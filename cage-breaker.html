@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -647,7 +647,6 @@ function rWelcome(a){
 // ═══════════════════════════════════════════════
 function rHub(a){
   const ids=S.identities;
-  // Sort: unpracticed today first
   const sorted=[...ids].sort((a,b)=>{
     const al=loggedToday(a)?1:0, bl=loggedToday(b)?1:0;
     return al-bl;
@@ -667,39 +666,6 @@ function rHub(a){
       <h2 style="margin:0">Your Identities</h2>
       <button class="b bd bs" onclick="openSyncModal()" style="font-size:12px;padding:6px 12px">☁️ Sync & Backup</button>
     </div>
-    <p class="d">${ids.length===0?'You haven\'t created any identities yet. Start your first exercise below.':ids.length+' identity'+(ids.length>1?'s':'')}</p>� Sync & Backup</button>
-    </div>
-    <p class="d">${ids.length===0?'You haven\'t created any identities yet. Start your first exercise below.':ids.length+' identity'+(ids.length>1?'s':'')}</p>`and offline.</p>'
-    +'<p class="sm" style="margin-bottom:20px;font-style:italic">Allow 15\u201320 minutes of honest reflection.</p>'
-    +resumeHtml
-    +'<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">'+(S.creating?'Start a new identity instead':'Full identity exercise')+'</button>'
-    +'<button class="b bd" onclick="go(\'quick-create\')" style="margin-top:0">Quick habit tracker \u2014 start in 30 seconds</button>'
-    +'</div>';
-}
-
-
-// ═══════════════════════════════════════════════
-// HUB
-// ═══════════════════════════════════════════════
-function rHub(a){
-  const ids=S.identities;
-  // Sort: unpracticed today first
-  const sorted=[...ids].sort((a,b)=>{
-    const al=loggedToday(a)?1:0, bl=loggedToday(b)?1:0;
-    return al-bl;
-  });
-
-  let resumeBanner='';
-  if(S.creating){
-    resumeBanner=`<div class="rfc">
-      <p class="d" style="margin-bottom:10px">You have an identity exercise in progress.</p>
-      <button class="b bp bs" onclick="resumeCreate()">Continue where I left off</button>
-      <button class="bg" style="margin-left:10px" onclick="discardCreate()">Discard it</button>
-    </div>`;
-  }
-
-  a.innerHTML=`<div class="fade">
-    <h2 style="margin-bottom:4px">Your Identities</h2>
     <p class="d">${ids.length===0?'You haven\'t created any identities yet. Start your first exercise below.':ids.length+' identity'+(ids.length>1?'s':'')}</p>
     ${resumeBanner}
     ${S.identities.length>0?'<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">\u26a1 Quick add evidence</button></div>':''}
