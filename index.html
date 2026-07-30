@@ -263,13 +263,258 @@ window.setWeightSel=function(prefix, w){
 // ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
-const DEF={screen:"welcome",identities:[],creating:null,currentId:null};
+const DEF={screen:"welcome",identities:[],creating:null,currentId:null,syncCode:null,cloudId:null};
 let S=load();
 
-function load(){try{const r=localStorage.getItem(SK);if(r){const p=JSON.parse(r);return{...DEF,...p}}}catch(e){}return{...DEF}}
-function save(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){}}
+function load(){
+  try{
+    const r=localStorage.getItem(SK);
+    if(r){
+      const p=JSON.parse(r);
+      const res={...DEF,...p};
+      if(res.cloudId) setTimeout(function(){ pullFromCloud(res.cloudId); }, 1000);
+      return res;
+    }
+  }catch(e){}
+  return{...DEF};
+}
+function save(){
+  try{
+    localStorage.setItem(SK,JSON.stringify(S));
+    triggerCloudAutoSync();
+  }catch(e){}
+}
 function go(scr){clearTimers();S.screen=scr;save();window.scrollTo(0,0);render()}
 function cur(){return S.identities.find(i=>i.id===S.currentId)||null}
+
+// ═══════════════════════════════════════════════
+// CLOUD SYNC & DATA PERSISTENCE ENGINE
+// ═══════════════════════════════════════════════
+var syncTimeout = null;
+function triggerCloudAutoSync() {
+  if (!S || !S.cloudId) return;
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(function() {
+    pushToCloud();
+  }, 1000);
+}
+
+window.pushToCloud = async function() {
+  if (!S.cloudId) {
+    try {
+      if (!S.syncCode) S.syncCode = 'CB-' + Math.floor(100000 + Math.random() * 900000);
+      const res = await fetch('https://api.restful-api.dev/objects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'cage-breaker-' + S.syncCode,
+          data: { payload: JSON.stringify(S) }
+        })
+      });
+      const data = await res.json();
+      if (data && data.id) {
+        S.cloudId = data.id;
+        localStorage.setItem(SK, JSON.stringify(S));
+        return true;
+      }
+    } catch(e) {
+      console.warn('Cloud init error:', e);
+      return false;
+    }
+  } else {
+    try {
+      await fetch('https://api.restful-api.dev/objects/' + S.cloudId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'cage-breaker-' + (S.syncCode || 'SYNC'),
+          data: { payload: JSON.stringify(S) }
+        })
+      });
+      return true;
+    } catch(e) {
+      console.warn('Cloud update error:', e);
+      return false;
+    }
+  }
+};
+
+window.pullFromCloud = async function(cloudIdOrCode) {
+  var targetId = cloudIdOrCode || S.cloudId;
+  if (!targetId) return false;
+  
+  try {
+    var url = 'https://api.restful-api.dev/objects/' + targetId;
+    var res = await fetch(url);
+    if (!res.ok) return false;
+    var data = await res.json();
+    if (data && data.data && data.data.payload) {
+      var parsed = JSON.parse(data.data.payload);
+      if (parsed && parsed.identities) {
+        S = { ...DEF, ...parsed, cloudId: targetId };
+        localStorage.setItem(SK, JSON.stringify(S));
+        render();
+        return true;
+      }
+    }
+  } catch(e) {
+    console.warn('Cloud pull error:', e);
+  }
+  return false;
+};
+
+window.connectSyncCode = async function() {
+  var inp = $('#connect-code-inp');
+  if (!inp) return;
+  var code = inp.value.trim();
+  if (!code) {
+    alert('Please enter a valid Sync Code or Cloud ID');
+    return;
+  }
+  var statusEl = $('#sync-status-msg');
+  if (statusEl) statusEl.textContent = '⏳ Connecting and pulling data from cloud...';
+  
+  var success = await pullFromCloud(code);
+  if (success) {
+    if (statusEl) statusEl.textContent = '✓ Successfully connected! All habits and logs loaded.';
+    setTimeout(closeSyncModal, 1200);
+  } else {
+    if (statusEl) statusEl.textContent = '❌ Sync ID/Code not found or network error. Check ID and try again.';
+  }
+};
+
+window.syncNowWithCloud = async function() {
+  var statusEl = $('#sync-status-msg');
+  if (statusEl) statusEl.textContent = '⏳ Syncing data to cloud...';
+  var ok = await pushToCloud();
+  if (ok && statusEl) {
+    statusEl.textContent = '✓ Cloud sync complete! ID: ' + S.cloudId;
+  } else if (statusEl) {
+    statusEl.textContent = '❌ Cloud sync failed. Check internet connection.';
+  }
+};
+
+window.exportDataJSON = function() {
+  var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(S, null, 2));
+  var downloadAnchor = document.createElement('a');
+  var filename = 'cage-breaker-backup-' + today() + '.json';
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", filename);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+};
+
+window.triggerImportJSON = function() {
+  var fileInp = $('#json-file-input');
+  if (fileInp) fileInp.click();
+};
+
+window.importDataJSONFile = function(evt) {
+  var file = evt.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var imported = JSON.parse(e.target.result);
+      if (imported && (imported.identities || imported.screen)) {
+        S = { ...DEF, ...imported };
+        save();
+        render();
+        alert('✓ Successfully imported backup! ' + (S.identities ? S.identities.length : 0) + ' identities loaded.');
+        closeSyncModal();
+      } else {
+        alert('Invalid backup file format.');
+      }
+    } catch(err) {
+      alert('Error reading JSON file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+};
+
+window.openSyncModal = function() {
+  var modal = document.getElementById('sync-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'sync-modal';
+    document.body.appendChild(modal);
+  }
+  renderSyncModalContent(modal);
+};
+
+function renderSyncModalContent(modal) {
+  if (!S.syncCode) {
+    S.syncCode = 'CB-' + Math.floor(100000 + Math.random() * 900000);
+    save();
+  }
+  var currentCode = S.cloudId || S.syncCode;
+  
+  modal.className = 'modal-overlay';
+  modal.onclick = function(e) {
+    if (e.target === modal) closeSyncModal();
+  };
+
+  modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
+    + '<div class="modal-header">'
+    + '<div>'
+    + '<h3 style="margin-bottom:2px">☁️ Multi-Device Sync & Data Backup</h3>'
+    + '<p class="sm" style="color:#9ca3af;margin:0">Access all your habits, logs, and progress on any device</p>'
+    + '</div>'
+    + '<button class="modal-close" onclick="closeSyncModal()" title="Close">×</button>'
+    + '</div>'
+    + '<div class="modal-body">'
+    
+    + '<div style="padding:16px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:12px;margin-bottom:16px">'
+    + '<p style="font-size:13px;color:#4ede80;font-weight:700;margin-bottom:4px">Your Multi-Device Sync ID / Code:</p>'
+    + '<div style="display:flex;gap:8px;align-items:center">'
+    + '<input type="text" id="my-sync-code" value="' + currentCode + '" readonly style="font-size:14px;font-weight:700;letter-spacing:1px;color:#fbbf24;text-align:center;background:#181824"/>'
+    + '<button class="b bp bs" style="white-space:nowrap" onclick="copySyncCode()">Copy Code</button>'
+    + '</div>'
+    + '<p class="sm" style="color:#d1d5db;margin-top:8px">Enter this code on your phone or any other browser to connect all habits and logs!</p>'
+    + '<button class="b bd bw" style="margin-top:10px" onclick="syncNowWithCloud()">☁️ Sync Now to Cloud</button>'
+    + '</div>'
+    
+    + '<div style="padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px;margin-bottom:16px">'
+    + '<p style="font-size:13px;color:#f3f4f6;font-weight:700;margin-bottom:4px">Connect to an existing Sync Code / ID:</p>'
+    + '<div style="display:flex;gap:8px">'
+    + '<input type="text" id="connect-code-inp" placeholder="Paste Sync Code or Cloud ID…" style="font-size:14px"/>'
+    + '<button class="b bp bs" style="white-space:nowrap" onclick="connectSyncCode()">Connect</button>'
+    + '</div>'
+    + '</div>'
+    
+    + '<div style="padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
+    + '<p style="font-size:13px;color:#f3f4f6;font-weight:700;margin-bottom:6px">Offline File Backup & Restore:</p>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button class="b bb bs" style="flex:1;min-width:140px" onclick="exportDataJSON()">📥 Export Backup (.json)</button>'
+    + '<button class="b bb bs" style="flex:1;min-width:140px" onclick="triggerImportJSON()">📤 Import Backup (.json)</button>'
+    + '</div>'
+    + '<input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>'
+    + '</div>'
+
+    + '<p id="sync-status-msg" class="sm" style="margin-top:12px;text-align:center;color:#4ede80;min-height:20px"></p>'
+    
+    + '</div>'
+    + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px">'
+    + '<button class="b bb bs" onclick="closeSyncModal()">Close</button>'
+    + '</div>'
+    + '</div>';
+}
+
+window.closeSyncModal = function() {
+  var modal = document.getElementById('sync-modal');
+  if (modal) modal.remove();
+};
+
+window.copySyncCode = function() {
+  var inp = $('#my-sync-code');
+  if (inp) {
+    inp.select();
+    navigator.clipboard.writeText(inp.value);
+    var statusEl = $('#sync-status-msg');
+    if (statusEl) statusEl.textContent = '✓ Sync code copied to clipboard!';
+  }
+};
 
 // ═══════════════════════════════════════════════
 // TIMERS
@@ -363,35 +608,7 @@ window.copyDayExample=function(textareaId, habitName){
   if(!ta)return;
   var name=habitName||'my new habit';
   var template='Morning (7:30 AM): I wake up feeling clear and energized. Instead of defaulting to old distractions, I start my morning focusing on '+name+'.\n\n'
-    +'Afternoon (2:00 PM): When midday stress or temptation hits, I stay grounded. I navigate my afternoon calmly without breaking momentum.\n\n'
-    +'Evening (10:00 PM): I review my day with a feeling of quiet pride. I check off my proof and go to sleep knowing my actions match who I am becoming.';
-  ta.value=template;
-  ta.focus();
-  ta.dispatchEvent(new Event('input',{bubbles:true}));
-};
-
-// ═══════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════
-function render(){
-  const a=$('#app'),s=S.screen;
-  if(s==='welcome')return rWelcome(a);
-  if(s==='hub')return rHub(a);
-  if(s.startsWith('create-'))return rCreate(a,s);
-  if(s==='identity')return rIdentity(a);
-  if(s==='practice')return rPractice(a);
-  if(s==='reflect')return rReflect(a);
-  if(s==='history')return rHistory(a);
-  if(s==='manage')return rManage(a);
-  if(s==='quick')return rQuick(a);
-  if(s==='goal')return rGoal(a);
-  if(s==='quick-create')return rQuickCreate(a);
-  // fallback
-  if(S.identities.length)return go('hub');
-  return go('welcome');
-}
-
-// ═══════════════════════════════════════════════
+    +'Afternoon (2:00 PM): When midday stress or temptat// ═══════════════════════════════════════════════
 // WELCOME
 // ═══════════════════════════════════════════════
 function rWelcome(a){
@@ -417,6 +634,42 @@ function rWelcome(a){
     +'<h1>Break Your Cage</h1>'
     +'<p class="d" style="max-width:440px;margin:14px auto 18px">You are not lazy. You are not broken. You are living inside a familiar identity that keeps you stuck \u2014 and today, you crack it open.</p>'
     +'<p class="h" style="max-width:420px;margin:0 auto 10px">A guided 5-step practice based on the psychology of Quantum Change. Everything is saved locally on your device \u2014 no server, no account, completely private and offline.</p>'
+    +'<p class="sm" style="margin-bottom:20px;font-style:italic">Allow 15\u201320 minutes of honest reflection.</p>'
+    +resumeHtml
+    +'<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">'+(S.creating?'Start a new identity instead':'Full identity exercise')+'</button>'
+    +'<button class="b bd" onclick="go(\'quick-create\')" style="margin-top:0;margin-bottom:10px">Quick habit tracker \u2014 start in 30 seconds</button>'
+    +'<button class="bg" onclick="openSyncModal()" style="display:block;margin:8px auto 0;color:#fbbf24;font-size:13px">☁️ Multi-Device Sync / Connect device or restore backup</button>'
+    +'</div>';
+}
+
+// ═══════════════════════════════════════════════
+// HUB
+// ═══════════════════════════════════════════════
+function rHub(a){
+  const ids=S.identities;
+  // Sort: unpracticed today first
+  const sorted=[...ids].sort((a,b)=>{
+    const al=loggedToday(a)?1:0, bl=loggedToday(b)?1:0;
+    return al-bl;
+  });
+
+  let resumeBanner='';
+  if(S.creating){
+    resumeBanner=`<div class="rfc">
+      <p class="d" style="margin-bottom:10px">You have an identity exercise in progress.</p>
+      <button class="b bp bs" onclick="resumeCreate()">Continue where I left off</button>
+      <button class="bg" style="margin-left:10px" onclick="discardCreate()">Discard it</button>
+    </div>`;
+  }
+
+  a.innerHTML=`<div class="fade">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">Your Identities</h2>
+      <button class="b bd bs" onclick="openSyncModal()" style="font-size:12px;padding:6px 12px">☁️ Sync & Backup</button>
+    </div>
+    <p class="d">${ids.length===0?'You haven\'t created any identities yet. Start your first exercise below.':ids.length+' identity'+(ids.length>1?'s':'')}</p>� Sync & Backup</button>
+    </div>
+    <p class="d">${ids.length===0?'You haven\'t created any identities yet. Start your first exercise below.':ids.length+' identity'+(ids.length>1?'s':'')}</p>`and offline.</p>'
     +'<p class="sm" style="margin-bottom:20px;font-style:italic">Allow 15\u201320 minutes of honest reflection.</p>'
     +resumeHtml
     +'<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">'+(S.creating?'Start a new identity instead':'Full identity exercise')+'</button>'
