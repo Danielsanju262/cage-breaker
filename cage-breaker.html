@@ -2894,6 +2894,17 @@
       </div>
     </div>
 
+    <!-- Supporting Proofs & Habits -->
+    <div class="mg-section">
+      <h3>Supporting Habits & Proofs</h3>
+      <p class="h">Specific actions that build evidence for your new identity.</p>
+      <div id="mg-act-list">${renderMgActionsList(id)}</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="text" id="mg-act-input" placeholder="Add supporting habit (e.g. Wash face with cleanser)..." style="flex:1;font-size:13px;padding:8px 10px"/>
+        <button class="b bp bs" onclick="mgAddAction()">Add habit</button>
+      </div>
+    </div>
+
     <!-- Stats -->
     <div class="mg-section">
       <h3>Stats</h3>
@@ -3485,6 +3496,80 @@
         wrap.classList.remove('editing');
         const btn = wrap.querySelector('.mg-save');
         if (btn) { btn.textContent = '✓ Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveOI = function () {
+      const v = $('#mg-oi')?.value?.trim(); if (!v) return;
+      const id = cur(); if (!id) return;
+      id.oldIdentity = v; save();
+      const wrap = $('#ed-oi');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = '✓ Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200); }
+      }
+    };
+
+    function renderMgOldEvList(id) {
+      if (!id || !id.oldEvidence || id.oldEvidence.length === 0) {
+        return '<p class="h" style="font-style:italic;margin-top:4px">No proofs added for old cage.</p>';
+      }
+      return id.oldEvidence.map((ev, i) => {
+        return '<div class="li" style="margin-bottom:6px"><span class="ln">' + e(ev) + '</span><button class="ev-del" onclick="mgDelOldEv(' + i + ')">delete</button></div>';
+      }).join('');
+    }
+
+    window.mgAddOldEv = function () {
+      const v = $('#mg-oldev-input')?.value?.trim(); if (!v) return;
+      const id = cur(); if (!id) return;
+      if (!id.oldEvidence) id.oldEvidence = [];
+      id.oldEvidence.push(v);
+      save();
+      const list = $('#mg-oldev-list');
+      if (list) list.innerHTML = renderMgOldEvList(id);
+      const inp = $('#mg-oldev-input');
+      if (inp) inp.value = '';
+    };
+
+    window.mgDelOldEv = function (i) {
+      const id = cur(); if (!id || !id.oldEvidence) return;
+      if (i >= 0 && i < id.oldEvidence.length) {
+        id.oldEvidence.splice(i, 1);
+        save();
+        const list = $('#mg-oldev-list');
+        if (list) list.innerHTML = renderMgOldEvList(id);
+      }
+    };
+
+    function renderMgActionsList(id) {
+      if (!id || !id.actions || id.actions.length === 0) {
+        return '<p class="h" style="font-style:italic;margin-top:4px">No supporting habits added yet.</p>';
+      }
+      return id.actions.map((ac, i) => {
+        return '<div class="li" style="margin-bottom:6px"><span class="ln">' + e(ac) + '</span><button class="ev-del" onclick="mgDelAction(' + i + ')">delete</button></div>';
+      }).join('');
+    }
+
+    window.mgAddAction = function () {
+      const v = $('#mg-act-input')?.value?.trim(); if (!v) return;
+      const id = cur(); if (!id) return;
+      if (!id.actions) id.actions = [];
+      id.actions.push(v);
+      save();
+      const list = $('#mg-act-list');
+      if (list) list.innerHTML = renderMgActionsList(id);
+      const inp = $('#mg-act-input');
+      if (inp) inp.value = '';
+    };
+
+    window.mgDelAction = function (i) {
+      const id = cur(); if (!id || !id.actions) return;
+      if (i >= 0 && i < id.actions.length) {
+        id.actions.splice(i, 1);
+        save();
+        const list = $('#mg-act-list');
+        if (list) list.innerHTML = renderMgActionsList(id);
       }
     };
 
