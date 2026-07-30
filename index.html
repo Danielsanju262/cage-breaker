@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Break Your Cage</title>
   <style>
     *,
@@ -2258,15 +2261,110 @@
       save(); go('hub');
     };
 
-    // ═══════════════════════════════════════════════
-    // IDENTITY HOME & MOTIVATIONAL DUAL PATH VIEW
-    // ═══════════════════════════════════════════════
-    function get14DayAntiVision(id) {
-      if (!id) return '';
-      if (id.antiVision14Day && id.antiVision14Day.trim()) return id.antiVision14Day.trim();
-      var oldName = (id.oldIdentity || 'this old pattern').trim();
-      oldName = oldName.replace(/^"|"$/g, '').replace(/^I am someone who\s+/i, '');
-      return 'If you continue without adding evidence for 14 days: "' + oldName + '" becomes 14x more deeply rooted. Your skin/habits stay neglected, snooze & hesitation compound, and you lose another 2 weeks to quiet regret.';
+    window.inlineFilterState = window.inlineFilterState || { preset: 'all', searchQuery: '' };
+
+    function filterInlineLogs(logs) {
+      var state = window.inlineFilterState;
+      if (!logs || !logs.length) return [];
+
+      var todayD = new Date();
+      var todayStr = getLocalYYYYMMDD(todayD);
+      var todayTime = new Date(todayStr + 'T00:00:00').getTime();
+
+      return logs.map(function (l, i) { return { l: l, realIdx: i }; }).filter(function (item) {
+        var l = item.l;
+        if (!l) return false;
+
+        if (state.searchQuery) {
+          var q = state.searchQuery.trim().toLowerCase();
+          var noteText = (l.note || '').toLowerCase();
+          if (!noteText.includes(q)) return false;
+        }
+
+        if (state.preset === 'all') return true;
+
+        if (!l.date) return false;
+        var logDateObj = new Date(l.date);
+        if (isNaN(logDateObj.getTime())) return false;
+        var logDateStr = getLocalYYYYMMDD(logDateObj);
+
+        if (state.preset === 'today') return logDateStr === todayStr;
+
+        if (state.preset === '7days') {
+          var logDateTime = new Date(logDateStr + 'T00:00:00').getTime();
+          var diffDays = (todayTime - logDateTime) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 7;
+        }
+
+        if (state.preset === '30days') {
+          var logDateTime = new Date(logDateStr + 'T00:00:00').getTime();
+          var diffDays = (todayTime - logDateTime) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 30;
+        }
+
+        return true;
+      });
+    }
+
+    window.setInlineFilterPreset = function (preset) {
+      window.inlineFilterState.preset = preset;
+      render();
+    };
+
+    window.setInlineSearchQuery = function (q) {
+      window.inlineFilterState.searchQuery = q;
+      render();
+    };
+
+    function renderInlineEvidenceSection(id) {
+      var logs = id.logs || [];
+      var streak = getStreak(id);
+      var state = window.inlineFilterState;
+      var filteredItems = filterInlineLogs(logs);
+
+      var filterHtml = '<div class="ev-filter-section" style="margin-top:10px;margin-bottom:12px;padding:10px 12px">'
+        + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<input type="text" class="ev-search-input" placeholder="🔍 Search proofs on page..." value="' + esc(state.searchQuery) + '" oninput="setInlineSearchQuery(this.value)" style="font-size:12px;padding:6px 10px"/>'
+        + (state.searchQuery ? '<button class="bg" style="font-size:11px;padding:2px 6px;color:#9ca3af" onclick="setInlineSearchQuery(\'\')">Clear</button>' : '')
+        + '</div>'
+        + '<div class="ev-filter-pills" style="gap:4px;margin-top:6px">'
+        + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'all\')">All Time</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'today\')">Today</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'7days\')">Last 7 Days</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'30days\')">Last 30 Days</button>'
+        + '</div>'
+        + '</div>';
+
+      var entriesHtml = '';
+      if (logs.length === 0) {
+        entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0">No evidence logged yet. Add your first proof above!</p>';
+      } else if (filteredItems.length === 0) {
+        entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0;color:#9ca3af">No proofs match this date/search filter.</p>';
+      } else {
+        entriesHtml = filteredItems.slice(-5).reverse().map(function (item) {
+          var l = item.l, ri = item.realIdx;
+          var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1f2436;gap:8px">'
+            + '<div style="display:flex;gap:6px;align-items:baseline;flex:1;overflow:hidden">'
+            + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">📅 ' + dateStr + '</span>'
+            + renderWeightBadge(l.weight)
+            + '<span style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.note) + '</span>'
+            + '</div>'
+            + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModal()">view</button>'
+            + '</div>';
+        }).join('');
+      }
+
+      return '<div style="margin-top:18px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<h3 style="color:#f3f4f6;font-size:15px;margin:0">Evidence Log History</h3>'
+        + '<span class="sm" style="color:#d1d5db">' + logs.length + ' proofs · ' + streak + '-day streak</span>'
+        + '</div>'
+        + '<div class="sb" style="margin-bottom:10px">' + streakDots(id) + '</div>'
+        + filterHtml
+        + '<div style="margin-bottom:12px">' + entriesHtml + '</div>'
+        + '<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Full Evidence Modal & Filter (' + logs.length + ' entries)</button>'
+        + '</div>';
     }
 
     function renderIdentityView(a, id) {
@@ -2400,14 +2498,7 @@
         + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:14px">⚡ Save Evidence & Level Up</button>'
         + '</div>'
 
-        + '<div style="margin-top:18px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<h3 style="color:#f3f4f6;font-size:15px;margin:0">Evidence Log History</h3>'
-        + '<span class="sm" style="color:#d1d5db">' + id.logs.length + ' proofs · ' + streak + '-day streak</span>'
-        + '</div>'
-        + '<div class="sb" style="margin-bottom:12px">' + streakDots(id) + '</div>'
-        + '<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Evidence Log Modal (' + id.logs.length + ' entries)</button>'
-        + '</div>'
+        + renderInlineEvidenceSection(id)
 
         + '<button class="b bb bw" onclick="go(\'manage\')" style="margin-top:18px">⚙️ Manage & Edit Identity Details</button>'
         + '</div>';
