@@ -1045,7 +1045,7 @@
     // ═══════════════════════════════════════════════
     var syncTimeout = null;
     function triggerCloudAutoSync() {
-      if (!S || !S.cloudId) return;
+      if (!S) return;
       clearTimeout(syncTimeout);
       syncTimeout = setTimeout(function () {
         pushToCloud();
@@ -1055,18 +1055,18 @@
     window.pushToCloud = async function () {
       if (!S.cloudId) {
         try {
-          if (!S.syncCode) S.syncCode = 'CB-' + Math.floor(100000 + Math.random() * 900000);
           const res = await fetch('https://api.restful-api.dev/objects', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              name: 'cage-breaker-' + S.syncCode,
+              name: 'cage-breaker-sync',
               data: { payload: JSON.stringify(S) }
             })
           });
           const data = await res.json();
           if (data && data.id) {
             S.cloudId = data.id;
+            S.syncCode = 'CB-' + data.id;
             localStorage.setItem(SK, JSON.stringify(S));
             return true;
           }
@@ -1080,7 +1080,7 @@
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              name: 'cage-breaker-' + (S.syncCode || 'SYNC'),
+              name: 'cage-breaker-sync',
               data: { payload: JSON.stringify(S) }
             })
           });
@@ -1090,10 +1090,13 @@
           return false;
         }
       }
+      return false;
     };
 
     window.pullFromCloud = async function (cloudIdOrCode) {
-      var targetId = cloudIdOrCode || S.cloudId;
+      var raw = cloudIdOrCode || S.cloudId;
+      if (!raw) return false;
+      var targetId = String(raw).replace(/^CB[-_]/i, '').trim();
       if (!targetId) return false;
 
       try {
@@ -1103,8 +1106,8 @@
         var data = await res.json();
         if (data && data.data && data.data.payload) {
           var parsed = JSON.parse(data.data.payload);
-          if (parsed && parsed.identities) {
-            S = { ...DEF, ...parsed, cloudId: targetId };
+          if (parsed && (parsed.identities || parsed.screen)) {
+            S = { ...DEF, ...parsed, cloudId: targetId, syncCode: 'CB-' + targetId };
             localStorage.setItem(SK, JSON.stringify(S));
             render();
             return true;
@@ -1141,7 +1144,10 @@
       if (statusEl) statusEl.textContent = '⏳ Syncing data to cloud...';
       var ok = await pushToCloud();
       if (ok && statusEl) {
-        statusEl.textContent = '✓ Cloud sync complete! ID: ' + S.cloudId;
+        var dispCode = S.syncCode || ('CB-' + S.cloudId);
+        statusEl.textContent = '✓ Cloud sync complete!';
+        var codeInp = $('#my-sync-code');
+        if (codeInp) codeInp.value = dispCode;
       } else if (statusEl) {
         statusEl.textContent = '❌ Cloud sync failed. Check internet connection.';
       }
@@ -1186,7 +1192,7 @@
       reader.readAsText(file);
     };
 
-    window.openSyncModal = function () {
+    window.openSyncModal = async function () {
       var modal = document.getElementById('sync-modal');
       if (!modal) {
         modal = document.createElement('div');
@@ -1194,14 +1200,18 @@
         document.body.appendChild(modal);
       }
       renderSyncModalContent(modal);
+      if (!S.cloudId) {
+        var statusEl = $('#sync-status-msg');
+        if (statusEl) statusEl.textContent = '⏳ Generating your cloud sync code...';
+        var ok = await pushToCloud();
+        renderSyncModalContent(modal);
+        var statusEl2 = $('#sync-status-msg');
+        if (ok && statusEl2) statusEl2.textContent = '✓ Cloud sync code active!';
+      }
     };
 
     function renderSyncModalContent(modal) {
-      if (!S.syncCode) {
-        S.syncCode = 'CB-' + Math.floor(100000 + Math.random() * 900000);
-        save();
-      }
-      var currentCode = S.cloudId || S.syncCode;
+      var displayCode = S.syncCode || (S.cloudId ? ('CB-' + S.cloudId) : 'Connecting to cloud...');
 
       modal.className = 'modal-overlay';
       modal.onclick = function (e) {
@@ -1221,7 +1231,7 @@
         + '<div style="padding:16px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:12px;margin-bottom:16px">'
         + '<p style="font-size:13px;color:#4ede80;font-weight:700;margin-bottom:4px">Your Multi-Device Sync ID / Code:</p>'
         + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<input type="text" id="my-sync-code" value="' + currentCode + '" readonly style="font-size:14px;font-weight:700;letter-spacing:1px;color:#fbbf24;text-align:center;background:#181824"/>'
+        + '<input type="text" id="my-sync-code" value="' + displayCode + '" readonly style="font-size:14px;font-weight:700;letter-spacing:1px;color:#fbbf24;text-align:center;background:#181824"/>'
         + '<button class="b bp bs" style="white-space:nowrap" onclick="copySyncCode()">Copy Code</button>'
         + '</div>'
         + '<p class="sm" style="color:#d1d5db;margin-top:8px">Enter this code on your phone or any other browser to connect all habits and logs!</p>'
