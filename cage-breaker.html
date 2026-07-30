@@ -1441,6 +1441,12 @@
     function save() {
       try {
         S._updatedAt = Date.now();
+        const id = cur();
+        if (id) {
+          id.updatedAt = new Date().toISOString();
+          const idx = (S.identities || []).findIndex(i => i && i.id === id.id);
+          if (idx >= 0) S.identities[idx] = id;
+        }
         const data = JSON.stringify(S);
         localStorage.setItem(SK, data);
         localStorage.setItem(SK + '_backup', data);
@@ -1483,6 +1489,13 @@
       if (!i1) return i2;
       if (!i2) return i1;
 
+      var t1 = new Date(i1.updatedAt || i1.createdDate || 0).getTime();
+      var t2 = new Date(i2.updatedAt || i2.createdDate || 0).getTime();
+
+      // Whichever identity has the NEWER timestamp is primary for all text fields!
+      var primary = (t1 >= t2) ? i1 : i2;
+      var secondary = (t1 >= t2) ? i2 : i1;
+
       const logsMap = new Map();
       [...(i1.logs || []), ...(i2.logs || [])].forEach(l => {
         if (!l) return;
@@ -1517,8 +1530,8 @@
       const mergedActions = [...new Set([...(i1.actions || []), ...(i2.actions || [])])];
 
       return {
-        ...i2,
-        ...i1,
+        ...secondary,
+        ...primary,
         logs: mergedLogs,
         habits: mergedHabits,
         reflections: mergedReflections,
@@ -2387,6 +2400,35 @@
     }
     window.get14DayAntiVision = get14DayAntiVision;
 
+    window.switchIdentity = function (id) {
+      if (!id) return;
+      S.currentId = id;
+      save();
+      go('identity');
+    };
+
+    window.startCreate = function () {
+      S.creating = {
+        path: 'habit',
+        behaviors: ['', '', ''],
+        feelings: [],
+        oldIdentity: '',
+        oldEvidence: [],
+        antiVisionText: '',
+        newIdentity: '',
+        crackAction: '',
+        actions: []
+      };
+      save();
+      go('create-path');
+    };
+
+    window.exitCreate = function () {
+      if (confirm('Exit creation flow? Your progress will be saved.')) {
+        go(S.identities.length ? 'identity' : 'hub');
+      }
+    };
+
     function renderIdentityView(a, id) {
       if (!id) return go('hub');
       var pts = getEvidencePoints(id);
@@ -2436,13 +2478,29 @@
           + '</div>';
       }
 
-      a.innerHTML = '<div class="fade">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        + '<button class="bg" onclick="go(\'hub\')">← Main menu</button>'
+      var allIds = S.identities || [];
+      var switcherHtml = '';
+      if (allIds.length > 1) {
+        switcherHtml = '<select onchange="switchIdentity(this.value)" style="background:#181824;color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">'
+          + allIds.map(function (item) {
+              return '<option value="' + item.id + '" ' + (item.id === id.id ? 'selected' : '') + '>👤 ' + e(item.newIdentity || 'Identity') + '</option>';
+            }).join('')
+          + '</select>';
+      }
+
+      var headerNavHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;flex-wrap:wrap">'
         + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit / Manage</button>'
+        + '<button class="b bp bs" onclick="startCreate()" style="font-size:12px;padding:7px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 3px 10px rgba(245,158,11,0.25)">➕ Create New Habit / Identity</button>'
+        + switcherHtml
         + '</div>'
+        + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit Details</button>'
+        + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:6px 10px;color:#9ca3af">All Cards →</button>'
         + '</div>'
+        + '</div>';
+
+      a.innerHTML = '<div class="fade">'
+        + headerNavHtml
 
         + '<div class="two-paths-container">'
 
@@ -2801,8 +2859,8 @@
         if (['identity', 'practice', 'reflect', 'history', 'manage', 'quick-create'].includes(scr)) {
           if (cur()) { render(); return }
         }
-        // Default to hub
-        S.screen = 'hub'; save();
+        // Default to active identity view as the main Home Screen!
+        S.screen = cur() ? 'identity' : 'hub'; save();
       } else if (!S.creating) {
         S.screen = 'welcome'; save();
       }
