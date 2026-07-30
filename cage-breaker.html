@@ -997,7 +997,7 @@
     // ═══════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════
-    const DEF = { screen: "welcome", identities: [], creating: null, currentId: null };
+    const DEF = { screen: "welcome", identities: [], creating: null, currentId: null, deletedIds: [] };
     let S = load();
 
     function sanitizeIdentity(id) {
@@ -1064,7 +1064,7 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // PERMANENT LIVE CLOUD STORAGE ENGINE (ADDITIVE UNION MERGE)
+    // PERMANENT LIVE CLOUD STORAGE ENGINE (ADDITIVE UNION MERGE + TOMBSTONES)
     // ═══════════════════════════════════════════════
     const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fb278-c045-7f04-b337-ddd5f9eeb9d2';
     var syncTimeout = null;
@@ -1119,20 +1119,25 @@
 
     function mergeStates(loc, cld) {
       if (!cld) return loc;
-      if (loc && loc._updatedAt && cld._updatedAt && loc._updatedAt >= cld._updatedAt) {
-        return loc;
-      }
-      const locIds = (loc && Array.isArray(loc.identities) ? loc.identities : []).map(sanitizeIdentity).filter(Boolean);
-      const cldIds = (cld && Array.isArray(cld.identities) ? cld.identities : []).map(sanitizeIdentity).filter(Boolean);
+      
+      const locDel = Array.isArray(loc && loc.deletedIds) ? loc.deletedIds : [];
+      const cldDel = Array.isArray(cld && cld.deletedIds) ? cld.deletedIds : [];
+      const allDeleted = [...new Set([...locDel, ...cldDel])];
 
-      if (cldIds.length === 0) {
-        if (locIds.length > 0) {
-          pushToCloud();
-        }
-        return { ...DEF, ...loc, identities: locIds };
+      const locIds = (loc && Array.isArray(loc.identities) ? loc.identities : [])
+        .map(sanitizeIdentity)
+        .filter(i => i && i.id && !allDeleted.includes(i.id));
+
+      const cldIds = (cld && Array.isArray(cld.identities) ? cld.identities : [])
+        .map(sanitizeIdentity)
+        .filter(i => i && i.id && !allDeleted.includes(i.id));
+
+      if (cldIds.length === 0 && locIds.length > 0) {
+        pushToCloud();
+        return { ...DEF, ...loc, identities: locIds, deletedIds: allDeleted };
       }
-      if (locIds.length === 0) {
-        return { ...DEF, ...cld, identities: cldIds };
+      if (locIds.length === 0 && cldIds.length > 0) {
+        return { ...DEF, ...cld, identities: cldIds, deletedIds: allDeleted };
       }
 
       const map = new Map();
@@ -1150,7 +1155,7 @@
       const mergedList = Array.from(map.values());
       const resScr = (loc.screen && loc.screen !== 'welcome') ? loc.screen : (cld.screen || 'hub');
       const resId = loc.currentId || cld.currentId || (mergedList.length > 0 ? mergedList[0].id : null);
-      return { ...DEF, ...cld, ...loc, identities: mergedList, screen: resScr, currentId: resId };
+      return { ...DEF, ...cld, ...loc, identities: mergedList, deletedIds: allDeleted, screen: resScr, currentId: resId };
     }
 
     function triggerCloudAutoSync() {
@@ -2832,7 +2837,9 @@
       }
     };
     window.confirmHubDel = function (id) {
-      S.identities = S.identities.filter(function (i) { return i.id !== id });
+      if (!S.deletedIds) S.deletedIds = [];
+      if (!S.deletedIds.includes(id)) S.deletedIds.push(id);
+      S.identities = S.identities.filter(function (i) { return i && i.id !== id });
       if (S.currentId === id) S.currentId = null;
       save();
       if (S.identities.length === 0) go('welcome'); else render();
