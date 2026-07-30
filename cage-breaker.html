@@ -801,7 +801,7 @@
       -moz-appearance: textfield
     }
 
-    /* Modal styles */
+    /* Modal styles & mobile responsive improvements */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -809,8 +809,8 @@
       width: 100vw;
       height: 100vh;
       background: rgba(10, 14, 26, 0.85);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 9999;
       display: flex;
       align-items: center;
@@ -824,12 +824,24 @@
       border: 1px solid #2e364f;
       border-radius: 16px;
       width: 100%;
-      max-width: 580px;
-      max-height: 85vh;
+      max-width: 600px;
+      max-height: 88vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(245, 158, 11, 0.15);
-      animation: modalSlide .25s cubic-bezier(0.16, 1, 0.3, 1)
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(245, 158, 11, 0.12);
+      animation: modalSlide .25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden
+    }
+
+    @media (max-width: 640px) {
+      .modal-overlay {
+        padding: 8px;
+        align-items: flex-end
+      }
+      .modal-card {
+        max-height: 92vh;
+        border-radius: 20px 20px 12px 12px
+      }
     }
 
     @keyframes modalSlide {
@@ -845,11 +857,14 @@
     }
 
     .modal-header {
-      padding: 18px 22px;
+      padding: 16px 20px;
       border-bottom: 1px solid #1f2436;
       display: flex;
       justify-content: space-between;
-      align-items: center
+      align-items: center;
+      background: rgba(18, 24, 41, 0.95);
+      backdrop-filter: blur(4px);
+      z-index: 2
     }
 
     .modal-header h3 {
@@ -864,14 +879,15 @@
       color: #d1d5db;
       font-size: 18px;
       line-height: 1;
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all .15s
+      transition: all .15s;
+      flex-shrink: 0
     }
 
     .modal-close:hover {
@@ -884,6 +900,396 @@
       padding: 16px 22px 24px;
       overflow-y: auto;
       flex: 1
+    }
+
+    /* Enhanced Identity Dual Paths Styles */
+    .two-paths-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .path-card {
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .path-red {
+      background: linear-gradient(145deg, rgba(239, 68, 68, 0.09), rgba(30, 15, 20, 0.7));
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1);
+    }
+
+    .path-green {
+      background: linear-gradient(145deg, rgba(74, 222, 128, 0.09), rgba(15, 30, 22, 0.7));
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      box-shadow: 0 4px 20px rgba(74, 222, 128, 0.1);
+    }
+
+    .path-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .path-badge-red {
+      background: rgba(239, 68, 68, 0.18);
+      color: #ff8f70;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .path-badge-green {
+      background: rgba(74, 222, 128, 0.18);
+      color: #4ede80;
+      border: 1px solid rgba(74, 222, 128, 0.4);
+    }
+
+    .path-section {
+      margin-bottom: 14px;
+    }
+
+    .path-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .path-sublabel {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ff8f70;
+      display: block;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .path-sublabel.green {
+      color: #4ede80;
+    }
+
+    .path-quote-red {
+      font-family: Georgia, serif;
+      font-size: 19px;
+      font-style: italic;
+      color: #ffb399;
+      line-height: 1.45;
+    }
+
+    .path-quote-green {
+      font-family: Georgia, serif;
+      font-size: 19px;
+      font-style: italic;
+      color: #4ede80;
+      line-height: 1.45;
+    }
+
+    .path-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .path-list-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .path-list-item-red {
+      color: #f3f4f6;
+    }
+
+    .bullet-red {
+      color: #ff8f70;
+      font-weight: bold;
+    }
+
+    .path-list-item-green {
+      color: #f3f4f6;
+    }
+
+    .bullet-green {
+      color: #4ede80;
+      font-weight: bold;
+    }
+
+    .timeline-box {
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 10px;
+    }
+
+    .timeline-box-red {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px dashed rgba(239, 68, 68, 0.35);
+    }
+
+    .timeline-box-red-dark {
+      background: rgba(180, 40, 40, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .timeline-box-green {
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .timeline-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .timeline-badge.red {
+      color: #ff8f70;
+    }
+
+    .timeline-badge.red-dark {
+      color: #fca5a5;
+    }
+
+    .timeline-badge.green {
+      color: #4ede80;
+    }
+
+    .journey-tag {
+      font-size: 10px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .timeline-text {
+      font-size: 13px;
+      line-height: 1.55;
+      font-style: italic;
+    }
+
+    .timeline-text.red {
+      color: #fca5a5;
+    }
+
+    .timeline-text.red-dark {
+      color: #fca5a5;
+    }
+
+    .day-vision-content {
+      font-size: 13px;
+      color: #e5e7eb;
+      line-height: 1.6;
+      font-style: italic;
+      white-space: pre-wrap;
+    }
+
+    .evidence-log-card {
+      padding: 20px;
+      background: linear-gradient(145deg, rgba(245, 158, 11, 0.08), rgba(20, 24, 38, 0.8));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 14px;
+      margin-top: 16px;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.08);
+    }
+
+    /* Modal Filter Styles */
+    .ev-filter-section {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid #232a3e;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    .ev-filter-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap
+    }
+
+    .ev-filter-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #2e364f;
+      color: #9ca3af;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit
+    }
+
+    .ev-filter-pill:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e5e7eb
+    }
+
+    .ev-filter-pill.active {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+      font-weight: 600
+    }
+
+    .ev-custom-date-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08)
+    }
+
+    .ev-date-input {
+      background: rgba(10, 14, 26, 0.8);
+      border: 1px solid #374151;
+      color: #f3f4f6;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      color-scheme: dark
+    }
+
+    .ev-date-input:focus {
+      outline: none;
+      border-color: #f59e0b
+    }
+
+    .ev-search-input {
+      background: rgba(10, 14, 26, 0.6);
+      border: 1px solid #2e364f;
+      color: #f3f4f6;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      width: 100%;
+      font-family: inherit
+    }
+
+    .ev-search-input:focus {
+      outline: none;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15)
+    }
+
+    /* Modern Log Entry Card */
+    .ev-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid #232a3e;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.15s ease
+    }
+
+    .ev-card:hover {
+      border-color: #374151;
+      background: rgba(255, 255, 255, 0.04)
+    }
+
+    .ev-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px
+    }
+
+    .ev-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .ev-card-date {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9ca3af;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      letter-spacing: 0.2px
+    }
+
+    .ev-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .ev-btn-edit,
+    .ev-btn-del {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      border: 1px solid transparent;
+      transition: all 0.15s ease
+    }
+
+    .ev-btn-edit {
+      background: rgba(255, 255, 255, 0.06);
+      color: #d1d5db;
+      border-color: #374151
+    }
+
+    .ev-btn-edit:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff
+    }
+
+    .ev-btn-del {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.25)
+    }
+
+    .ev-btn-del:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fee2e2
+    }
+
+    .ev-card-note {
+      font-size: 14px;
+      color: #f3f4f6;
+      line-height: 1.55;
+      overflow-wrap: break-word;
+      word-break: normal;
+      white-space: pre-wrap
     }
   </style>
 </head>
@@ -1853,73 +2259,189 @@
     };
 
     // ═══════════════════════════════════════════════
-    // IDENTITY HOME
+    // IDENTITY HOME & MOTIVATIONAL DUAL PATH VIEW
     // ═══════════════════════════════════════════════
-    function rIdentity(a) {
-      const id = cur(); if (!id) return go('hub');
-      const pts = getEvidencePoints(id);
-      const st = getStage(pts);
-      const streak = getStreak(id);
-      const days = daysOld(id);
-      const logged = loggedToday(id);
-      const needsR = needsReflection(id);
-
-      a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('hub')">← Main menu</button></div>
-
-    <!-- 1. THE CAGE YOU BROKE (OLD IDENTITY) -->
-    <div class="c cr" style="margin-top:0;margin-bottom:14px">
-      <div class="cl clr">THE CAGE YOU BROKE (OLD IDENTITY)</div>
-      <p style="font-size:15px;color:#ffb399;line-height:1.5;font-style:italic;margin-bottom:8px">"${e(id.oldIdentity)}"</p>
-      ${id.oldEvidence && id.oldEvidence.length > 0 ? `
-        <p style="font-size:12px;color:#fca5a5;font-weight:600;margin-bottom:4px">Evidence that cage existed:</p>
-        ${id.oldEvidence.map(ev => `<div style="display:flex;gap:8px;padding:2px 0"><span style="color:#ff8f70;font-size:11px">•</span><span style="font-size:13px;color:#f3f4f6;line-height:1.4">${e(ev)}</span></div>`).join('')}
-      ` : ''}
-    </div>
-
-    <!-- 2. NEW IDENTITY -->
-    <div class="dp-id" style="margin-top:0;margin-bottom:14px">
-      <p class="sm" style="margin-bottom:6px;color:#4ede80;font-weight:700">YOU ARE BECOMING (NEW IDENTITY)</p>
-      <p class="cq" style="color:#4ede80;font-size:19px">"${e(id.newIdentity)}"</p>
-    </div>
-
-    <!-- 3. TUG OF WAR -->
-    ${renderTugOfWar(id)}
-
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin:12px 0 4px">
-      <span class="sm" style="color:#f3f4f6;font-weight:600">${st.name}</span>
-      <span class="sm" style="color:#d1d5db">${pts} pts (${id.logs.length} proofs) · Day ${days}${streak > 1 ? ' · ' + streak + '-day streak' : ''}</span>
-    </div>
-    <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
-    <p class="h" style="margin-top:4px;margin-bottom:20px;color:#9ca3af">${st.desc}</p>
-
-    ${!logged ? `<button class="b bp bw" onclick="go('practice')" style="margin-bottom:10px">Do today's practice & log evidence</button>`
-          : `<button class="b bd bw" onclick="go('practice')" style="margin-bottom:10px">Re-read Anti-Vision & add more evidence</button>`}
-
-    ${needsR ? `<div class="rfc" style="margin-bottom:12px">
-      <p class="d" style="margin-bottom:8px">It's been ${id.reflections.length === 0 ? 'a week' : 'another week'} — time for a deeper check-in to grow your identity.</p>
-      <button class="b bp bs" onclick="go('reflect')">Do weekly reflection</button>
-    </div>`: ''}
-
-    ${renderGoalCard(id)}
-
-    <div class="c cr" style="margin-top:14px">
-      <div class="cl clr">ANTI-VISION — read when motivation fades</div>
-      <p style="font-size:14px;color:#ffb399;line-height:1.55;font-style:italic">${e(id.antiVisionText)}</p>
-    </div>
-
-    <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h3 style="color:#f3f4f6">Evidence Log</h3>
-        <span class="sm" style="color:#d1d5db">${id.logs.length} proofs · ${streak}-day streak</span>
-      </div>
-      <div class="sb" style="margin-bottom:12px">${streakDots(id)}</div>
-      <button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Evidence Log Modal (${id.logs.length} entries)</button>
-    </div>
-
-    <button class="b bb bw" onclick="go('manage')" style="margin-top:20px">Manage this identity</button>
-  </div>`;
+    function get14DayAntiVision(id) {
+      if (!id) return '';
+      if (id.antiVision14Day && id.antiVision14Day.trim()) return id.antiVision14Day.trim();
+      var oldName = (id.oldIdentity || 'this old pattern').trim();
+      oldName = oldName.replace(/^"|"$/g, '').replace(/^I am someone who\s+/i, '');
+      return 'If you continue without adding evidence for 14 days: "' + oldName + '" becomes 14x more deeply rooted. Your skin/habits stay neglected, snooze & hesitation compound, and you lose another 2 weeks to quiet regret.';
     }
+
+    function renderIdentityView(a, id) {
+      if (!id) return go('hub');
+      var pts = getEvidencePoints(id);
+      var st = getStage(pts);
+      var streak = getStreak(id);
+      var days = daysOld(id);
+      var logged = loggedToday(id);
+      var needsR = needsReflection(id);
+
+      var dayVisionStr = (id.goalVision || id.dayVisionText || '').trim();
+
+      var oldEvHtml = '';
+      if (id.oldEvidence && id.oldEvidence.length > 0) {
+        oldEvHtml = '<div class="path-section">'
+          + '<span class="path-sublabel">EVIDENCE THAT CAGE EXISTED</span>'
+          + '<div class="path-list">'
+          + id.oldEvidence.map(function (ev) {
+              return '<div class="path-list-item path-list-item-red">'
+                + '<span class="bullet-red">•</span>'
+                + '<span>' + e(ev) + '</span>'
+                + '</div>';
+            }).join('')
+          + '</div>'
+          + '</div>';
+      }
+
+      var actionsHtml = '';
+      if (id.actions && id.actions.length > 0) {
+        actionsHtml = '<div class="path-section">'
+          + '<span class="path-sublabel green">SUPPORTING PROOFS & HABITS</span>'
+          + '<div class="path-list">'
+          + id.actions.map(function (ac) {
+              return '<div class="path-list-item path-list-item-green">'
+                + '<span class="bullet-green">✓</span>'
+                + '<span>' + e(ac) + '</span>'
+                + '</div>';
+            }).join('')
+          + '</div>'
+          + '</div>';
+      }
+
+      var reflectHtml = '';
+      if (needsR) {
+        reflectHtml = '<div class="rfc" style="margin-bottom:14px">'
+          + '<p class="d" style="margin-bottom:8px">It\'s been a week — time for a deeper check-in to solidify your identity growth.</p>'
+          + '<button class="b bp bs" onclick="go(\'reflect\')">Do weekly reflection</button>'
+          + '</div>';
+      }
+
+      a.innerHTML = '<div class="fade">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+        + '<button class="bg" onclick="go(\'hub\')">← Main menu</button>'
+        + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit / Manage</button>'
+        + '</div>'
+        + '</div>'
+
+        + '<div class="two-paths-container">'
+
+        // 🔴 PATH 1: WITHOUT ADDING EVIDENCE (OLD IDENTITY CONTINUED)
+        + '<div class="path-card path-red">'
+        + '<div class="path-badge path-badge-red">'
+        + '<span class="path-icon">🔴</span> WITHOUT ADDING EVIDENCE'
+        + '</div>'
+
+        + '<div class="path-section">'
+        + '<span class="path-sublabel">THE CAGE YOU BROKE (OLD IDENTITY)</span>'
+        + '<h3 class="path-quote-red">"' + e(id.oldIdentity) + '"</h3>'
+        + '</div>'
+
+        + oldEvHtml
+
+        + '<div class="path-section timeline-box timeline-box-red">'
+        + '<div class="timeline-header">'
+        + '<span class="timeline-badge red">⏳ IN 14 DAYS (IF YOU CONTINUE)</span>'
+        + '</div>'
+        + '<p class="timeline-text red">'
+        + e(get14DayAntiVision(id))
+        + '</p>'
+        + '</div>'
+
+        + '<div class="path-section timeline-box timeline-box-red-dark">'
+        + '<div class="timeline-header">'
+        + '<span class="timeline-badge red-dark">💀 IN 10 YEARS (THE ANTI-VISION)</span>'
+        + '</div>'
+        + '<p class="timeline-text red-dark">'
+        + '"' + e(id.antiVisionText || 'What your life looks like if you never change.') + '"'
+        + '</p>'
+        + '</div>'
+        + '</div>'
+
+        // 🟢 PATH 2: BY ADDING EVIDENCE (NEW IDENTITY BUILT)
+        + '<div class="path-card path-green">'
+        + '<div class="path-badge path-badge-green">'
+        + '<span class="path-icon">🟢</span> BY ADDING EVIDENCE'
+        + '</div>'
+
+        + '<div class="path-section">'
+        + '<span class="path-sublabel green">YOU ARE BECOMING (NEW IDENTITY)</span>'
+        + '<h3 class="path-quote-green">"' + e(id.newIdentity) + '"</h3>'
+        + '</div>'
+
+        + '<div class="path-section timeline-box timeline-box-green">'
+        + '<div class="timeline-header">'
+        + '<span class="timeline-badge green">✨ HOW YOUR DAY WILL LOOK</span>'
+        + '<span class="journey-tag">' + (id.goalDays || 30) + '-Day Journey</span>'
+        + '</div>'
+        + '<div class="day-vision-content">'
+        + '"' + e(dayVisionStr || 'Morning: Clear & energized.\nAfternoon: Grounded & confident.\nEvening: Proud of your progress.') + '"'
+        + '</div>'
+        + '</div>'
+
+        + actionsHtml
+        + '</div>'
+
+        + '</div>'
+
+        + renderTugOfWar(id)
+        + reflectHtml
+
+        + '<div class="evidence-log-card">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<h3 style="color:#fbbf24;margin:0;font-size:16px">⚡ Log Today\'s Evidence</h3>'
+        + '<span class="sm" style="color:#4ede80;font-weight:600">' + (logged ? '✓ Evidence logged today' : 'Add proof for today') + '</span>'
+        + '</div>'
+        + '<p class="d" style="font-size:13px;color:#d1d5db;margin-bottom:12px">Every proof entry weakens the old identity and levels up your new self.</p>'
+        + renderWeightSelector('idlog')
+        + '<textarea rows="3" id="idlog" placeholder="What did the new you do today? (e.g., Drank 2L water, washed face with cleanser, woke up early...)" style="margin-bottom:12px"></textarea>'
+        + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:14px">⚡ Save Evidence & Level Up</button>'
+        + '</div>'
+
+        + '<div style="margin-top:18px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<h3 style="color:#f3f4f6;font-size:15px;margin:0">Evidence Log History</h3>'
+        + '<span class="sm" style="color:#d1d5db">' + id.logs.length + ' proofs · ' + streak + '-day streak</span>'
+        + '</div>'
+        + '<div class="sb" style="margin-bottom:12px">' + streakDots(id) + '</div>'
+        + '<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Evidence Log Modal (' + id.logs.length + ' entries)</button>'
+        + '</div>'
+
+        + '<button class="b bb bw" onclick="go(\'manage\')" style="margin-top:18px">⚙️ Manage & Edit Identity Details</button>'
+        + '</div>';
+    }
+
+    function rIdentity(a) {
+      const id = cur();
+      renderIdentityView(a, id);
+    }
+
+    window.logIdentityEvidence = function () {
+      const v = $('#idlog')?.value?.trim(); if (!v) return;
+      const w = $('#idlog-weight')?.value || 'medium';
+      const id = cur(); if (!id) return;
+      id.logs.push({ date: new Date().toISOString(), note: v, weight: w });
+      save();
+      var ta = $('#idlog');
+      if (ta) ta.value = '';
+      var pts = getEvidencePoints(id);
+      var st = getStage(pts);
+      var isStrong = (w === 'strong');
+      var btn = ta?.parentElement?.querySelector('button.bp');
+      if (btn) {
+        btn.textContent = isStrong ? '🔥 Significant Growth! +4 Points Added!' : (w === 'fine' ? '🌱 Fine Step +1 Point Added!' : '⚡ Proof Saved! +2 Points Added!');
+        btn.style.background = isStrong ? '#3a7e4a' : '#3a6e4a';
+        setTimeout(function () {
+          btn.textContent = '⚡ Save Evidence & Level Up';
+          btn.style.background = '';
+          render();
+        }, 1200);
+      } else {
+        render();
+      }
+    };
 
     // ═══════════════════════════════════════════════
     // DAILY PRACTICE
@@ -2212,9 +2734,19 @@
       </div>
     </div>
 
+    <!-- 14-Day Continuation Projection -->
+    <div class="mg-section">
+      <h3>14-Day Continuation Projection (If Old Identity Continues)</h3>
+      <p class="h">What happens in 14 days if you continue without adding evidence for your new identity.</p>
+      <div class="mg-editable" id="ed-av14">
+        <textarea rows="3" id="mg-av14" oninput="mgEditing('av14')" placeholder="e.g., In 14 days without evidence: skin stays dull, bad habits lock deeper...">${esc(id.antiVision14Day || get14DayAntiVision(id))}</textarea>
+        <button class="b bp bs mg-save" onclick="mgSaveAV14()">Save changes</button>
+      </div>
+    </div>
+
     <!-- Anti-Vision -->
     <div class="mg-section">
-      <h3>Anti-Vision</h3>
+      <h3>10-Year Anti-Vision</h3>
       <p class="h">Deepen it as new fears or realizations surface. The more vivid, the more fuel it gives you.</p>
       <div class="mg-editable" id="ed-av">
         <textarea rows="4" id="mg-av" oninput="mgEditing('av')">${esc(id.antiVisionText)}</textarea>
@@ -2513,8 +3045,106 @@
     };
 
     // ═══════════════════════════════════════════════
-    // EVIDENCE POP MODAL
+    // EVIDENCE POP MODAL & DATE FILTER
     // ═══════════════════════════════════════════════
+    window.modalFilterState = {
+      preset: 'all',
+      startDate: '',
+      endDate: '',
+      searchQuery: ''
+    };
+
+    function getLocalYYYYMMDD(dObj) {
+      if (!dObj || isNaN(dObj.getTime())) return '';
+      var y = dObj.getFullYear();
+      var m = String(dObj.getMonth() + 1).padStart(2, '0');
+      var d = String(dObj.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
+    }
+
+    function filterModalLogs(logs) {
+      var state = window.modalFilterState;
+      if (!logs || !logs.length) return [];
+
+      var todayD = new Date();
+      var todayStr = getLocalYYYYMMDD(todayD);
+      var todayTime = new Date(todayStr + 'T00:00:00').getTime();
+
+      return logs.map(function (l, i) { return { l: l, realIdx: i }; }).filter(function (item) {
+        var l = item.l;
+        if (!l) return false;
+
+        // Search Text
+        if (state.searchQuery) {
+          var q = state.searchQuery.trim().toLowerCase();
+          var noteText = (l.note || '').toLowerCase();
+          if (!noteText.includes(q)) return false;
+        }
+
+        // Date Filter Preset
+        if (state.preset === 'all') return true;
+
+        if (!l.date) return false;
+        var logDateObj = new Date(l.date);
+        if (isNaN(logDateObj.getTime())) return false;
+        var logDateStr = getLocalYYYYMMDD(logDateObj);
+
+        if (state.preset === 'today') {
+          return logDateStr === todayStr;
+        }
+
+        if (state.preset === '7days') {
+          var logDateTime = new Date(logDateStr + 'T00:00:00').getTime();
+          var diffDays = (todayTime - logDateTime) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 7;
+        }
+
+        if (state.preset === '30days') {
+          var logDateTime = new Date(logDateStr + 'T00:00:00').getTime();
+          var diffDays = (todayTime - logDateTime) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 30;
+        }
+
+        if (state.preset === 'custom') {
+          if (state.startDate && logDateStr < state.startDate) return false;
+          if (state.endDate && logDateStr > state.endDate) return false;
+          return true;
+        }
+
+        return true;
+      });
+    }
+
+    window.setModalFilterPreset = function (preset) {
+      window.modalFilterState.preset = preset;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.setModalCustomDate = function (field, value) {
+      if (field === 'start') window.modalFilterState.startDate = value;
+      if (field === 'end') window.modalFilterState.endDate = value;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.setModalSearchQuery = function (value) {
+      window.modalFilterState.searchQuery = value;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.resetModalFilters = function () {
+      window.modalFilterState = {
+        preset: 'all',
+        startDate: '',
+        endDate: '',
+        searchQuery: ''
+      };
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
     window.openEvidenceModal = function () {
       var id = cur();
       if (!id) return;
@@ -2531,41 +3161,88 @@
       var logs = id.logs || [];
       var st = getStage(logs.length);
       var streak = getStreak(id);
+      var state = window.modalFilterState;
 
       modal.className = 'modal-overlay';
       modal.onclick = function (e) {
         if (e.target === modal) closeEvidenceModal();
       };
 
+      var filteredItems = filterModalLogs(logs);
+      var hasActiveFilter = state.preset !== 'all' || state.startDate || state.endDate || (state.searchQuery && state.searchQuery.trim().length > 0);
+
+      var filterHtml = '<div class="ev-filter-section">'
+        + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<input type="text" class="ev-search-input" placeholder="🔍 Search proof notes..." value="' + esc(state.searchQuery) + '" oninput="setModalSearchQuery(this.value)" />'
+        + (state.searchQuery ? '<button class="bg" style="font-size:12px;white-space:nowrap;padding:4px 8px;color:#9ca3af" onclick="setModalSearchQuery(\'\')">Clear</button>' : '')
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<div class="ev-filter-pills">'
+        + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" onclick="setModalFilterPreset(\'all\')">All Time</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" onclick="setModalFilterPreset(\'today\')">Today</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'7days\')">Last 7 Days</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'30days\')">Last 30 Days</button>'
+        + '<button class="ev-filter-pill ' + (state.preset === 'custom' ? 'active' : '') + '" onclick="setModalFilterPreset(\'custom\')">Custom Date</button>'
+        + '</div>'
+        + (hasActiveFilter ? '<button class="bg" style="font-size:12px;color:#f59e0b;font-weight:600" onclick="resetModalFilters()">Reset Filters</button>' : '')
+        + '</div>'
+        + (state.preset === 'custom' ?
+          '<div class="ev-custom-date-row">'
+          + '<span class="sm" style="color:#9ca3af">From:</span>'
+          + '<input type="date" class="ev-date-input" value="' + state.startDate + '" onchange="setModalCustomDate(\'start\', this.value)" />'
+          + '<span class="sm" style="color:#9ca3af">To:</span>'
+          + '<input type="date" class="ev-date-input" value="' + state.endDate + '" onchange="setModalCustomDate(\'end\', this.value)" />'
+          + '</div>'
+          : '')
+        + '</div>';
+
       var logsHtml = '';
       if (logs.length === 0) {
         logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
+      } else if (filteredItems.length === 0) {
+        logsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+          + '<p class="h" style="margin-bottom:12px">No evidence logs found matching your filter criteria.</p>'
+          + '<button class="b bb bs" onclick="resetModalFilters()">Reset Filters</button>'
+          + '</div>';
       } else {
-        logsHtml = [...logs].map(function (l, i) { return { l: l, realIdx: i }; }).reverse().map(function (item) {
+        logsHtml = filteredItems.reverse().map(function (item) {
           var l = item.l, ri = item.realIdx;
-          return '<div class="li" style="padding:14px 0">'
-            + '<span class="ld">' + new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</span> '
+          var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          return '<div class="ev-card">'
+            + '<div class="ev-card-top">'
+            + '<div class="ev-card-meta">'
+            + '<span class="ev-card-date">📅 ' + dateStr + '</span>'
             + renderWeightBadge(l.weight)
-            + ' <span class="ln" style="flex:1;word-break:break-word">' + e(l.note) + '</span> '
-            + ' <button class="ev-edit" onclick="editModalLog(' + ri + ', this)">edit</button> '
-            + ' <button class="ev-del" onclick="delModalLog(' + ri + ')">delete</button>'
+            + '</div>'
+            + '<div class="ev-card-actions">'
+            + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
+            + '<button class="ev-btn-del" onclick="delModalLog(' + ri + ')">Delete</button>'
+            + '</div>'
+            + '</div>'
+            + '<div class="ev-card-note">' + esc(l.note) + '</div>'
             + '</div>';
         }).join('');
       }
+
+      var statsSummary = hasActiveFilter
+        ? ('Showing <strong style="color:#fbbf24">' + filteredItems.length + '</strong> of ' + logs.length + ' proofs · ' + streak + '-day streak · ' + st.name)
+        : (logs.length + ' total proofs · ' + streak + '-day streak · ' + st.name);
 
       modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
         + '<div class="modal-header">'
         + '<div>'
         + '<h3 style="margin-bottom:2px">All Evidence Logs</h3>'
-        + '<p class="sm" style="color:#9ca3af;margin:0">' + logs.length + ' total proofs · ' + streak + '-day streak · ' + st.name + '</p>'
+        + '<p class="sm" style="color:#9ca3af;margin:0">' + statsSummary + '</p>'
         + '</div>'
         + '<button class="modal-close" onclick="closeEvidenceModal()" title="Close">×</button>'
         + '</div>'
         + '<div class="modal-body">'
         + '<div class="sb" style="margin-bottom:14px;justify-content:flex-start">' + streakDots(id) + '</div>'
+        + filterHtml
         + '<div id="modal-logs-list">' + logsHtml + '</div>'
         + '</div>'
-        + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px">'
+        + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px;display:flex;justify-content:space-between;align-items:center">'
+        + '<span class="sm" style="color:#9ca3af">' + (hasActiveFilter ? filteredItems.length + ' entries shown' : logs.length + ' total entries') + '</span>'
         + '<button class="b bb bs" onclick="closeEvidenceModal()">Done / Close</button>'
         + '</div>'
         + '</div>';
@@ -2592,23 +3269,27 @@
       var id = cur();
       if (!id || !id.logs[i]) return;
       var l = id.logs[i];
-      var item = btnEl ? btnEl.closest('.li') : null;
+      var item = btnEl ? btnEl.closest('.ev-card') : null;
       if (!item) return;
       var currentWeight = l.weight || 'medium';
-      item.style.flexDirection = 'column';
-      item.style.alignItems = 'stretch';
-      item.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;width:100%;padding:6px 0">'
-        + '<div class="sm" style="color:#e5e7eb;font-weight:600">Edit Proof / Evidence:</div>'
-        + '<textarea id="modal-log-note-' + i + '" rows="2" style="width:100%;font-size:14px">' + esc(l.note) + '</textarea>'
-        + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+      var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      item.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:2px 0">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<span class="sm" style="color:#e5e7eb;font-weight:600">Edit Evidence Entry</span>'
+        + '<span class="ev-card-date">📅 ' + dateStr + '</span>'
+        + '</div>'
+        + '<textarea id="modal-log-note-' + i + '" rows="3" style="width:100%;font-size:14px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:10px;color:#f9fafb;font-family:inherit">' + esc(l.note) + '</textarea>'
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
         + '<span class="sm" style="color:#9ca3af">Impact:</span>'
-        + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px">'
+        + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
         + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>🌱 Fine (+1)</option>'
         + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>⚡ Medium (+2)</option>'
         + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>🔥 Strong (+4)</option>'
         + '</select>'
-        + '<button class="b bp bs" style="padding:6px 14px;font-size:12px;margin-left:auto" onclick="saveModalLogEdit(' + i + ')">Save</button>'
-        + '<button class="bg" style="font-size:12px" onclick="openEvidenceModal()">Cancel</button>'
+        + '<div style="margin-left:auto;display:flex;gap:8px">'
+        + '<button class="b bp bs" style="padding:6px 14px;font-size:12px" onclick="saveModalLogEdit(' + i + ')">Save</button>'
+        + '<button class="bg" style="font-size:12px" onclick="renderEvidenceModalContent(document.getElementById(\'evidence-modal\'), cur())">Cancel</button>'
+        + '</div>'
         + '</div>'
         + '</div>';
       $('#modal-log-note-' + i)?.focus();
@@ -2653,6 +3334,18 @@
       const id = cur(); if (!id) return;
       id.antiVisionText = v; save();
       const wrap = $('#ed-av');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = '✓ Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveAV14 = function () {
+      const v = $('#mg-av14')?.value?.trim(); if (!v) return;
+      const id = cur(); if (!id) return;
+      id.antiVision14Day = v; save();
+      const wrap = $('#ed-av14');
       if (wrap) {
         wrap.classList.remove('editing');
         const btn = wrap.querySelector('.mg-save');
@@ -3136,101 +3829,7 @@
 
     function rQuick(a) {
       var id = cur();
-      if (!id) return go('hub');
-      if (!id.habits) id.habits = [];
-      var stage = getStage(id.logs.length);
-      var streak = getStreak(id);
-
-      // Goal info
-      var goalHtml = '';
-      if (id.goalDays) {
-        var elapsed = daysBetween(id.goalSetDate, new Date().toISOString());
-        var remaining = Math.max(0, id.goalDays - elapsed);
-        var progress = Math.min(100, Math.round(elapsed / id.goalDays * 100));
-        goalHtml = '<div style="padding:14px;background:rgba(212,160,74,0.04);border:1px solid rgba(212,160,74,0.1);border-radius:10px;margin-bottom:14px">'
-          + '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
-          + '<span style="font-size:10px;color:#d4a04a;font-weight:700;letter-spacing:1px">' + id.goalDays + '-DAY GOAL</span>'
-          + '<span style="font-size:10px;color:#6e6862">Day ' + elapsed + ' \u2014 ' + remaining + ' days left</span>'
-          + '</div>'
-          + '<div style="height:5px;background:#141420;border-radius:3px;overflow:hidden;margin-bottom:10px"><div style="height:100%;width:' + progress + '%;background:linear-gradient(90deg,#b8862e,#d4a04a);border-radius:3px"></div></div>'
-          + '<p style="font-size:13px;color:#c8b890;line-height:1.5;font-style:italic;margin-bottom:8px">\u201c' + e(id.goalVision) + '\u201d</p>'
-          + (id.goalActions && id.goalActions.length > 0 ?
-            '<div style="margin-top:6px">' + id.goalActions.map(function (ac) { return '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:#d4a04a;font-size:11px">\u25b8</span><span style="font-size:12px;color:#8a8470;line-height:1.35">' + e(ac) + '</span></div>' }).join('') + '</div>'
-            : '')
-          + '</div>';
-      }
-
-      // Build the full motivating view
-      a.innerHTML = '<div class="fade">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-        + '<button class="bg" onclick="go(\'hub\')">\u2190 Main menu</button>'
-        + '<span class="sm" style="color:#f59e0b;font-weight:700">\u26a1 Quick Add</span>'
-        + '</div>'
-
-        // ── 1. THE CAGE YOU BROKE (OLD IDENTITY & EVIDENCE) ──
-        + '<div style="padding:18px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:12px;margin-bottom:14px">'
-        + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1.2px;margin-bottom:6px">THE CAGE YOU BROKE</p>'
-        + '<p style="font-family:Georgia,serif;font-size:17px;font-style:italic;color:#ffb399;line-height:1.5;margin-bottom:10px">\u201c' + e(id.oldIdentity) + '\u201d</p>'
-        + (id.oldEvidence && id.oldEvidence.length > 0 ?
-          '<p style="font-size:12px;color:#fca5a5;font-weight:600;margin-bottom:6px">Evidence that cage existed:</p>'
-          + id.oldEvidence.map(function (ev) { return '<div style="display:flex;gap:8px;padding:3px 0;align-items:baseline"><span style="color:#ff8f70;font-size:12px">\u2022</span><span style="font-size:13px;color:#f3f4f6;line-height:1.45">' + e(ev) + '</span></div>' }).join('')
-          : '')
-        + '</div>'
-
-        // ── 2. YOUR NEW IDENTITY ──
-        + '<div style="text-align:center;padding:16px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:12px;margin-bottom:14px">'
-        + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1.2px;margin-bottom:6px">WHO YOU ARE BECOMING (NEW IDENTITY)</p>'
-        + '<p style="font-family:Georgia,serif;font-size:19px;font-style:italic;color:#4ede80;line-height:1.45">\u201c' + e(id.newIdentity) + '\u201d</p>'
-        + '</div>'
-
-        // ── 3. LEVEL VISUALIZATION (TUG OF WAR) ──
-        + renderTugOfWar(id)
-
-        // ── 4. ADD EVIDENCE ──
-        + '<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:12px;margin-bottom:14px">'
-        + '<p style="font-size:15px;color:#fbbf24;font-weight:700;margin-bottom:4px">Add proof for your new identity</p>'
-        + '<p style="font-size:13px;color:#d1d5db;margin-bottom:12px">Every entry levels you up and weakens the old identity.</p>'
-        + renderWeightSelector('qlog')
-        + '<textarea rows="2" id="qlog" placeholder="What did the new you do today?" style="margin-bottom:12px"></textarea>'
-        + '<button class="b bp" onclick="quickLog()" style="width:100%">Add proof</button>'
-        + '</div>'
-
-        // ── 5. GOAL PROGRESS ──
-        + goalHtml
-
-        // ── 7. YOUR ANTI-VISION (collapsible reminder) ──
-        + '<details style="margin-bottom:14px">'
-        + '<summary style="font-size:12px;color:#ff8f70;cursor:pointer;padding:10px 0;font-weight:700;letter-spacing:1px">ANTI-VISION \u2014 the future you refused (tap to read)</summary>'
-        + '<div style="padding:14px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:10px;margin-top:4px">'
-        + '<p style="font-size:14px;color:#ffb399;font-style:italic;line-height:1.6">' + e(id.antiVisionText) + '</p>'
-        + '</div></details>'
-
-        // ── 8. YOUR ACTIONS & COMMITMENTS ──
-        + (id.actions && id.actions.length > 0 ?
-          '<details style="margin-bottom:14px">'
-          + '<summary style="font-size:12px;color:#4ede80;cursor:pointer;padding:10px 0;font-weight:700;letter-spacing:1px">YOUR ACTIONS & COMMITMENTS (tap to see)</summary>'
-          + '<div style="padding:14px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.15);border-radius:10px;margin-top:4px">'
-          + id.actions.map(function (ac) { return '<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#4ede80;font-size:12px">\u25b8</span><span style="font-size:13px;color:#e5e7eb;line-height:1.4">' + e(ac) + '</span></div>' }).join('')
-          + '</div></details>'
-          : '')
-
-        // ── 9. BEHAVIORS YOU IDENTIFIED ──
-        + '<details style="margin-bottom:14px">'
-        + '<summary style="font-size:12px;color:#cbd5e1;cursor:pointer;padding:10px 0;font-weight:700;letter-spacing:1px">BEHAVIORS YOU IDENTIFIED (tap to see)</summary>'
-        + '<div style="padding:14px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:10px;margin-top:4px">'
-        + id.behaviors.map(function (b) { return '<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#9ca3af;font-size:12px">\u2022</span><span style="font-size:13px;color:#e5e7eb;line-height:1.4">' + e(b) + '</span></div>' }).join('')
-        + '</div></details>'
-
-        // ── 10. EVIDENCE HISTORY ──
-        + '<div style="margin-top:12px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<p style="font-size:12px;color:#e5e7eb;font-weight:700;letter-spacing:1px;margin:0">EVIDENCE LOG (' + id.logs.length + ' proofs \u00b7 ' + streak + '-day streak)</p>'
-        + '</div>'
-        + '<div class="sb" style="margin-bottom:12px">' + streakDots(id) + '</div>'
-        + '<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Evidence Log Modal (' + id.logs.length + ' entries)</button>'
-        + '</div>'
-
-        + '</div>';
+      renderIdentityView(a, id);
     }
 
     window.quickLog = function () {
