@@ -997,17 +997,16 @@
     // ═══════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════
-    const DEF = { screen: "welcome", identities: [], creating: null, currentId: null, syncCode: null, cloudId: null };
+    const DEF = { screen: "welcome", identities: [], creating: null, currentId: null };
     let S = load();
 
     function load() {
       try {
+        setTimeout(function () { pullFromCloud(); }, 300);
         const r = localStorage.getItem(SK);
         if (r) {
           const p = JSON.parse(r);
-          const res = { ...DEF, ...p };
-          if (res.cloudId) setTimeout(function () { pullFromCloud(res.cloudId); }, 1000);
-          return res;
+          return { ...DEF, ...p };
         }
       } catch (e) { }
       return { ...DEF };
@@ -1041,73 +1040,45 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // CLOUD SYNC & DATA PERSISTENCE ENGINE
+    // AUTOMATIC GLOBAL CLOUD SYNC ENGINE (SHARED LIVE LINK)
     // ═══════════════════════════════════════════════
+    const GLOBAL_CLOUD_ID = 'ff8081819f7e10ae019fb271a6b44bf0';
     var syncTimeout = null;
+
     function triggerCloudAutoSync() {
       if (!S) return;
       clearTimeout(syncTimeout);
       syncTimeout = setTimeout(function () {
         pushToCloud();
-      }, 1000);
+      }, 800);
     }
 
     window.pushToCloud = async function () {
-      if (!S.cloudId) {
-        try {
-          const res = await fetch('https://api.restful-api.dev/objects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: 'cage-breaker-sync',
-              data: { payload: JSON.stringify(S) }
-            })
-          });
-          const data = await res.json();
-          if (data && data.id) {
-            S.cloudId = data.id;
-            S.syncCode = 'CB-' + data.id;
-            localStorage.setItem(SK, JSON.stringify(S));
-            return true;
-          }
-        } catch (e) {
-          console.warn('Cloud init error:', e);
-          return false;
-        }
-      } else {
-        try {
-          await fetch('https://api.restful-api.dev/objects/' + S.cloudId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: 'cage-breaker-sync',
-              data: { payload: JSON.stringify(S) }
-            })
-          });
-          return true;
-        } catch (e) {
-          console.warn('Cloud update error:', e);
-          return false;
-        }
+      try {
+        await fetch('https://api.restful-api.dev/objects/' + GLOBAL_CLOUD_ID, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'cage-breaker-global-live',
+            data: { payload: JSON.stringify(S) }
+          })
+        });
+        return true;
+      } catch (e) {
+        console.warn('Cloud push error:', e);
+        return false;
       }
-      return false;
     };
 
-    window.pullFromCloud = async function (cloudIdOrCode) {
-      var raw = cloudIdOrCode || S.cloudId;
-      if (!raw) return false;
-      var targetId = String(raw).replace(/^CB[-_]/i, '').trim();
-      if (!targetId) return false;
-
+    window.pullFromCloud = async function () {
       try {
-        var url = 'https://api.restful-api.dev/objects/' + targetId;
-        var res = await fetch(url);
+        var res = await fetch('https://api.restful-api.dev/objects/' + GLOBAL_CLOUD_ID);
         if (!res.ok) return false;
         var data = await res.json();
         if (data && data.data && data.data.payload) {
           var parsed = JSON.parse(data.data.payload);
           if (parsed && (parsed.identities || parsed.screen)) {
-            S = { ...DEF, ...parsed, cloudId: targetId, syncCode: 'CB-' + targetId };
+            S = { ...DEF, ...parsed };
             if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
               S.screen = 'hub';
             }
@@ -1120,45 +1091,6 @@
         console.warn('Cloud pull error:', e);
       }
       return false;
-    };
-
-    window.connectSyncCode = async function () {
-      var inp = $('#connect-code-inp');
-      if (!inp) return;
-      var code = inp.value.trim();
-      if (!code) {
-        alert('Please enter a valid Sync Code or Cloud ID');
-        return;
-      }
-      var statusEl = $('#sync-status-msg');
-      if (statusEl) statusEl.textContent = '⏳ Connecting and pulling data from cloud...';
-
-      var success = await pullFromCloud(code);
-      if (success) {
-        if (statusEl) statusEl.textContent = '✓ Successfully connected! All habits and logs loaded.';
-        setTimeout(function () {
-          closeSyncModal();
-          if (S.identities && S.identities.length > 0) {
-            go('hub');
-          }
-        }, 1000);
-      } else {
-        if (statusEl) statusEl.textContent = '❌ Sync ID/Code not found or network error. Check ID and try again.';
-      }
-    };
-
-    window.syncNowWithCloud = async function () {
-      var statusEl = $('#sync-status-msg');
-      if (statusEl) statusEl.textContent = '⏳ Syncing data to cloud...';
-      var ok = await pushToCloud();
-      if (ok && statusEl) {
-        var dispCode = S.syncCode || ('CB-' + S.cloudId);
-        statusEl.textContent = '✓ Cloud sync complete!';
-        var codeInp = $('#my-sync-code');
-        if (codeInp) codeInp.value = dispCode;
-      } else if (statusEl) {
-        statusEl.textContent = '❌ Cloud sync failed. Check internet connection.';
-      }
     };
 
     window.exportDataJSON = function () {
@@ -1189,7 +1121,6 @@
             save();
             render();
             alert('✓ Successfully imported backup! ' + (S.identities ? S.identities.length : 0) + ' identities loaded.');
-            closeSyncModal();
           } else {
             alert('Invalid backup file format.');
           }
@@ -1198,83 +1129,6 @@
         }
       };
       reader.readAsText(file);
-    };
-
-    window.openSyncModal = async function () {
-      var modal = document.getElementById('sync-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'sync-modal';
-        document.body.appendChild(modal);
-      }
-      renderSyncModalContent(modal);
-      if (!S.cloudId) {
-        var statusEl = $('#sync-status-msg');
-        if (statusEl) statusEl.textContent = '⏳ Generating your cloud sync code...';
-        var ok = await pushToCloud();
-        renderSyncModalContent(modal);
-        var statusEl2 = $('#sync-status-msg');
-        if (ok && statusEl2) statusEl2.textContent = '✓ Cloud sync code active!';
-      }
-    };
-
-    function renderSyncModalContent(modal) {
-      var displayCode = S.syncCode || (S.cloudId ? ('CB-' + S.cloudId) : 'Connecting to cloud...');
-
-      modal.className = 'modal-overlay';
-      modal.onclick = function (e) {
-        if (e.target === modal) closeSyncModal();
-      };
-
-      modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
-        + '<div class="modal-header">'
-        + '<div>'
-        + '<h3 style="margin-bottom:2px">☁️ Multi-Device Sync & Data Backup</h3>'
-        + '<p class="sm" style="color:#9ca3af;margin:0">Access all your habits, logs, and progress on any device</p>'
-        + '</div>'
-        + '<button class="modal-close" onclick="closeSyncModal()" title="Close">×</button>'
-        + '</div>'
-        + '<div class="modal-body">'
-
-        + '<div style="padding:16px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:12px;margin-bottom:16px">'
-        + '<p style="font-size:13px;color:#4ede80;font-weight:700;margin-bottom:4px">Your Multi-Device Sync ID / Code:</p>'
-        + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<input type="text" id="my-sync-code" value="' + displayCode + '" readonly style="font-size:14px;font-weight:700;letter-spacing:1px;color:#fbbf24;text-align:center;background:#181824"/>'
-        + '<button class="b bp bs" style="white-space:nowrap" onclick="copySyncCode()">Copy Code</button>'
-        + '</div>'
-        + '<p class="sm" style="color:#d1d5db;margin-top:8px">Enter this code on your phone or any other browser to connect all habits and logs!</p>'
-        + '<button class="b bd bw" style="margin-top:10px" onclick="syncNowWithCloud()">☁️ Sync Now to Cloud</button>'
-        + '</div>'
-
-        + '<div style="padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px;margin-bottom:16px">'
-        + '<p style="font-size:13px;color:#f3f4f6;font-weight:700;margin-bottom:4px">Connect to an existing Sync Code / ID:</p>'
-        + '<div style="display:flex;gap:8px">'
-        + '<input type="text" id="connect-code-inp" placeholder="Paste Sync Code or Cloud ID…" style="font-size:14px"/>'
-        + '<button class="b bp bs" style="white-space:nowrap" onclick="connectSyncCode()">Connect</button>'
-        + '</div>'
-        + '</div>'
-
-        + '<div style="padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
-        + '<p style="font-size:13px;color:#f3f4f6;font-weight:700;margin-bottom:6px">Offline File Backup & Restore:</p>'
-        + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-        + '<button class="b bb bs" style="flex:1;min-width:140px" onclick="exportDataJSON()">📥 Export Backup (.json)</button>'
-        + '<button class="b bb bs" style="flex:1;min-width:140px" onclick="triggerImportJSON()">📤 Import Backup (.json)</button>'
-        + '</div>'
-        + '<input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>'
-        + '</div>'
-
-        + '<p id="sync-status-msg" class="sm" style="margin-top:12px;text-align:center;color:#4ede80;min-height:20px"></p>'
-
-        + '</div>'
-        + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px">'
-        + '<button class="b bb bs" onclick="closeSyncModal()">Close</button>'
-        + '</div>'
-        + '</div>';
-    }
-
-    window.closeSyncModal = function () {
-      var modal = document.getElementById('sync-modal');
-      if (modal) modal.remove();
     };
 
     window.copySyncCode = function () {
@@ -1423,7 +1277,7 @@
         + viewHubHtml
         + '<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">' + (S.creating ? 'Start a new identity instead' : 'Full identity exercise') + '</button>'
         + '<button class="b bd" onclick="go(\'quick-create\')" style="margin-top:0;margin-bottom:10px">Quick habit tracker \u2014 start in 30 seconds</button>'
-        + '<button class="bg" onclick="openSyncModal()" style="display:block;margin:8px auto 0;color:#fbbf24;font-size:13px">☁️ Multi-Device Sync / Connect device or restore backup</button>'
+        + '<p class="sm" style="margin-top:12px;color:#4ede80;font-weight:600">\u2601\ufe0f Automatic Live Sync Active \u2014 open this link on any device to view</p>'
         + '</div>';
     }
 
