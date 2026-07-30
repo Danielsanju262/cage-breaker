@@ -7,91 +7,92 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:#0a0e1a;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#b8b0a4;min-height:100vh;line-height:1.6}
-::selection{background:rgba(212,160,74,0.3)}
-#app{max-width:600px;margin:0 auto;padding:36px 20px 80px;min-height:100vh}
+body{background:#0a0e1a;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#e2dad0;min-height:100vh;line-height:1.6}
+::selection{background:rgba(245,158,11,0.35);color:#fff}
+#app{max-width:620px;margin:0 auto;padding:36px 20px 80px;min-height:100vh}
 .fade{animation:fadeIn .45s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes breathK{0%,100%{transform:scale(.75);opacity:.2}50%{transform:scale(1.2);opacity:.6}}
-@keyframes glowK{0%,100%{box-shadow:0 0 15px rgba(212,160,74,.08)}50%{box-shadow:0 0 35px rgba(212,160,74,.22)}}
+@keyframes glowK{0%,100%{box-shadow:0 0 15px rgba(245,158,11,.15)}50%{box-shadow:0 0 35px rgba(245,158,11,.35)}}
 
-h1{font-family:Georgia,'Times New Roman',serif;font-size:36px;font-weight:normal;color:#e8e2d8;line-height:1.2;letter-spacing:-.4px}
-h2{font-family:Georgia,'Times New Roman',serif;font-size:25px;font-weight:normal;color:#e8e2d8;line-height:1.25;margin-bottom:4px}
-h3{font-size:15px;font-weight:600;color:#c8c2b8}
-.sn{font-size:11px;font-weight:700;color:#d4a04a;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
-.d{font-size:15px;line-height:1.7;color:#8a8480;margin-bottom:14px}
-.h{font-size:13px;color:#5a5650;margin-bottom:12px;line-height:1.5}
-.sm{font-size:12px;color:#4a4656}
-.lb{display:block;font-size:14px;font-weight:500;color:#a09890;margin-bottom:8px}
+h1{font-family:Georgia,'Times New Roman',serif;font-size:36px;font-weight:normal;color:#f9fafb;line-height:1.2;letter-spacing:-.4px}
+h2{font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#f9fafb;line-height:1.25;margin-bottom:6px}
+h3{font-size:16px;font-weight:600;color:#f3f4f6}
+.sn{font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.d{font-size:15px;line-height:1.7;color:#d1d5db;margin-bottom:14px}
+.h{font-size:13px;color:#9ca3af;margin-bottom:12px;line-height:1.5}
+.sm{font-size:12px;color:#9ca3af}
+.lb{display:block;font-size:14px;font-weight:600;color:#e5e7eb;margin-bottom:8px}
 
-input[type="text"],input[type="number"],textarea{width:100%;background:rgba(255,255,255,.03);border:1px solid #1e2030;border-radius:8px;padding:13px 14px;font-size:15px;color:#c8c2b8;font-family:inherit;line-height:1.6;resize:vertical}
-input[type="text"]:focus,input[type="number"]:focus,textarea:focus{outline:none;border-color:#d4a04a}
-input::placeholder,textarea::placeholder{color:#2e2e3e}
+input[type="text"],input[type="number"],textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid #2e364f;border-radius:8px;padding:13px 14px;font-size:15px;color:#f9fafb;font-family:inherit;line-height:1.6;resize:vertical}
+input[type="text"]:focus,input[type="number"]:focus,textarea:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.2)}
+input::placeholder,textarea::placeholder{color:#71717a}
 
-.b{border:none;border-radius:8px;padding:13px 26px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .1s}
+.b{border:none;border-radius:8px;padding:13px 26px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .1s,background-color .15s}
 .b:active{transform:scale(.97)}
-.bp{background:linear-gradient(135deg,#b8862e,#d4a04a);color:#0e0e0e}
-.bd{background:rgba(200,120,90,.1);color:#c9785a;border:1px solid rgba(200,120,90,.2)}
-.bb{background:none;color:#5a5650;border:1px solid #1e2030;padding:11px 20px;font-size:13px}
-.bg{background:none;border:none;color:#5a5650;font-size:13px;cursor:pointer;padding:6px 0;font-family:inherit}
-.bx{background:#1a1a26;color:#2e2e3e;cursor:not-allowed}
+.bp{background:linear-gradient(135deg,#d97706,#f59e0b);color:#09090b}
+.bd{background:rgba(255,143,112,.15);color:#ff8f70;border:1px solid rgba(255,143,112,.35)}
+.bb{background:rgba(255,255,255,.04);color:#d1d5db;border:1px solid #2e364f;padding:11px 20px;font-size:13px}
+.bg{background:none;border:none;color:#9ca3af;font-size:13px;cursor:pointer;padding:6px 0;font-family:inherit}
+.bg:hover{color:#f3f4f6}
+.bx{background:#181824;color:#52525b;cursor:not-allowed}
 .bs{padding:10px 18px;font-size:13px;border-radius:6px}
-.br{background:#c9785a;color:#fff}
+.br{background:#ef4444;color:#fff}
 .bw{width:100%;text-align:center;padding:15px}
 
 .nav{display:flex;justify-content:space-between;align-items:center;margin-top:32px;gap:12px;flex-wrap:wrap}
 .center{display:flex;flex-direction:column;align-items:center;text-align:center}
 .ir{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.inum{font-size:13px;font-weight:600;color:#2e2e3e;min-width:18px;text-align:right}
+.inum{font-size:13px;font-weight:600;color:#9ca3af;min-width:18px;text-align:right}
 
 .c{padding:18px;border-radius:10px;margin-bottom:12px}
-.cr{background:rgba(200,120,90,.05);border:1px solid rgba(200,120,90,.13)}
-.cg{background:rgba(106,191,123,.05);border:1px solid rgba(106,191,123,.13)}
-.cy{background:rgba(212,160,74,.05);border:1px solid rgba(212,160,74,.13)}
-.cd{background:rgba(255,255,255,.02);border:1px solid #1a1a26}
-.cl{font-size:10px;font-weight:700;letter-spacing:1.3px;margin-bottom:8px}
-.clr{color:#c9785a}.clg{color:#6abf7b}.cly{color:#d4a04a}
+.cr{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25)}
+.cg{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25)}
+.cy{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25)}
+.cd{background:rgba(255,255,255,.03);border:1px solid #27273a}
+.cl{font-size:11px;font-weight:700;letter-spacing:1.3px;margin-bottom:8px}
+.clr{color:#ff8f70}.clg{color:#4ede80}.cly{color:#fbbf24}
 .cq{font-family:Georgia,serif;font-size:17px;font-style:italic;line-height:1.55}
 
-.pc{width:100%;text-align:left;background:rgba(255,255,255,.02);border:1px solid #1e2030;border-radius:12px;padding:18px;cursor:pointer;font-family:inherit;color:inherit;transition:border-color .2s,background .2s;margin-bottom:10px}
-.pc:hover{border-color:#d4a04a;background:rgba(212,160,74,.03)}
-.pc h3{margin-bottom:3px}.pc p{font-size:13px;color:#6e6862;line-height:1.4}
+.pc{width:100%;text-align:left;background:rgba(255,255,255,.03);border:1px solid #27273a;border-radius:12px;padding:18px;cursor:pointer;font-family:inherit;color:inherit;transition:border-color .2s,background .2s;margin-bottom:10px}
+.pc:hover{border-color:#f59e0b;background:rgba(245,158,11,.05)}
+.pc h3{margin-bottom:3px;color:#f9fafb}.pc p{font-size:13px;color:#9ca3af;line-height:1.4}
 
-.ch{width:100%;text-align:left;background:rgba(255,255,255,.02);border:1px solid #1e2030;border-radius:10px;padding:12px 16px;cursor:pointer;font-family:inherit;color:inherit;margin-bottom:8px;transition:border-color .15s,background .15s}
-.ch:hover{border-color:#3a3a4a}
-.ch.on{background:rgba(212,160,74,.07);border-color:rgba(212,160,74,.35)}
-.chl{font-size:14px;font-weight:600;color:#c8c2b8}.chd{font-size:12px;color:#5e5a56;margin-top:2px}
+.ch{width:100%;text-align:left;background:rgba(255,255,255,.03);border:1px solid #27273a;border-radius:10px;padding:12px 16px;cursor:pointer;font-family:inherit;color:inherit;margin-bottom:8px;transition:border-color .15s,background .15s}
+.ch:hover{border-color:#4b5563}
+.ch.on{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.45)}
+.chl{font-size:14px;font-weight:600;color:#f3f4f6}.chd{font-size:12px;color:#9ca3af;margin-top:2px}
 
 .bw-wrap{display:flex;flex-direction:column;align-items:center;padding:48px 0}
-.bw-ring{width:100px;height:100px;border-radius:50%;border:1.5px solid rgba(200,150,74,.2);display:flex;align-items:center;justify-content:center;margin-bottom:24px}
-.bw-dot{width:36px;height:36px;border-radius:50%;background:rgba(200,150,74,.3);animation:breathK 4.5s ease-in-out infinite}
-.bw-txt{font-family:Georgia,serif;font-size:18px;font-style:italic;color:#a09890;margin-bottom:6px}
+.bw-ring{width:100px;height:100px;border-radius:50%;border:1.5px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+.bw-dot{width:36px;height:36px;border-radius:50%;background:rgba(245,158,11,.4);animation:breathK 4.5s ease-in-out infinite}
+.bw-txt{font-family:Georgia,serif;font-size:18px;font-style:italic;color:#e5e7eb;margin-bottom:6px}
 
 .nl{font-family:Georgia,serif;font-size:17px;line-height:1.75;margin-bottom:20px;transition:opacity 1s,color 1s}
 
-.li{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #141420;align-items:baseline}
-.ld{font-size:11px;color:#4a4656;min-width:48px;flex-shrink:0;font-weight:500}
-.ln{font-size:14px;color:#908a82;line-height:1.5}
+.li{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid #1f2436;align-items:baseline}
+.ld{font-size:11px;color:#9ca3af;min-width:48px;flex-shrink:0;font-weight:500}
+.ln{font-size:14px;color:#e5e7eb;line-height:1.5}
 
 .ct{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .ct>div{flex:1;min-width:220px}
 
-.sb{display:flex;gap:3px;flex-wrap:wrap;margin:10px 0}
-.sd{width:13px;height:13px;border-radius:3px;background:#141420}
-.sd.f{background:#d4a04a}.sd.t{background:#6abf7b}
+.sb{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0}
+.sd{width:13px;height:13px;border-radius:3px;background:#1f2436}
+.sd.f{background:#f59e0b}.sd.t{background:#4ede80}
 
-.pg{height:6px;background:#141420;border-radius:3px;overflow:hidden;margin:8px 0}
-.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,#b8862e,#d4a04a);transition:width .6s ease}
+.pg{height:6px;background:#1f2436;border-radius:3px;overflow:hidden;margin:8px 0}
+.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,#d97706,#f59e0b);transition:width .6s ease}
 
-.dp-id{text-align:center;padding:28px 18px;margin:16px 0;border-radius:12px;background:rgba(106,191,123,.04);border:1px solid rgba(106,191,123,.12)}
-.dp-id .cq{color:#6abf7b;font-size:19px}
+.dp-id{text-align:center;padding:28px 18px;margin:16px 0;border-radius:12px;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2)}
+.dp-id .cq{color:#4ede80;font-size:19px}
 
-.icard{border:1px solid #1e2030;border-radius:12px;padding:20px;margin-bottom:12px;cursor:pointer;transition:border-color .2s;background:rgba(255,255,255,.015)}
-.icard:hover{border-color:#3a3a4a}
-.icard.needs{border-left:3px solid #d4a04a}
-.icard.done{border-left:3px solid #1e2030;opacity:.75}
+.icard{border:1px solid #27273a;border-radius:12px;padding:20px;margin-bottom:12px;cursor:pointer;transition:border-color .2s;background:rgba(255,255,255,.02)}
+.icard:hover{border-color:#4b5563}
+.icard.needs{border-left:3px solid #f59e0b}
+.icard.done{border-left:3px solid #374151;opacity:.85}
 
-.rfc{background:rgba(212,160,74,.04);border:1px solid rgba(212,160,74,.12);border-radius:10px;padding:18px;margin-bottom:18px}
+.rfc{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:18px;margin-bottom:18px}
 
 @media(max-width:480px){h1{font-size:28px}h2{font-size:22px}.ct>div{min-width:100%}}
 
@@ -103,44 +104,54 @@ input::placeholder,textarea::placeholder{color:#2e2e3e}
 .mg-editable .mg-save{display:none;margin-top:8px}
 .mg-editable.editing .mg-save{display:inline-block}
 
-.habit-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid #141420}
-.habit-check{width:22px;height:22px;border-radius:5px;border:2px solid #2a2a3a;background:none;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.habit-check.checked{background:#d4a04a;border-color:#d4a04a}
-.habit-check.checked::after{content:'✓';color:#0e0e0e;font-size:13px;font-weight:700}
+.habit-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid #1f2436}
+.habit-check{width:22px;height:22px;border-radius:5px;border:2px solid #374151;background:none;cursor:pointer;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.habit-check.checked{background:#f59e0b;border-color:#f59e0b}
+.habit-check.checked::after{content:'✓';color:#09090b;font-size:13px;font-weight:700}
 .habit-text{flex:1}
-.habit-name{font-size:14px;color:#c8c2b8;line-height:1.4}
-.habit-meta{font-size:11px;color:#4a4656;margin-top:3px}
-.habit-streak{color:#d4a04a;font-weight:600}
+.habit-name{font-size:14px;color:#f3f4f6;line-height:1.4}
+.habit-meta{font-size:11px;color:#9ca3af;margin-top:3px}
+.habit-streak{color:#f59e0b;font-weight:600}
 .habit-actions{display:flex;gap:6px;flex-shrink:0}
 
 .mg-add-row{display:flex;gap:8px;margin-top:10px}
 .mg-add-row input{flex:1}
 
 /* Tug of war meter */
-.tow{margin:16px 0;padding:16px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid #1a1a26}
-.tow-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#141420;margin:10px 0}
-.tow-old{background:linear-gradient(90deg,#8b4a3a,#c9785a);transition:width .8s ease;border-radius:5px 0 0 5px}
-.tow-new{background:linear-gradient(90deg,#3a7e4a,#6abf7b);transition:width .8s ease;border-radius:0 5px 5px 0}
+.tow{margin:16px 0;padding:18px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid #27273a}
+.tow-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#1f2436;margin:10px 0}
+.tow-old{background:linear-gradient(90deg,#dc2626,#ff8f70);transition:width .8s ease;border-radius:5px 0 0 5px}
+.tow-new{background:linear-gradient(90deg,#16a34a,#4ede80);transition:width .8s ease;border-radius:0 5px 5px 0}
 .tow-labels{display:flex;justify-content:space-between;font-size:11px;line-height:1.3}
-.tow-old-label{color:#c9785a;max-width:45%;text-align:left}
-.tow-new-label{color:#6abf7b;max-width:45%;text-align:right}
+.tow-old-label{color:#ff8f70;max-width:45%;text-align:left}
+.tow-new-label{color:#4ede80;max-width:45%;text-align:right}
 
 /* Evidence list items */
-.ev-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #141420}
-.ev-text{flex:1;font-size:13px;color:#c8c2b8;line-height:1.45}
-.ev-edit{background:rgba(255,255,255,0.04);border:1px solid #2a2a3a;color:#a09890;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:4px;font-family:inherit;flex-shrink:0;transition:all .15s;margin-right:4px}
-.ev-edit:hover{color:#d4a04a;border-color:rgba(212,160,74,0.4);background:rgba(212,160,74,0.1)}
-.ev-del{background:rgba(201,120,90,0.1);border:1px solid rgba(201,120,90,0.3);color:#e57373;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:4px;font-family:inherit;flex-shrink:0;opacity:0.95;transition:all .15s}
-.ev-del:hover{opacity:1;color:#ff6b6b;background:rgba(201,120,90,0.22);border-color:rgba(255,107,107,0.5)}
+.ev-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1f2436}
+.ev-text{flex:1;font-size:14px;color:#e5e7eb;line-height:1.45}
+.ev-edit{background:rgba(255,255,255,0.06);border:1px solid #374151;color:#d1d5db;font-size:11px;cursor:pointer;padding:4px 9px;border-radius:4px;font-family:inherit;flex-shrink:0;transition:all .15s;margin-right:4px}
+.ev-edit:hover{color:#fbbf24;border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.15)}
+.ev-del{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:11px;cursor:pointer;padding:4px 9px;border-radius:4px;font-family:inherit;flex-shrink:0;opacity:0.95;transition:all .15s}
+.ev-del:hover{opacity:1;color:#ff6b6b;background:rgba(239,68,68,0.28);border-color:rgba(239,68,68,0.6)}
 
 /* Action items */
-.act-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #141420}
-.act-text{flex:1;font-size:14px;color:#c8c2b8;line-height:1.45}
+.act-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1f2436}
+.act-text{flex:1;font-size:14px;color:#e5e7eb;line-height:1.45}
 
 /* Log success */
 .log-success{text-align:center;padding:20px;animation:fadeIn .4s ease}
-.log-success h3{color:#6abf7b;margin-bottom:6px}
+.log-success h3{color:#4ede80;margin-bottom:6px}
 input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type="number"]{-moz-appearance:textfield}
+
+/* Modal styles */
+.modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,14,26,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease}
+.modal-card{background:#121829;border:1px solid #2e364f;border-radius:16px;width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,0.7),0 0 30px rgba(245,158,11,0.15);animation:modalSlide .25s cubic-bezier(0.16,1,0.3,1)}
+@keyframes modalSlide{from{opacity:0;transform:translateY(16px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-header{padding:18px 22px;border-bottom:1px solid #1f2436;display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{font-size:18px;color:#f9fafb;font-family:Georgia,serif}
+.modal-close{background:rgba(255,255,255,0.06);border:1px solid #374151;color:#d1d5db;font-size:18px;line-height:1;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.modal-close:hover{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5);color:#fca5a5}
+.modal-body{padding:16px 22px 24px;overflow-y:auto;flex:1}
 </style>
 </head>
 <body>
@@ -211,21 +222,21 @@ function getStage(n){
 function renderWeightBadge(w){
   w = w || 'medium';
   if(w === 'strong') {
-    return '<span style="font-size:10px;font-weight:700;background:rgba(106,191,123,0.2);color:#6abf7b;border:1px solid rgba(106,191,123,0.4);padding:2px 7px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Significant Growth (+4 points)">🔥 STRONG +4</span>';
+    return '<span style="font-size:10px;font-weight:700;background:rgba(74,222,128,0.2);color:#4ede80;border:1px solid rgba(74,222,128,0.4);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Significant Growth (+4 points)">🔥 STRONG +4</span>';
   }
   if(w === 'fine') {
-    return '<span style="font-size:10px;font-weight:500;background:rgba(255,255,255,0.05);color:#8a8480;border:1px solid rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Fine step (+1 point)">🌱 Fine +1</span>';
+    return '<span style="font-size:10px;font-weight:600;background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.2);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Fine step (+1 point)">🌱 Fine +1</span>';
   }
-  return '<span style="font-size:10px;font-weight:600;background:rgba(212,160,74,0.15);color:#d4a04a;border:1px solid rgba(212,160,74,0.3);padding:2px 6px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Medium proof (+2 points)">⚡ Medium +2</span>';
+  return '<span style="font-size:10px;font-weight:700;background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.45);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Medium proof (+2 points)">⚡ Medium +2</span>';
 }
 
 function renderWeightSelector(prefix){
   return '<div style="margin-bottom:12px">'
-    +'<div class="sm" style="margin-bottom:6px;color:#a09890;font-weight:600">Select Impact (Weight):</div>'
+    +'<div class="sm" style="margin-bottom:6px;color:#e5e7eb;font-weight:600">Select Impact (Weight):</div>'
     +'<div id="'+prefix+'-wgroup" style="display:flex;gap:6px;flex-wrap:wrap">'
     +'<button type="button" class="b bs bb '+prefix+'-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px" onclick="setWeightSel(\''+prefix+'\',\'fine\')">🌱 Fine (+1)</button>'
     +'<button type="button" class="b bs bp '+prefix+'-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px" onclick="setWeightSel(\''+prefix+'\',\'medium\')">⚡ Medium (+2)</button>'
-    +'<button type="button" class="b bs bb '+prefix+'-wbtn" style="flex:1;min-width:140px;font-size:12px;padding:8px 4px;color:#6abf7b;border-color:rgba(106,191,123,0.4)" onclick="setWeightSel(\''+prefix+'\',\'strong\')">🔥 Strong (+4 Growth)</button>'
+    +'<button type="button" class="b bs bb '+prefix+'-wbtn" style="flex:1;min-width:140px;font-size:12px;padding:8px 4px;color:#4ede80;border-color:rgba(74,222,128,0.5)" onclick="setWeightSel(\''+prefix+'\',\'strong\')">🔥 Strong (+4 Growth)</button>'
     +'</div>'
     +'<input type="hidden" id="'+prefix+'-weight" value="medium"/>'
     +'</div>';
@@ -240,11 +251,11 @@ window.setWeightSel=function(prefix, w){
     btns[1].className='b bs '+prefix+'-wbtn '+(w==='medium'?'bp':'bb');
     btns[2].className='b bs '+prefix+'-wbtn '+(w==='strong'?'bp':'bb');
     if(w==='strong'){
-      btns[2].style.background='rgba(106,191,123,0.2)';
-      btns[2].style.color='#6abf7b';
+      btns[2].style.background='rgba(74,222,128,0.2)';
+      btns[2].style.color='#4ede80';
     } else {
       btns[2].style.background='';
-      btns[2].style.color='#6abf7b';
+      btns[2].style.color='#4ede80';
     }
   }
 };
@@ -446,16 +457,16 @@ function rHub(a){
       const days=daysOld(id);
       return`<div class="icard ${logged?'done':'needs'}" onclick="openIdentity('${id.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:${logged?'#6e6e6e':'#6abf7b'};line-height:1.45;margin-bottom:10px;flex:1">${id.type==='quick'?'<span style="font-size:9px;background:rgba(212,160,74,.15);color:#d4a04a;padding:2px 6px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px">HABIT</span>':''}${e(id.newIdentity)}</p>
+          <p style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:${logged?'#9ca3af':'#4ede80'};line-height:1.45;margin-bottom:10px;flex:1">${id.type==='quick'?'<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>':''}${e(id.newIdentity)}</p>
           <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
-            <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #1e2030;color:#a09890;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
-            <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid #2a1a1a;color:#8b5a4a;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
+            <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #374151;color:#d1d5db;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
+            <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
           </div>
         </div>
         <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:4px">
-          <span class="sm">${st.name} · Day ${days} · ${id.logs.length} proofs${streak>1?' · '+streak+'-day streak':''}${id.habits&&id.habits.length?' · '+getHabitsToday(id)+'/'+id.habits.length+' habits':''}</span>
-          ${logged?'<span class="sm" style="color:#4a6e4a">✓ practiced today</span>':'<span class="sm" style="color:#d4a04a">practice today →</span>'}
+          <span class="sm" style="color:#d1d5db">${st.name} · Day ${days} · ${id.logs.length} proofs${streak>1?' · '+streak+'-day streak':''}</span>
+          ${logged?'<span class="sm" style="color:#4ede80;font-weight:600">✓ practiced today</span>':'<span class="sm" style="color:#fbbf24;font-weight:600">practice today →</span>'}
         </div>
       </div>`}).join('')}
     <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
@@ -541,11 +552,11 @@ function rCS2(a,c){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 2 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
     <h2>Find Your Cage</h2>
     <p class="d">Look at what you listed:</p>
-    <div class="c cd" style="margin-bottom:16px">${behaviors.map(b=>`<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#4a4656">•</span><span style="color:#8a8480;font-size:14px">${e(b)}</span></div>`).join('')}</div>
+    <div class="c cd" style="margin-bottom:16px">${behaviors.map(b=>`<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#9ca3af">•</span><span style="color:#f3f4f6;font-size:14px">${e(b)}</span></div>`).join('')}</div>
     <p class="d">When you do these things, what do they <em>give</em> you? What feeling keeps you coming back? Pick all that fit:</p>
     <div id="flist">${renderFeelingChips(c)}</div>
     <div id="s2part2">${(c.feelings.length>0||(c.customFeelings||[]).length>0)?s2Part2(c):''}</div>
-    ${!ok?'<p class="sm" style="color:#6e4a4a;margin-top:16px">To continue: '
+    ${!ok?'<p class="sm" style="color:#f87171;margin-top:16px">To continue: '
       +(!hasFeelings?'select at least one feeling above':'')
       +(hasFeelings&&!hasId?'write your old identity statement':'')
       +(hasFeelings&&hasId&&!hasEv?'add at least one piece of evidence for your old identity':'')
@@ -559,24 +570,24 @@ function s2Part2(c){
   const names=allFeelings.join(', ').toLowerCase();
   const hasId=c.oldIdentity.trim().length>0;
   return`<div style="margin-top:28px">
-    <p class="d">The thread connecting your patterns is <strong style="color:#d4a04a">${names}</strong>. These aren't just habits — they're an identity built around staying in the known.</p>
+    <p class="d">The thread connecting your patterns is <strong style="color:#fbbf24">${names}</strong>. These aren't just habits — they're an identity built around staying in the known.</p>
     <p class="d">Capture that identity in one honest sentence:</p>
     <p class="h">Complete this: <strong>"I am someone who…"</strong></p>
-      <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
-        <strong style="color:#6e6862">Examples:</strong><br>
+      <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#d1d5db;line-height:1.6">
+        <strong style="color:#f3f4f6">Examples:</strong><br>
         • "I am someone who always picks the safe option because I'm terrified of failing."<br>
         • "I am someone who hides behind busyness to avoid doing the hard, meaningful work."<br>
         • "I am someone who stays in my comfort zone because change feels too risky."
       </div>
     <textarea rows="3" id="oi" placeholder='e.g., "I am someone who always picks what feels safe over what actually matters to me."' oninput="uOI_live(this.value)">${e(c.oldIdentity)}</textarea>
     <div id="cage-preview">
-    ${hasId?`<div class="c cr" style="margin-top:18px"><div class="cl clr">YOUR CAGE</div><p class="cq" style="color:#c9785a">"${e(c.oldIdentity.trim())}"</p><p class="h" style="margin-top:10px;margin-bottom:0">This is the invisible identity running your decisions.</p></div>`:''}
+    ${hasId?`<div class="c cr" style="margin-top:18px"><div class="cl clr">YOUR CAGE</div><p class="cq" style="color:#ff8f70">"${e(c.oldIdentity.trim())}"</p><p class="h" style="margin-top:10px;margin-bottom:0">This is the invisible identity running your decisions.</p></div>`:''}
     </div>
           <div style="margin-top:20px">
             <label class="lb">What evidence supports this old belief?</label>
             <p class="h">List real moments, patterns, or incidents that prove this old identity has been running your life. At least one — the more honest, the more powerful the exercise.</p>
-            <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
-              <strong style="color:#6e6862">Examples:</strong><br>
+            <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#d1d5db;line-height:1.6">
+              <strong style="color:#f3f4f6">Examples:</strong><br>
               • "I had a startup idea 2 years ago and never opened the folder again."<br>
               • "Every time I get motivated, I quit within 2 weeks."<br>
               • "I chose a stable job over what excited me because my parents said so."
@@ -903,19 +914,31 @@ function rIdentity(a){
   a.innerHTML=`<div class="fade">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('hub')">← Main menu</button></div>
 
-    <div class="dp-id" style="margin-top:0">
-      <p class="sm" style="margin-bottom:6px">YOU ARE BECOMING</p>
-      <p class="cq" style="color:#6abf7b;font-size:18px">"${e(id.newIdentity)}"</p>
+    <!-- 1. THE CAGE YOU BROKE (OLD IDENTITY) -->
+    <div class="c cr" style="margin-top:0;margin-bottom:14px">
+      <div class="cl clr">THE CAGE YOU BROKE (OLD IDENTITY)</div>
+      <p style="font-size:15px;color:#ffb399;line-height:1.5;font-style:italic;margin-bottom:8px">"${e(id.oldIdentity)}"</p>
+      ${id.oldEvidence && id.oldEvidence.length > 0 ? `
+        <p style="font-size:12px;color:#fca5a5;font-weight:600;margin-bottom:4px">Evidence that cage existed:</p>
+        ${id.oldEvidence.map(ev => `<div style="display:flex;gap:8px;padding:2px 0"><span style="color:#ff8f70;font-size:11px">•</span><span style="font-size:13px;color:#f3f4f6;line-height:1.4">${e(ev)}</span></div>`).join('')}
+      ` : ''}
     </div>
 
+    <!-- 2. NEW IDENTITY -->
+    <div class="dp-id" style="margin-top:0;margin-bottom:14px">
+      <p class="sm" style="margin-bottom:6px;color:#4ede80;font-weight:700">YOU ARE BECOMING (NEW IDENTITY)</p>
+      <p class="cq" style="color:#4ede80;font-size:19px">"${e(id.newIdentity)}"</p>
+    </div>
+
+    <!-- 3. TUG OF WAR -->
     ${renderTugOfWar(id)}
 
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin:12px 0 4px">
-      <span class="sm" style="color:#a09890">${st.name}</span>
-      <span class="sm">${pts} pts (${id.logs.length} proofs) · Day ${days}${streak>1?' · '+streak+'-day streak':''}</span>
+      <span class="sm" style="color:#f3f4f6;font-weight:600">${st.name}</span>
+      <span class="sm" style="color:#d1d5db">${pts} pts (${id.logs.length} proofs) · Day ${days}${streak>1?' · '+streak+'-day streak':''}</span>
     </div>
     <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
-    <p class="h" style="margin-top:4px;margin-bottom:20px">${st.desc}</p>
+    <p class="h" style="margin-top:4px;margin-bottom:20px;color:#9ca3af">${st.desc}</p>
 
     ${!logged?`<button class="b bp bw" onclick="go('practice')" style="margin-bottom:10px">Do today's practice & log evidence</button>`
     :`<button class="b bd bw" onclick="go('practice')" style="margin-bottom:10px">Re-read Anti-Vision & add more evidence</button>`}
@@ -925,31 +948,20 @@ function rIdentity(a){
       <button class="b bp bs" onclick="go('reflect')">Do weekly reflection</button>
     </div>`:''}
 
-    <div class="c cr" style="margin-top:16px">
-      <div class="cl clr">ANTI-VISION — read when motivation fades</div>
-      <p style="font-size:13px;color:#8a7670;line-height:1.55;font-style:italic">${e(id.antiVisionText)}</p>
-    </div>
-
-    <div class="c cy" style="display:flex;gap:12px;align-items:flex-start">
-      <svg width="16" height="16" viewBox="0 0 28 28" fill="none" style="flex-shrink:0;margin-top:4px"><path d="M14 4L13 12L16 14L12 22L15 24L11 28" stroke="#d4a04a" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
-      <div><div class="cl cly">FIRST CRACK</div><p style="font-size:13px;color:#a09890;line-height:1.4">${e(id.crackAction)}</p></div>
-    </div>
-
-    <div class="c cr" style="margin-top:4px">
-      <div class="cl clr">OLD CAGE</div>
-      <p style="font-size:13px;color:#8a7670;line-height:1.4;font-style:italic">"${e(id.oldIdentity)}"</p>
-    </div>
-
     ${renderGoalCard(id)}
 
-    <div style="margin-top:20px">
+    <div class="c cr" style="margin-top:14px">
+      <div class="cl clr">ANTI-VISION — read when motivation fades</div>
+      <p style="font-size:14px;color:#ffb399;line-height:1.55;font-style:italic">${e(id.antiVisionText)}</p>
+    </div>
+
+    <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h3>Evidence log</h3>
-        <button class="bg" onclick="go('history')">See all →</button>
+        <h3 style="color:#f3f4f6">Evidence Log</h3>
+        <span class="sm" style="color:#d1d5db">${id.logs.length} proofs · ${streak}-day streak</span>
       </div>
-      <div class="sb">${streakDots(id)}</div>
-      ${id.logs.length>0?id.logs.slice(-5).map((l,i)=>({l,ri:id.logs.length-5+i<0?i:id.logs.length-5+i})).reverse().map(({l,ri})=>`<div class="li"><span class="ld">${new Date(l.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>${renderWeightBadge(l.weight)}<span class="ln">${e(l.note)}</span><button class="ev-edit" onclick="editLog(${ri}, this)">edit</button><button class="ev-del" onclick="delLog(${ri})">delete</button></div>`).join('')
-      :'<p class="h" style="font-style:italic">No evidence yet. Do your daily practice to start.</p>'}
+      <div class="sb" style="margin-bottom:12px">${streakDots(id)}</div>
+      <button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Evidence Log Modal (${id.logs.length} entries)</button>
     </div>
 
     <button class="b bb bw" onclick="go('manage')" style="margin-top:20px">Manage this identity</button>
@@ -966,24 +978,24 @@ function rPractice(a){
   const streak=getStreak(id);
 
   a.innerHTML=`<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('identity')">← Back</button><button class="bg" onclick="go('hub')" style="color:#d4a04a">Main menu →</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('identity')">← Back</button><button class="bg" onclick="go('hub')" style="color:#f59e0b">Main menu →</button></div>
     <div class="sn">DAILY PRACTICE</div>
     <h2>Remember why you started</h2>
 
-    <p class="d" style="margin-top:16px;margin-bottom:4px;color:#c9785a;font-weight:500">The future you refused:</p>
+    <p class="d" style="margin-top:16px;margin-bottom:4px;color:#ff8f70;font-weight:700">The future you refused (Anti-Vision):</p>
     <div class="c cr" style="margin-bottom:20px">
-      <p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#a07a6a;line-height:1.6">${e(id.antiVisionText)}</p>
+      <p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#ffb399;line-height:1.6">${e(id.antiVisionText)}</p>
     </div>
 
-    <p class="d" style="margin-bottom:4px;color:#6abf7b;font-weight:500">The person you chose to become:</p>
+    <p class="d" style="margin-bottom:4px;color:#4ede80;font-weight:700">The person you chose to become:</p>
     <div class="dp-id" style="margin-top:0;margin-bottom:12px">
-      <p class="cq" style="color:#6abf7b;font-size:18px">"${e(id.newIdentity)}"</p>
+      <p class="cq" style="color:#4ede80;font-size:19px">"${e(id.newIdentity)}"</p>
     </div>
     ${renderTugOfWar(id)}
 
     <div class="c cd" style="padding:22px">
-      <h3 style="margin-bottom:4px">${logged?"Add more evidence":"Log today's evidence"}</h3>
-      <p class="d" style="font-style:italic;color:#7a7a70;margin-bottom:14px">${e(prompt)}</p>
+      <h3 style="margin-bottom:4px;color:#f3f4f6">${logged?"Add more evidence":"Log today's evidence"}</h3>
+      <p class="d" style="font-style:italic;color:#d1d5db;margin-bottom:14px">${e(prompt)}</p>
       ${renderWeightSelector('plog')}
       <textarea rows="3" id="plog" placeholder="What did the new you do today?" style="margin-bottom:10px"></textarea>
       <button class="b bp bs" onclick="logPractice()">Save evidence</button>
@@ -994,11 +1006,6 @@ function rPractice(a){
       <div class="sb">${streakDots(id)}</div>
     </div>`:''}
 
-    ${id.habits&&id.habits.length?`<div class="c cd" style="padding:20px;margin-top:16px">
-      <h3 style="margin-bottom:4px">Today's Habits</h3>
-      <p class="h" style="margin-bottom:12px">Check off as you complete them — each one is proof your identity is real.</p>
-      <div id="practice-habits">${renderHabits(id)}</div>
-    </div>`:''}
   </div>`;
 }
 window.logPractice=function(){
@@ -1123,6 +1130,10 @@ window.delIdentity=function(){
 // INIT & GLOBAL KEYDOWN HANDLER FOR ENTER KEY
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeEvidenceModal();
+    return;
+  }
   if (e.key === 'Enter') {
     const target = e.target;
     if (!target) return;
@@ -1227,16 +1238,6 @@ function rManage(a){
     <div class="sn">MANAGE IDENTITY</div>
     <h2 style="margin-bottom:14px">Build & maintain this identity</h2>
 
-    <!-- Daily Habits -->
-    <div class="mg-section">
-      <h3>Daily Habits</h3>
-      <p class="h" style="margin-bottom:14px">Set specific daily actions tied to your new identity. Check them off each day to build consistency. These are the small, repeatable proofs that compound over time.</p>
-      <div id="habits-list">${renderHabits(id)}</div>
-      <div id="habit-add-area">
-        <button class="bg" onclick="showAddHabit()" id="add-habit-btn" style="margin-top:8px">+ Add a daily habit</button>
-      </div>
-    </div>
-
     <!-- Identity Statement -->
     <div class="mg-section">
       <h3>New Identity Statement</h3>
@@ -1305,8 +1306,7 @@ function rManage(a){
         Days active: ${days}<br>
         Evidence entries: ${id.logs.length}<br>
         Weekly reflections: ${id.reflections.length}<br>
-        Stage: ${st.name} (${st.pct}%)<br>
-        Daily habits: ${id.habits.length}
+        Stage: ${st.name} (${st.pct}%)
       </div>
     </div>
 
@@ -1557,6 +1557,124 @@ window.saveLogEdit=function(i){
   render();
 };
 
+// ═══════════════════════════════════════════════
+// EVIDENCE POP MODAL
+// ═══════════════════════════════════════════════
+window.openEvidenceModal = function() {
+  var id = cur();
+  if (!id) return;
+  var modal = document.getElementById('evidence-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'evidence-modal';
+    document.body.appendChild(modal);
+  }
+  renderEvidenceModalContent(modal, id);
+};
+
+function renderEvidenceModalContent(modal, id) {
+  var logs = id.logs || [];
+  var st = getStage(logs.length);
+  var streak = getStreak(id);
+  
+  modal.className = 'modal-overlay';
+  modal.onclick = function(e) {
+    if (e.target === modal) closeEvidenceModal();
+  };
+
+  var logsHtml = '';
+  if (logs.length === 0) {
+    logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
+  } else {
+    logsHtml = [...logs].map(function(l, i) { return { l: l, realIdx: i }; }).reverse().map(function(item) {
+      var l = item.l, ri = item.realIdx;
+      return '<div class="li" style="padding:14px 0">'
+        + '<span class="ld">' + new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</span> '
+        + renderWeightBadge(l.weight)
+        + ' <span class="ln" style="flex:1;word-break:break-word">' + e(l.note) + '</span> '
+        + ' <button class="ev-edit" onclick="editModalLog(' + ri + ', this)">edit</button> '
+        + ' <button class="ev-del" onclick="delModalLog(' + ri + ')">delete</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
+    + '<div class="modal-header">'
+    + '<div>'
+    + '<h3 style="margin-bottom:2px">All Evidence Logs</h3>'
+    + '<p class="sm" style="color:#9ca3af;margin:0">' + logs.length + ' total proofs · ' + streak + '-day streak · ' + st.name + '</p>'
+    + '</div>'
+    + '<button class="modal-close" onclick="closeEvidenceModal()" title="Close">×</button>'
+    + '</div>'
+    + '<div class="modal-body">'
+    + '<div class="sb" style="margin-bottom:14px;justify-content:flex-start">' + streakDots(id) + '</div>'
+    + '<div id="modal-logs-list">' + logsHtml + '</div>'
+    + '</div>'
+    + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px">'
+    + '<button class="b bb bs" onclick="closeEvidenceModal()">Done / Close</button>'
+    + '</div>'
+    + '</div>';
+}
+
+window.closeEvidenceModal = function() {
+  var modal = document.getElementById('evidence-modal');
+  if (modal) {
+    modal.remove();
+  }
+};
+
+window.delModalLog = function(i) {
+  var id = cur();
+  if (!id || i < 0 || i >= id.logs.length) return;
+  id.logs.splice(i, 1);
+  save();
+  var modal = document.getElementById('evidence-modal');
+  if (modal) renderEvidenceModalContent(modal, id);
+  render();
+};
+
+window.editModalLog = function(i, btnEl) {
+  var id = cur();
+  if (!id || !id.logs[i]) return;
+  var l = id.logs[i];
+  var item = btnEl ? btnEl.closest('.li') : null;
+  if (!item) return;
+  var currentWeight = l.weight || 'medium';
+  item.style.flexDirection = 'column';
+  item.style.alignItems = 'stretch';
+  item.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;width:100%;padding:6px 0">'
+    + '<div class="sm" style="color:#e5e7eb;font-weight:600">Edit Proof / Evidence:</div>'
+    + '<textarea id="modal-log-note-' + i + '" rows="2" style="width:100%;font-size:14px">' + esc(l.note) + '</textarea>'
+    + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+    + '<span class="sm" style="color:#9ca3af">Impact:</span>'
+    + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px">'
+    + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>🌱 Fine (+1)</option>'
+    + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>⚡ Medium (+2)</option>'
+    + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>🔥 Strong (+4)</option>'
+    + '</select>'
+    + '<button class="b bp bs" style="padding:6px 14px;font-size:12px;margin-left:auto" onclick="saveModalLogEdit(' + i + ')">Save</button>'
+    + '<button class="bg" style="font-size:12px" onclick="openEvidenceModal()">Cancel</button>'
+    + '</div>'
+    + '</div>';
+  $('#modal-log-note-' + i)?.focus();
+};
+
+window.saveModalLogEdit = function(i) {
+  var id = cur();
+  if (!id || !id.logs[i]) return;
+  var noteInp = $('#modal-log-note-' + i);
+  var weightInp = $('#modal-log-weight-' + i);
+  if (!noteInp) return;
+  var newNote = noteInp.value.trim();
+  if (!newNote) return;
+  id.logs[i].note = newNote;
+  if (weightInp) id.logs[i].weight = weightInp.value;
+  save();
+  var modal = document.getElementById('evidence-modal');
+  if (modal) renderEvidenceModalContent(modal, id);
+  render();
+};
+
 // Editing indicators for identity fields
 window.mgEditing=function(field){
   const wrap=$('#ed-'+field);
@@ -1703,7 +1821,7 @@ function renderTugOfWar(id){
   function makePips(count,max,color){
     var h='<div style="display:flex;gap:4px;justify-content:center;margin-top:6px">';
     for(var p=0;p<max;p++){
-      h+='<div style="width:8px;height:8px;border-radius:50%;background:'+(p<count?color:'#1a1a26')+';transition:background 0.3s"></div>';
+      h+='<div style="width:8px;height:8px;border-radius:50%;background:'+(p<count?color:'#27273a')+';transition:background 0.3s"></div>';
     }
     h+='</div>';
     return h;
@@ -1714,31 +1832,31 @@ function renderTugOfWar(id){
     
     // OLD IDENTITY
     +'<div style="flex:1">'
-    +'<p style="font-size:10px;color:#805030;font-weight:600;letter-spacing:1px;margin-bottom:4px">OLD IDENTITY</p>'
+    +'<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:4px">OLD IDENTITY</p>'
     +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">'
-    +'<span style="font-size:20px;font-weight:700;color:#c9785a;font-family:Georgia,serif">Lv.'+oLevelRaw+'</span>'
-    +'<span style="font-size:12px;color:#805030">'+oName+'</span>'
+    +'<span style="font-size:20px;font-weight:700;color:#ff7a59;font-family:Georgia,serif">Lv.'+oLevelRaw+'</span>'
+    +'<span style="font-size:12px;color:#fca5a5;font-weight:600">'+oName+'</span>'
     +'</div>'
-    +makeBar(oPct,'#8b4a3a','#5a2010','rtl')
-    +'<p style="font-size:10px;color:#5a3a2a;margin-top:4px">'+oPct+'% remaining</p>'
-    +makePips(oLevelRaw,5,'#8b4a3a')
+    +makeBar(oPct,'#dc2626','#7f1d1d','rtl')
+    +'<p style="font-size:11px;color:#d1d5db;margin-top:4px">'+oPct+'% remaining</p>'
+    +makePips(oLevelRaw,5,'#ef4444')
     +'</div>'
     
     // NEW IDENTITY
     +'<div style="flex:1">'
-    +'<p style="font-size:10px;color:#3a8e4a;font-weight:600;letter-spacing:1px;margin-bottom:4px">NEW IDENTITY</p>'
+    +'<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:4px">NEW IDENTITY</p>'
     +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">'
-    +'<span style="font-size:20px;font-weight:700;color:#6abf7b;font-family:Georgia,serif">Lv.'+nLvl.level+'</span>'
-    +'<span style="font-size:12px;color:#3a7e4a">'+nName+'</span>'
+    +'<span style="font-size:20px;font-weight:700;color:#4ede80;font-family:Georgia,serif">Lv.'+nLvl.level+'</span>'
+    +'<span style="font-size:12px;color:#86efac;font-weight:600">'+nName+'</span>'
     +'</div>'
-    +makeBar(nPct,'#4a9e5a','#2a6e3a','ltr')
-    +'<p style="font-size:10px;color:#3a6e4a;margin-top:4px">'+nLvl.progress+'/'+nLvl.needed+' pts ('+nPct+'% filled)</p>'
-    +makePips(nLvl.level,Math.max(5,nLvl.level+2),'#4a9e5a')
-    +'</div>'
-    
+    +makeBar(nPct,'#22c55e','#14532d','ltr')
+    +'<p style="font-size:11px;color:#d1d5db;margin-top:4px">'+nLvl.progress+'/'+nLvl.needed+' pts ('+nPct+'% filled)</p>'
+    +makePips(nLvl.level,Math.max(5,nLvl.level+2),'#22c55e')
     +'</div>'
     
-    +'<p style="font-size:12px;color:#6e6862;text-align:center;margin-top:14px;font-style:italic">'
+    +'</div>'
+    
+    +'<p style="font-size:12px;color:#cbd5e1;text-align:center;margin-top:14px;font-style:italic">'
     +(entryCount===0?'Add your first proof to begin leveling up'
      :nPct>=80?'Almost there — '+(nLvl.needed-nLvl.progress)+' more pts to Level Up!'
      :nLvl.level===0?'Building momentum — '+nLvl.progress+' of '+nLvl.needed+' pts to Level 1'
@@ -2092,88 +2210,70 @@ function rQuick(a){
   a.innerHTML='<div class="fade">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
     +'<button class="bg" onclick="go(\'hub\')">\u2190 Main menu</button>'
-    +'<span class="sm" style="color:#d4a04a">\u26a1 Quick Add</span>'
+    +'<span class="sm" style="color:#f59e0b;font-weight:700">\u26a1 Quick Add</span>'
     +'</div>'
     
-    // ── YOUR NEW IDENTITY ──
-    +'<div style="text-align:center;padding:14px 0">'
-    +'<p style="font-size:10px;color:#3a8e4a;font-weight:600;letter-spacing:1px;margin-bottom:6px">WHO YOU ARE BECOMING</p>'
-    +'<p style="font-family:Georgia,serif;font-size:18px;font-style:italic;color:#6abf7b;line-height:1.4">\u201c'+e(id.newIdentity)+'\u201d</p>'
+    // ── 1. THE CAGE YOU BROKE (OLD IDENTITY & EVIDENCE) ──
+    +'<div style="padding:18px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:12px;margin-bottom:14px">'
+    +'<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1.2px;margin-bottom:6px">THE CAGE YOU BROKE</p>'
+    +'<p style="font-family:Georgia,serif;font-size:17px;font-style:italic;color:#ffb399;line-height:1.5;margin-bottom:10px">\u201c'+e(id.oldIdentity)+'\u201d</p>'
+    +(id.oldEvidence&&id.oldEvidence.length>0?
+      '<p style="font-size:12px;color:#fca5a5;font-weight:600;margin-bottom:6px">Evidence that cage existed:</p>'
+      +id.oldEvidence.map(function(ev){return '<div style="display:flex;gap:8px;padding:3px 0;align-items:baseline"><span style="color:#ff8f70;font-size:12px">\u2022</span><span style="font-size:13px;color:#f3f4f6;line-height:1.45">'+e(ev)+'</span></div>'}).join('')
+    :'')
+    +'</div>'
+
+    // ── 2. YOUR NEW IDENTITY ──
+    +'<div style="text-align:center;padding:16px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:12px;margin-bottom:14px">'
+    +'<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1.2px;margin-bottom:6px">WHO YOU ARE BECOMING (NEW IDENTITY)</p>'
+    +'<p style="font-family:Georgia,serif;font-size:19px;font-style:italic;color:#4ede80;line-height:1.45">\u201c'+e(id.newIdentity)+'\u201d</p>'
     +'</div>'
     
-    // ── LEVEL VISUALIZATION ──
+    // ── 3. LEVEL VISUALIZATION (TUG OF WAR) ──
     +renderTugOfWar(id)
     
-    // ── GOAL PROGRESS ──
-    +goalHtml
-    
-    // ── ADD EVIDENCE ──
-    +'<div style="padding:18px;background:rgba(106,191,123,0.04);border:1px solid rgba(106,191,123,0.15);border-radius:10px;margin-bottom:14px">'
-    +'<p style="font-size:14px;color:#6abf7b;font-weight:600;margin-bottom:4px">Add proof for your new identity</p>'
-    +'<p style="font-size:12px;color:#6e6862;margin-bottom:10px">Every entry levels you up and weakens the old identity.</p>'
+    // ── 4. ADD EVIDENCE ──
+    +'<div style="padding:18px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:12px;margin-bottom:14px">'
+    +'<p style="font-size:15px;color:#fbbf24;font-weight:700;margin-bottom:4px">Add proof for your new identity</p>'
+    +'<p style="font-size:13px;color:#d1d5db;margin-bottom:12px">Every entry levels you up and weakens the old identity.</p>'
     +renderWeightSelector('qlog')
-    +'<textarea rows="2" id="qlog" placeholder="What did the new you do today?" style="margin-bottom:10px"></textarea>'
+    +'<textarea rows="2" id="qlog" placeholder="What did the new you do today?" style="margin-bottom:12px"></textarea>'
     +'<button class="b bp" onclick="quickLog()" style="width:100%">Add proof</button>'
     +'</div>'
+
+    // ── 5. GOAL PROGRESS ──
+    +goalHtml
     
-    // ── DAILY HABITS ──
-    +(id.habits.length>0?
-      '<div style="padding:14px;background:rgba(255,255,255,0.015);border:1px solid #1a1a26;border-radius:10px;margin-bottom:14px">'
-      +'<p style="font-size:12px;color:#6e6862;font-weight:600;margin-bottom:8px">DAILY HABITS</p>'
-      +'<div id="quick-habits">'+renderHabits(id)+'</div>'
-      +'</div>'
-    :'')
-    
-    // ── WHAT YOU LEFT BEHIND ──
-    +'<div style="padding:14px;background:rgba(200,120,90,0.03);border:1px solid rgba(200,120,90,0.08);border-radius:10px;margin-bottom:14px">'
-    +'<p style="font-size:10px;color:#805030;font-weight:600;letter-spacing:1px;margin-bottom:6px">THE CAGE YOU BROKE</p>'
-    +'<p style="font-size:13px;color:#8a6a5a;font-style:italic;line-height:1.45;margin-bottom:8px">\u201c'+e(id.oldIdentity)+'\u201d</p>'
-    +(id.oldEvidence&&id.oldEvidence.length>0?
-      '<p style="font-size:10px;color:#6e4a3a;margin-bottom:4px">Evidence that cage existed:</p>'
-      +id.oldEvidence.map(function(ev){return '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:#805030;font-size:10px">\u2022</span><span style="font-size:11px;color:#6e5a4a;line-height:1.35">'+e(ev)+'</span></div>'}).join('')
-    :'')
-    +'</div>'
-    
-    // ── YOUR ANTI-VISION (collapsible reminder) ──
+    // ── 7. YOUR ANTI-VISION (collapsible reminder) ──
     +'<details style="margin-bottom:14px">'
-    +'<summary style="font-size:11px;color:#805030;cursor:pointer;padding:8px 0;font-weight:600;letter-spacing:1px">ANTI-VISION \u2014 the future you refused (tap to read)</summary>'
-    +'<div style="padding:12px;background:rgba(200,120,90,0.03);border:1px solid rgba(200,120,90,0.08);border-radius:8px;margin-top:4px">'
-    +'<p style="font-size:13px;color:#8a6a5a;font-style:italic;line-height:1.55">'+e(id.antiVisionText)+'</p>'
+    +'<summary style="font-size:12px;color:#ff8f70;cursor:pointer;padding:10px 0;font-weight:700;letter-spacing:1px">ANTI-VISION \u2014 the future you refused (tap to read)</summary>'
+    +'<div style="padding:14px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:10px;margin-top:4px">'
+    +'<p style="font-size:14px;color:#ffb399;font-style:italic;line-height:1.6">'+e(id.antiVisionText)+'</p>'
     +'</div></details>'
     
-    // ── YOUR ACTIONS & COMMITMENTS ──
-    +'<details style="margin-bottom:14px">'
-    +'<summary style="font-size:11px;color:#3a7e4a;cursor:pointer;padding:8px 0;font-weight:600;letter-spacing:1px">YOUR ACTIONS & COMMITMENTS (tap to see)</summary>'
-    +'<div style="padding:12px;background:rgba(106,191,123,0.03);border:1px solid rgba(106,191,123,0.08);border-radius:8px;margin-top:4px">'
-    +'<p style="font-size:11px;color:#3a6e4a;font-weight:600;margin-bottom:6px">First crack:</p>'
-    +'<p style="font-size:13px;color:#7a9a7a;line-height:1.4;margin-bottom:10px">'+e(id.crackAction)+'</p>'
+    // ── 8. YOUR ACTIONS & COMMITMENTS ──
     +(id.actions&&id.actions.length>0?
-      '<p style="font-size:11px;color:#3a6e4a;font-weight:600;margin-bottom:4px">Ongoing actions:</p>'
-      +id.actions.map(function(ac){return '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:#4a9e5a;font-size:11px">\u25b8</span><span style="font-size:12px;color:#7a9a7a;line-height:1.35">'+e(ac)+'</span></div>'}).join('')
+      '<details style="margin-bottom:14px">'
+      +'<summary style="font-size:12px;color:#4ede80;cursor:pointer;padding:10px 0;font-weight:700;letter-spacing:1px">YOUR ACTIONS & COMMITMENTS (tap to see)</summary>'
+      +'<div style="padding:14px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.15);border-radius:10px;margin-top:4px">'
+      +id.actions.map(function(ac){return '<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#4ede80;font-size:12px">\u25b8</span><span style="font-size:13px;color:#e5e7eb;line-height:1.4">'+e(ac)+'</span></div>'}).join('')
+      +'</div></details>'
     :'')
-    +'</div></details>'
     
-    // ── BEHAVIORS YOU IDENTIFIED ──
+    // ── 9. BEHAVIORS YOU IDENTIFIED ──
     +'<details style="margin-bottom:14px">'
-    +'<summary style="font-size:11px;color:#6e6862;cursor:pointer;padding:8px 0;font-weight:600;letter-spacing:1px">BEHAVIORS YOU IDENTIFIED (tap to see)</summary>'
-    +'<div style="padding:12px;background:rgba(255,255,255,0.015);border:1px solid #1a1a26;border-radius:8px;margin-top:4px">'
-    +id.behaviors.map(function(b){return '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:#4a4656;font-size:11px">\u2022</span><span style="font-size:12px;color:#7a7a70;line-height:1.35">'+e(b)+'</span></div>'}).join('')
+    +'<summary style="font-size:12px;color:#cbd5e1;cursor:pointer;padding:10px 0;font-weight:700;letter-spacing:1px">BEHAVIORS YOU IDENTIFIED (tap to see)</summary>'
+    +'<div style="padding:14px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:10px;margin-top:4px">'
+    +id.behaviors.map(function(b){return '<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#9ca3af;font-size:12px">\u2022</span><span style="font-size:13px;color:#e5e7eb;line-height:1.4">'+e(b)+'</span></div>'}).join('')
     +'</div></details>'
     
-    // ── EVIDENCE HISTORY ──
-    +'<div style="margin-top:8px">'
-    +'<p style="font-size:11px;color:#6e6862;font-weight:600;letter-spacing:1px;margin-bottom:8px">EVIDENCE LOG ('+id.logs.length+' proofs \u00b7 '+streak+'-day streak)</p>'
-    +'<div class="sb" style="margin-bottom:10px">'+streakDots(id)+'</div>'
-    +(id.logs.length>0?
-      id.logs.slice(-5).map(function(l,i){
-        var realIdx = (id.logs.length < 5 ? 0 : id.logs.length - 5) + i;
-        return {l: l, realIdx: realIdx};
-      }).reverse().map(function(item){
-        var l = item.l, ri = item.realIdx;
-        return '<div class="li"><span class="ld">'+new Date(l.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</span> '+renderWeightBadge(l.weight)+' <span class="ln">'+e(l.note)+'</span> <button class="ev-edit" onclick="editLog('+ri+', this)">edit</button> <button class="ev-del" onclick="delLog('+ri+')">delete</button></div>';
-      }).join('')
-      +(id.logs.length>5?'<button class="bg" onclick="go(\'history\')" style="margin-top:6px">See all '+id.logs.length+' entries \u2192</button>':'')
-    :'<p class="sm" style="font-style:italic">No evidence yet. Add your first proof above!</p>')
+    // ── 10. EVIDENCE HISTORY ──
+    +'<div style="margin-top:12px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    +'<p style="font-size:12px;color:#e5e7eb;font-weight:700;letter-spacing:1px;margin:0">EVIDENCE LOG ('+id.logs.length+' proofs \u00b7 '+streak+'-day streak)</p>'
+    +'</div>'
+    +'<div class="sb" style="margin-bottom:12px">'+streakDots(id)+'</div>'
+    +'<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Evidence Log Modal ('+id.logs.length+' entries)</button>'
     +'</div>'
     
     +'</div>';
