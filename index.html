@@ -2378,6 +2378,15 @@
         + '</div>';
     }
 
+    function get14DayAntiVision(id) {
+      if (!id) return '';
+      if (id.antiVision14Day && id.antiVision14Day.trim()) return id.antiVision14Day.trim();
+      var oldName = (id.oldIdentity || 'this old pattern').trim();
+      oldName = oldName.replace(/^"|"$/g, '').replace(/^I am someone who\s+/i, '');
+      return 'If you continue without adding evidence for 14 days: "' + oldName + '" becomes 14x more deeply rooted. Your skin/habits stay neglected, snooze & hesitation compound, and you lose another 2 weeks to quiet regret.';
+    }
+    window.get14DayAntiVision = get14DayAntiVision;
+
     function renderIdentityView(a, id) {
       if (!id) return go('hub');
       var pts = getEvidencePoints(id);
