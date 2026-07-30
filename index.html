@@ -7,6 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛓️</text></svg>">
   <title>Break Your Cage</title>
   <style>
     *,
@@ -1567,6 +1568,8 @@
       return { ...DEF, ...cld, ...loc, identities: mergedList, deletedIds: allDeleted, screen: resScr, currentId: resId };
     }
 
+    var cloudCooldownUntil = 0;
+
     function triggerCloudAutoSync() {
       if (!S) return;
       clearTimeout(syncTimeout);
@@ -1576,24 +1579,33 @@
     }
 
     window.pushToCloud = async function () {
+      if (Date.now() < cloudCooldownUntil) return false;
       try {
-        await fetch(CLOUD_URL, {
+        var res = await fetch(CLOUD_URL, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(S)
         });
-        return true;
+        if (res.status === 429) {
+          cloudCooldownUntil = Date.now() + 60000;
+          return false;
+        }
+        return res.ok;
       } catch (e) {
-        console.warn('Cloud push error:', e);
         return false;
       }
     };
 
     window.pullFromCloud = async function () {
+      if (Date.now() < cloudCooldownUntil) return false;
       try {
         var res = await fetch(CLOUD_URL, {
           headers: { 'Accept': 'application/json' }
         });
+        if (res.status === 429) {
+          cloudCooldownUntil = Date.now() + 60000;
+          return false;
+        }
         if (!res.ok) return false;
         var parsed = await res.json();
         if (parsed) {
@@ -1606,7 +1618,6 @@
           return true;
         }
       } catch (e) {
-        console.warn('Cloud pull error:', e);
       }
       return false;
     };
