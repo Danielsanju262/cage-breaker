@@ -1459,6 +1459,17 @@
       const found = ids.find(i => i && i.id === S.currentId);
       return found ? sanitizeIdentity(found) : null;
     }
+    function getCurRef() {
+      if (!S || !Array.isArray(S.identities)) return null;
+      const found = S.identities.find(i => i && i.id === S.currentId);
+      if (!found) return null;
+      if (!found.logs) found.logs = [];
+      if (!found.habits) found.habits = [];
+      if (!found.reflections) found.reflections = [];
+      if (!found.oldEvidence) found.oldEvidence = [];
+      if (!found.actions) found.actions = [];
+      return found;
+    }
 
     function render() {
       const a = $('#app');
@@ -2859,8 +2870,8 @@
         if (['identity', 'practice', 'reflect', 'history', 'manage', 'quick-create'].includes(scr)) {
           if (cur()) { render(); return }
         }
-        // Default to active identity view as the main Home Screen!
-        S.screen = cur() ? 'identity' : 'hub'; save();
+        // Default to Main Menu (hub) as home screen!
+        S.screen = 'hub'; save();
       } else if (!S.creating) {
         S.screen = 'welcome'; save();
       }
@@ -3506,8 +3517,8 @@
 
     window.mgSaveNI = function () {
       const v = $('#mg-ni')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
-      id.newIdentity = v; save();
+      const id = getCurRef(); if (!id) return;
+      id.newIdentity = v; id.updatedAt = new Date().toISOString(); save();
       const wrap = $('#ed-ni');
       if (wrap) {
         wrap.classList.remove('editing');
@@ -3518,8 +3529,8 @@
 
     window.mgSaveAV = function () {
       const v = $('#mg-av')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
-      id.antiVisionText = v; save();
+      const id = getCurRef(); if (!id) return;
+      id.antiVisionText = v; id.updatedAt = new Date().toISOString(); save();
       const wrap = $('#ed-av');
       if (wrap) {
         wrap.classList.remove('editing');
@@ -3530,8 +3541,8 @@
 
     window.mgSaveAV14 = function () {
       const v = $('#mg-av14')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
-      id.antiVision14Day = v; save();
+      const id = getCurRef(); if (!id) return;
+      id.antiVision14Day = v; id.updatedAt = new Date().toISOString(); save();
       const wrap = $('#ed-av14');
       if (wrap) {
         wrap.classList.remove('editing');
@@ -3542,8 +3553,8 @@
 
     window.mgSaveCK = function () {
       const v = $('#mg-ck')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
-      id.crackAction = v; save();
+      const id = getCurRef(); if (!id) return;
+      id.crackAction = v; id.updatedAt = new Date().toISOString(); save();
       const wrap = $('#ed-ck');
       if (wrap) {
         wrap.classList.remove('editing');
@@ -3554,8 +3565,8 @@
 
     window.mgSaveGV = function () {
       const v = $('#mg-gv')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
-      id.goalVision = v; save();
+      const id = getCurRef(); if (!id) return;
+      id.goalVision = v; id.updatedAt = new Date().toISOString(); save();
       const wrap = $('#ed-gv');
       if (wrap) {
         wrap.classList.remove('editing');
@@ -3566,8 +3577,8 @@
 
     window.mgSaveOI = function () {
       const v = $('#mg-oi')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
-      id.oldIdentity = v; save();
+      const id = getCurRef(); if (!id) return;
+      id.oldIdentity = v; id.updatedAt = new Date().toISOString(); save();
       const wrap = $('#ed-oi');
       if (wrap) {
         wrap.classList.remove('editing');
@@ -3587,9 +3598,10 @@
 
     window.mgAddOldEv = function () {
       const v = $('#mg-oldev-input')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
+      const id = getCurRef(); if (!id) return;
       if (!id.oldEvidence) id.oldEvidence = [];
       id.oldEvidence.push(v);
+      id.updatedAt = new Date().toISOString();
       save();
       const list = $('#mg-oldev-list');
       if (list) list.innerHTML = renderMgOldEvList(id);
@@ -3598,9 +3610,10 @@
     };
 
     window.mgDelOldEv = function (i) {
-      const id = cur(); if (!id || !id.oldEvidence) return;
+      const id = getCurRef(); if (!id || !id.oldEvidence) return;
       if (i >= 0 && i < id.oldEvidence.length) {
         id.oldEvidence.splice(i, 1);
+        id.updatedAt = new Date().toISOString();
         save();
         const list = $('#mg-oldev-list');
         if (list) list.innerHTML = renderMgOldEvList(id);
@@ -3618,9 +3631,10 @@
 
     window.mgAddAction = function () {
       const v = $('#mg-act-input')?.value?.trim(); if (!v) return;
-      const id = cur(); if (!id) return;
+      const id = getCurRef(); if (!id) return;
       if (!id.actions) id.actions = [];
       id.actions.push(v);
+      id.updatedAt = new Date().toISOString();
       save();
       const list = $('#mg-act-list');
       if (list) list.innerHTML = renderMgActionsList(id);
@@ -3629,9 +3643,10 @@
     };
 
     window.mgDelAction = function (i) {
-      const id = cur(); if (!id || !id.actions) return;
+      const id = getCurRef(); if (!id || !id.actions) return;
       if (i >= 0 && i < id.actions.length) {
         id.actions.splice(i, 1);
+        id.updatedAt = new Date().toISOString();
         save();
         const list = $('#mg-act-list');
         if (list) list.innerHTML = renderMgActionsList(id);
@@ -3639,7 +3654,7 @@
     };
 
     window.mgSaveAll = function () {
-      const id = cur(); if (!id) return;
+      const id = getCurRef(); if (!id) return;
 
       const ni = $('#mg-ni')?.value?.trim();
       const gv = $('#mg-gv')?.value?.trim();
@@ -3648,12 +3663,12 @@
       const ck = $('#mg-ck')?.value?.trim();
       const oi = $('#mg-oi')?.value?.trim();
 
-      if (ni) id.newIdentity = ni;
-      if (gv) id.goalVision = gv;
-      if (av14) id.antiVision14Day = av14;
-      if (av) id.antiVisionText = av;
-      if (ck) id.crackAction = ck;
-      if (oi) id.oldIdentity = oi;
+      if (ni !== undefined && ni !== '') id.newIdentity = ni;
+      if (gv !== undefined && gv !== '') id.goalVision = gv;
+      if (av14 !== undefined && av14 !== '') id.antiVision14Day = av14;
+      if (av !== undefined && av !== '') id.antiVisionText = av;
+      if (ck !== undefined && ck !== '') id.crackAction = ck;
+      if (oi !== undefined && oi !== '') id.oldIdentity = oi;
 
       const oldEvVal = $('#mg-oldev-input')?.value?.trim();
       if (oldEvVal) {
@@ -3671,6 +3686,7 @@
         if (inp) inp.value = '';
       }
 
+      id.updatedAt = new Date().toISOString();
       save();
 
       const btn = $('#mg-save-all-btn');
@@ -3680,7 +3696,7 @@
         btn.style.borderColor = '#4ede80';
         setTimeout(() => {
           go('identity');
-        }, 600);
+        }, 500);
       } else {
         go('identity');
       }
