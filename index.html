@@ -1021,6 +1021,25 @@
     function go(scr) { clearTimers(); S.screen = scr; save(); window.scrollTo(0, 0); render() }
     function cur() { return S.identities.find(i => i.id === S.currentId) || null }
 
+    function render() {
+      const a = $('#app');
+      if (!a) return;
+      const scr = S.screen;
+      if (scr === 'welcome') return rWelcome(a);
+      if (scr === 'hub') return rHub(a);
+      if (scr.startsWith('create-')) return rCreate(a, scr);
+      if (scr === 'identity') return rIdentity(a);
+      if (scr === 'practice') return rPractice(a);
+      if (scr === 'reflect') return rReflect(a);
+      if (scr === 'history') return rHistory(a);
+      if (scr === 'manage') return rManage(a);
+      if (scr === 'quick-create') return rQuickCreate(a);
+      if (scr === 'quick') return rQuick(a);
+      if (scr === 'goal') return rGoal(a);
+      rWelcome(a);
+    }
+    window.render = render;
+
     // ═══════════════════════════════════════════════
     // CLOUD SYNC & DATA PERSISTENCE ENGINE
     // ═══════════════════════════════════════════════
