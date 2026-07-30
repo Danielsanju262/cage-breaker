@@ -930,35 +930,27 @@ window.avWrite=function(){
   const z=$('#avz');
   z.innerHTML=`<div class="fade">
     <p class="d" style="color:#c9785a;font-style:italic;margin-bottom:6px">That future — the one where nothing changed — what does it look like for YOU?</p>
-    <p class="h">Be painfully specific. What does that person look like physically? How do they feel each morning? What did they never build? What excuses do they still make? Write at least 3–4 sentences.</p>
+    <p class="h">Be specific. What does that person look like physically? How do they feel each morning? What did they never build? Write as much or as little as you want.</p>
     <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
       <strong style="color:#6e6862">Example:</strong> "It's 10 years from today. I'm 10 years older. I still work the same job. My startup/project idea is still in that folder — I never opened it again. I have less energy, less spark, less of myself. I tell others to play it safe because I played it safe. Every Sunday night I feel that same quiet regret."
     </div>
     <textarea rows="7" style="min-height:150px" id="avt" placeholder="Describe the future you DON'T want…" oninput="uAV(this.value)">${e(c.antiVisionText)}</textarea>
-    <p class="sm" id="avh" style="margin-top:6px">${c.antiVisionText.trim().length<=30?'<span style="color:#c9785a">'+c.antiVisionText.trim().length+'/30 characters minimum</span> — go deeper, the more vivid the more powerful':c.antiVisionText.trim().length+' characters ✓'}</p>
   </div>`;
   $('#avn').style.display='block';
   avBtnCheck();
 };
 window.uAV=function(v){
   S.creating.antiVisionText=v;save();
-  var h=$('#avh');
-  if(h){
-    var len=v.trim().length;
-    h.innerHTML=len<=30?'<span style="color:#c9785a">'+len+'/30 characters minimum</span> — go deeper, the more vivid the more powerful':len+' characters ✓';
-  }
   avBtnCheck();
 };
 function avBtnCheck(){
-  const ok=S.creating.antiVisionText.trim().length>30;
   const btn=$('#s3n');if(!btn)return;
-  btn.className='b '+(ok?'bp':'bx');
-  ok?btn.setAttribute('onclick',"go('create-step4')"):btn.removeAttribute('onclick');
+  btn.className='b bp';
+  btn.setAttribute('onclick',"go('create-step4')");
 }
 
 // STEP 4
 function rCS4(a,c){
-  const ok=c.newIdentity.trim().length>10;
   const dv=c.dayVisionText||c.goalVision||'';
   a.innerHTML=`<div class="fade">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 4 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
@@ -973,12 +965,11 @@ function rCS4(a,c){
     <div class="ct">
       <div class="cr" style="padding:16px;border-radius:10px">
         <div class="cl clr">OLD CAGE</div>
-        <p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#8a7e76;line-height:1.45">"${e(c.oldIdentity)}"</p>
+        <p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#8a7e76;line-height:1.45">"${e(c.oldIdentity || 'The old pattern')}"</p>
       </div>
       <div style="padding:16px;border-radius:10px;background:rgba(106,191,123,.04);border:1px solid rgba(106,191,123,.12)">
         <div class="cl clg">NEW IDENTITY</div>
         <textarea rows="3" style="background:rgba(106,191,123,.04);border-color:rgba(106,191,123,.18)" id="ni" placeholder='"I am someone who takes calculated risks and builds what matters, even when it scares me."' oninput="uNI(this.value)">${e(c.newIdentity)}</textarea>
-        <p class="sm" id="nih" style="margin-top:4px">${c.newIdentity.trim().length<=10?'<span style="color:#c9785a">'+c.newIdentity.trim().length+'/10 characters minimum</span>':c.newIdentity.trim().length+' characters ✓'}</p>
       </div>
     </div>
 
@@ -990,19 +981,11 @@ function rCS4(a,c){
       <textarea rows="4" style="min-height:100px" id="ni-dayvision" placeholder="Describe your day from morning to night after 30 days of this habit…" oninput="uNIDayVision(this.value)">${e(dv)}</textarea>
     </div>
 
-    ${ok?`<div class="c cg" style="margin-top:16px"><p class="cq" style="color:#6abf7b">"${e(c.newIdentity.trim())}"</p><p class="h" style="margin-top:10px;margin-bottom:0">An identity without evidence is just a wish. The next step makes it real.</p></div>`:''}
-    <div class="nav"><button class="b bb" onclick="go('create-step3')">Back</button><button class="b ${ok?'bp':'bx'}" id="s4n">Final Step — Make the First Crack</button></div>
+    <div class="nav"><button class="b bb" onclick="go('create-step3')">Back</button><button class="b bp" id="s4n" onclick="go('create-step5')">Final Step — Make the First Crack</button></div>
   </div>`;
-  setTimeout(()=>{const btn=$('#s4n');if(btn&&c.newIdentity.trim().length>10)btn.onclick=function(){go('create-step5')}},0);
 }
 window.uNI=function(v){
   S.creating.newIdentity=v;save();
-  var h=$('#nih');
-  if(h){var len=v.trim().length;h.innerHTML=len<=10?'<span style="color:#c9785a">'+len+'/10 characters minimum</span>':len+' characters ✓';}
-  const btn=$('#s4n');if(!btn)return;
-  const ok=v.trim().length>10;
-  btn.className='b '+(ok?'bp':'bx');
-  if(ok)btn.onclick=function(){go('create-step5')};else btn.onclick=null;
 };
 window.uNIDayVision=function(v){
   S.creating.dayVisionText=v;
@@ -1014,8 +997,6 @@ window.uNIDayVision=function(v){
 function rCS5(a,c){
   const p=PATHS[c.path]||PATHS.habit;
   const acts=c.actions||[];
-  const hasCrack=c.crackAction.trim().length>10;
-  const ok=hasCrack&&acts.length>0;
   a.innerHTML=`<div class="fade">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 5 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
     <h2>The First Crack</h2>
@@ -1031,12 +1012,11 @@ function rCS5(a,c){
         • "When the craving hits tonight, walk for 10 minutes instead."
       </div>
       <textarea rows="2" style="min-height:55px" id="ca" placeholder='${e(p.ck)}' oninput="uCA(this.value)">${e(c.crackAction)}</textarea>
-      <p class="sm" id="cah" style="margin-top:4px">${c.crackAction.trim().length<=10?'<span style="color:#c9785a">'+c.crackAction.trim().length+'/10 characters minimum</span>':c.crackAction.trim().length+' characters ✓'}</p>
     </div>
 
     <div style="margin-top:24px">
       <label class="lb">What ongoing actions will support your new identity?</label>
-      <p class="h">List the things you'll do regularly to keep proving the new identity is real. Add as many as you want — at least one.</p>
+      <p class="h">List the things you'll do regularly to keep proving the new identity is real. Add as many as you want.</p>
       <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
         <strong style="color:#6e6862">Examples:</strong><br>
         • "Spend 30 minutes every evening on my project"<br>
@@ -1045,48 +1025,41 @@ function rCS5(a,c){
       </div>
       <div id="act-list">${renderActionList(acts)}</div>
       <div style="display:flex;gap:8px;margin-top:8px"><input type="text" id="act-input" placeholder="e.g., Work on my project 30 min every evening" style="flex:1"/><button class="b bp bs" onclick="addAction()">Add</button></div>
-      ${acts.length===0?'<p class="sm" style="margin-top:8px;color:#d4a04a">Add at least one ongoing action to continue.</p>':''}
     </div>
 
-    ${ok?'<p class="h" style="margin-top:22px">When you seal this, the old identity no longer rules you.</p>':''}
-    <div class="nav"><button class="b bb" onclick="go('create-step4')">Back</button><button class="b ${ok?'bp':'bx'}" id="s5seal" ${ok?'style="animation:glowK 2s ease infinite"':''}>I commit — seal it</button></div>
+    <p class="h" style="margin-top:22px">When you seal this, the old identity no longer rules you.</p>
+    <div class="nav"><button class="b bb" onclick="go('create-step4')">Back</button><button class="b bp" id="s5seal" onclick="sealIdentity()" style="animation:glowK 2s ease infinite">I commit — seal it</button></div>
   </div>`;
-  setTimeout(()=>{const btn=$('#s5seal');if(btn&&ok)btn.onclick=function(){sealIdentity()}},0);
 }
 window.uCA=function(v){
   S.creating.crackAction=v;save();
-  var h=$('#cah');
-  if(h){var len=v.trim().length;h.innerHTML=len<=10?'<span style="color:#c9785a">'+len+'/10 characters minimum</span>':len+' characters ✓';}
-  updateS5Btn();
 };
-function updateS5Btn(){
-  const c=S.creating;if(!c)return;
-  const ok=c.crackAction.trim().length>10&&(c.actions||[]).length>0;
-  const btn=$('#s5seal');if(!btn)return;
-  btn.className='b '+(ok?'bp':'bx');
-  if(ok){btn.onclick=function(){sealIdentity()};btn.style.animation='glowK 2s ease infinite'}
-  else{btn.onclick=null;btn.style.animation=''}
-}
 window.sealIdentity=function(){
   const c=S.creating;
+  const newIdName=(c.newIdentity&&c.newIdentity.trim())?c.newIdentity.trim():'My New Identity';
+  const oldIdName=(c.oldIdentity&&c.oldIdentity.trim())?c.oldIdentity.trim():'The old pattern';
+  const crackAct=(c.crackAction&&c.crackAction.trim())?c.crackAction.trim():'First action toward my new identity';
+  const antiText=(c.antiVisionText&&c.antiVisionText.trim())?c.antiVisionText.trim():'What my life looks like if I never change.';
+  const actionsList=(c.actions&&c.actions.length>0)?c.actions:[crackAct];
+
   const id={
     id:'id_'+Date.now(),
-    path:c.path,
-    behaviors:c.behaviors,
-    feelings:c.feelings,
-    oldIdentity:c.oldIdentity,
+    path:c.path||'habit',
+    behaviors:c.behaviors||[],
+    feelings:c.feelings||[],
+    oldIdentity:oldIdName,
     oldEvidence:c.oldEvidence||[],
-    antiVisionText:c.antiVisionText,
-    newIdentity:c.newIdentity,
-    crackAction:c.crackAction,
-    actions:c.actions||[],
+    antiVisionText:antiText,
+    newIdentity:newIdName,
+    crackAction:crackAct,
+    actions:actionsList,
     createdDate:new Date().toISOString(),
     logs:[],
     reflections:[],
-    habits:c.actions?c.actions.map(a=>({text:a,createdDate:new Date().toISOString(),checks:[]})):[],
+    habits:actionsList.map(a=>({text:a,createdDate:new Date().toISOString(),checks:[]})),
     goalDays:30,
     goalVision:c.dayVisionText||c.goalVision||'Morning (7:30 AM): I start my day focused and energized.\nAfternoon (2:00 PM): I handle challenges with calm focus.\nEvening (10:00 PM): I end my day proud of my progress.',
-    goalActions:c.actions||[],
+    goalActions:actionsList,
     goalSetDate:new Date().toISOString()
   };
   S.identities.push(id);
@@ -2230,15 +2203,15 @@ function rQuickCreate(a){
 }
 
 window.createQuickHabit=function(){
-  var name=$('#qh-name')?.value?.trim();
-  var oldId=$('#qh-old')?.value?.trim()||'';
-  var vision=$('#qh-vision')?.value?.trim()||'';
-  var anti=$('#qh-anti')?.value?.trim()||'';
   var q=S._qh||{};
-  
-  if(!name){$('#qh-name')?.focus();return}
+  var rawName=$('#qh-name')?.value?.trim();
+  var name=rawName||(q.name?q.name.trim():'')||'My New Habit';
+  var oldId=$('#qh-old')?.value?.trim()||q.oldIdentity||'The version of me without this habit';
+  var vision=$('#qh-vision')?.value?.trim()||q.vision||'Morning: Clear and focused.\nAfternoon: Grounded and consistent.\nEvening: Quiet pride in my progress.';
+  var anti=$('#qh-anti')?.value?.trim()||q.antiVision||'What my life looks like if I never build this habit.';
   
   var habitText = (q.actions && q.actions.length > 0) ? q.actions[0] : name;
+  var actList = (q.actions && q.actions.length > 0) ? q.actions : [habitText];
   
   var id={
     id:'id_'+Date.now(),
@@ -2246,19 +2219,19 @@ window.createQuickHabit=function(){
     path:'habit',
     behaviors:[],
     feelings:[],
-    oldIdentity:oldId||'The version of me without this habit',
+    oldIdentity:oldId,
     oldEvidence:q.oldEvidence||[],
-    antiVisionText:anti||'What my life looks like if I never build this habit.',
+    antiVisionText:anti,
     newIdentity:name,
     crackAction:habitText,
-    actions:q.actions||[],
+    actions:actList,
     createdDate:new Date().toISOString(),
     logs:[],
     reflections:[],
-    habits:[{text:habitText,createdDate:new Date().toISOString(),checks:[]}],
+    habits:actList.map(a=>({text:a,createdDate:new Date().toISOString(),checks:[]})),
     goalDays:q.days||30,
     goalVision:vision,
-    goalActions:q.actions||[],
+    goalActions:actList,
     goalSetDate:new Date().toISOString()
   };
   S.identities.push(id);
@@ -2653,14 +2626,11 @@ window.delGA=function(i){
 
 window.saveGoal=function(){
   var id=cur();if(!id)return;
-  var days=id.goalDays;
+  var customDays=parseInt($('#gd-custom')?.value);
+  if(customDays)id.goalDays=customDays;
+  if(!id.goalDays)id.goalDays=30;
   var vision=$('#gv')?.value?.trim();
-  if(!days||!vision){
-    var btn=$('#goal-save');
-    if(btn){btn.textContent='Fill in days and vision first';btn.style.background='#8b4a3a';setTimeout(function(){btn.textContent='Save my goal';btn.style.background='';},1500);}
-    return;
-  }
-  id.goalVision=vision;
+  id.goalVision=vision||id.goalVision||'Morning: Clear and focused.\nAfternoon: Grounded and consistent.\nEvening: Quiet pride in my progress.';
   if(!id.goalSetDate)id.goalSetDate=new Date().toISOString();
   save();
   go('identity');
