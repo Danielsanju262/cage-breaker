@@ -1108,6 +1108,9 @@
           var parsed = JSON.parse(data.data.payload);
           if (parsed && (parsed.identities || parsed.screen)) {
             S = { ...DEF, ...parsed, cloudId: targetId, syncCode: 'CB-' + targetId };
+            if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
+              S.screen = 'hub';
+            }
             localStorage.setItem(SK, JSON.stringify(S));
             render();
             return true;
@@ -1133,7 +1136,12 @@
       var success = await pullFromCloud(code);
       if (success) {
         if (statusEl) statusEl.textContent = '✓ Successfully connected! All habits and logs loaded.';
-        setTimeout(closeSyncModal, 1200);
+        setTimeout(function () {
+          closeSyncModal();
+          if (S.identities && S.identities.length > 0) {
+            go('hub');
+          }
+        }, 1000);
       } else {
         if (statusEl) statusEl.textContent = '❌ Sync ID/Code not found or network error. Check ID and try again.';
       }
@@ -1395,6 +1403,13 @@
           + '<button class="bg" style="margin-left:10px" onclick="discardCreate();render()">Discard</button>'
           + '</div>';
       }
+      var viewHubHtml = '';
+      if (S.identities && S.identities.length > 0) {
+        viewHubHtml = '<div style="margin-bottom:16px;width:100%;max-width:440px;margin-left:auto;margin-right:auto">'
+          + '<button class="b bp" onclick="go(\'hub\')" style="width:100%;padding:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;box-shadow:0 4px 14px rgba(245,158,11,0.3)">'
+          + '⚡ View My Habits & Identities (' + S.identities.length + ') →</button>'
+          + '</div>';
+      }
       a.innerHTML = '<div class="center fade">'
         + '<svg width="64" height="64" viewBox="0 0 72 72" fill="none" style="margin-bottom:22px">'
         + '<circle cx="36" cy="36" r="34" stroke="#c9964a" stroke-width="1.5" opacity=".2"/>'
@@ -1405,6 +1420,7 @@
         + '<p class="h" style="max-width:420px;margin:0 auto 10px">A guided 5-step practice based on the psychology of Quantum Change. Everything is saved locally on your device \u2014 no server, no account, completely private and offline.</p>'
         + '<p class="sm" style="margin-bottom:20px;font-style:italic">Allow 15\u201320 minutes of honest reflection.</p>'
         + resumeHtml
+        + viewHubHtml
         + '<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">' + (S.creating ? 'Start a new identity instead' : 'Full identity exercise') + '</button>'
         + '<button class="b bd" onclick="go(\'quick-create\')" style="margin-top:0;margin-bottom:10px">Quick habit tracker \u2014 start in 30 seconds</button>'
         + '<button class="bg" onclick="openSyncModal()" style="display:block;margin:8px auto 0;color:#fbbf24;font-size:13px">☁️ Multi-Device Sync / Connect device or restore backup</button>'
