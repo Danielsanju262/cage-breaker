@@ -1000,13 +1000,29 @@
     const DEF = { screen: "welcome", identities: [], creating: null, currentId: null };
     let S = load();
 
+    function sanitizeIdentity(id) {
+      if (!id || typeof id !== 'object') return null;
+      return {
+        ...id,
+        logs: Array.isArray(id.logs) ? id.logs : [],
+        reflections: Array.isArray(id.reflections) ? id.reflections : [],
+        habits: Array.isArray(id.habits) ? id.habits : []
+      };
+    }
+
     function load() {
       try {
         setTimeout(function () { pullFromCloud(); }, 300);
         const r = localStorage.getItem(SK);
         if (r) {
           const p = JSON.parse(r);
-          return { ...DEF, ...p };
+          const res = { ...DEF, ...p };
+          if (Array.isArray(res.identities)) {
+            res.identities = res.identities.map(sanitizeIdentity).filter(Boolean);
+          } else {
+            res.identities = [];
+          }
+          return res;
         }
       } catch (e) { }
       return { ...DEF };
@@ -1018,7 +1034,11 @@
       } catch (e) { }
     }
     function go(scr) { clearTimers(); S.screen = scr; save(); window.scrollTo(0, 0); render() }
-    function cur() { return S.identities.find(i => i.id === S.currentId) || null }
+    function cur() {
+      const ids = Array.isArray(S.identities) ? S.identities : [];
+      const found = ids.find(i => i && i.id === S.currentId);
+      return found ? sanitizeIdentity(found) : null;
+    }
 
     function render() {
       const a = $('#app');
@@ -1047,18 +1067,21 @@
 
     function mergeStates(loc, cld) {
       if (!cld) return loc;
-      if (!cld.identities || cld.identities.length === 0) {
-        if (loc && loc.identities && loc.identities.length > 0) {
+      const locIds = (loc && Array.isArray(loc.identities) ? loc.identities : []).map(sanitizeIdentity).filter(Boolean);
+      const cldIds = (cld && Array.isArray(cld.identities) ? cld.identities : []).map(sanitizeIdentity).filter(Boolean);
+
+      if (cldIds.length === 0) {
+        if (locIds.length > 0) {
           triggerCloudAutoSync();
         }
-        return loc;
+        return { ...DEF, ...loc, identities: locIds };
       }
-      if (!loc || !loc.identities || loc.identities.length === 0) {
-        return cld;
+      if (locIds.length === 0) {
+        return { ...DEF, ...cld, identities: cldIds };
       }
       const map = new Map();
-      (loc.identities || []).forEach(i => map.set(i.id, i));
-      (cld.identities || []).forEach(i => {
+      locIds.forEach(i => map.set(i.id, i));
+      cldIds.forEach(i => {
         if (!map.has(i.id)) {
           map.set(i.id, i);
         } else {
@@ -1315,12 +1338,9 @@
     // HUB
     // ═══════════════════════════════════════════════
     function rHub(a) {
-      const ids = S.identities || [];
-      ids.forEach(id => {
-        if (!id.logs) id.logs = [];
-        if (!id.reflections) id.reflections = [];
-        if (!id.habits) id.habits = [];
-      });
+      const rawIds = (S && Array.isArray(S.identities)) ? S.identities : [];
+      const ids = rawIds.map(sanitizeIdentity).filter(Boolean);
+      S.identities = ids;
 
       const sorted = [...ids].sort((a, b) => {
         const al = loggedToday(a) ? 1 : 0, bl = loggedToday(b) ? 1 : 0;
@@ -1348,21 +1368,15 @@
     </div>
     <p class="d">${ids.length === 0 ? 'You haven\'t created any identities yet. Start your first exercise below.' : ids.length + ' identity' + (ids.length > 1 ? 's' : '')}</p>
     ${resumeBanner}
-    ${S.identities.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">\u26a1 Quick add evidence</button></div>' : ''}
+    ${ids.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">\u26a1 Quick add evidence</button></div>' : ''}
     ${sorted.map(id => {
-        id.logs = id.logs || [];
-        id.reflections = id.reflections || [];
-        id.habits = id.habits || [];
         const st = getStage(id.logs.length);
-        const streak = getStreak(id);
-        const logged = loggedToday(id);
-        const days = daysOld(id);
         const streak = getStreak(id);
         const logged = loggedToday(id);
         const days = daysOld(id);
         return `<div class="icard ${logged ? 'done' : 'needs'}" onclick="openIdentity('${id.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <p style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:${logged ? '#9ca3af' : '#4ede80'};line-height:1.45;margin-bottom:10px;flex:1">${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>' : ''}${e(id.newIdentity)}</p>
+          <p style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:${logged ? '#9ca3af' : '#4ede80'};line-height:1.45;margin-bottom:10px;flex:1">${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>' : ''}${e(id.newIdentity || '')}</p>
           <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
             <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #374151;color:#d1d5db;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
             <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
