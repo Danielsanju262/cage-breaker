@@ -1040,10 +1040,39 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // PERMANENT LIVE CLOUD STORAGE ENGINE (JSONBLOB)
+    // PERMANENT LIVE CLOUD STORAGE ENGINE (LOCAL-FIRST MERGE)
     // ═══════════════════════════════════════════════
     const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fb278-c045-7f04-b337-ddd5f9eeb9d2';
     var syncTimeout = null;
+
+    function mergeStates(loc, cld) {
+      if (!cld) return loc;
+      if (!cld.identities || cld.identities.length === 0) {
+        if (loc && loc.identities && loc.identities.length > 0) {
+          triggerCloudAutoSync();
+        }
+        return loc;
+      }
+      if (!loc || !loc.identities || loc.identities.length === 0) {
+        return cld;
+      }
+      const map = new Map();
+      (loc.identities || []).forEach(i => map.set(i.id, i));
+      (cld.identities || []).forEach(i => {
+        if (!map.has(i.id)) {
+          map.set(i.id, i);
+        } else {
+          const ex = map.get(i.id);
+          if ((i.logs ? i.logs.length : 0) > (ex.logs ? ex.logs.length : 0)) {
+            map.set(i.id, i);
+          }
+        }
+      });
+      const mergedList = Array.from(map.values());
+      const resScr = (loc.screen && loc.screen !== 'welcome') ? loc.screen : (cld.screen || 'hub');
+      const resId = loc.currentId || cld.currentId || (mergedList.length > 0 ? mergedList[0].id : null);
+      return { ...DEF, ...cld, ...loc, identities: mergedList, screen: resScr, currentId: resId };
+    }
 
     function triggerCloudAutoSync() {
       if (!S) return;
@@ -1074,8 +1103,8 @@
         });
         if (!res.ok) return false;
         var parsed = await res.json();
-        if (parsed && (parsed.identities || parsed.screen)) {
-          S = { ...DEF, ...parsed };
+        if (parsed) {
+          S = mergeStates(S, parsed);
           if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
             S.screen = 'hub';
           }
