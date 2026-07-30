@@ -1044,7 +1044,8 @@
     function load() {
       try {
         setTimeout(function () { pullFromCloud(); }, 300);
-        const r = localStorage.getItem(SK);
+        let r = localStorage.getItem(SK);
+        if (!r) r = localStorage.getItem(SK + '_backup');
         if (r) {
           const p = JSON.parse(r);
           const res = { ...DEF, ...p };
@@ -1060,7 +1061,9 @@
     }
     function save() {
       try {
-        localStorage.setItem(SK, JSON.stringify(S));
+        const data = JSON.stringify(S);
+        localStorage.setItem(SK, data);
+        localStorage.setItem(SK + '_backup', data);
         triggerCloudAutoSync();
       } catch (e) { }
     }
@@ -1091,10 +1094,58 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // PERMANENT LIVE CLOUD STORAGE ENGINE (LOCAL-FIRST MERGE)
+    // PERMANENT LIVE CLOUD STORAGE ENGINE (ADDITIVE UNION MERGE)
     // ═══════════════════════════════════════════════
     const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fb278-c045-7f04-b337-ddd5f9eeb9d2';
     var syncTimeout = null;
+
+    function mergeSingleIdentity(i1, i2) {
+      if (!i1) return i2;
+      if (!i2) return i1;
+
+      const logsMap = new Map();
+      [...(i1.logs || []), ...(i2.logs || [])].forEach(l => {
+        if (!l) return;
+        const key = (l.date || '') + '_' + (l.note || '');
+        logsMap.set(key, l);
+      });
+      const mergedLogs = Array.from(logsMap.values()).sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+      const habitsMap = new Map();
+      [...(i1.habits || []), ...(i2.habits || [])].forEach(h => {
+        if (!h) return;
+        const key = h.text || '';
+        if (!habitsMap.has(key)) {
+          habitsMap.set(key, { ...h, checks: Array.isArray(h.checks) ? [...h.checks] : [] });
+        } else {
+          const existing = habitsMap.get(key);
+          const combinedChecks = [...new Set([...(existing.checks || []), ...(h.checks || [])])];
+          habitsMap.set(key, { ...existing, ...h, checks: combinedChecks });
+        }
+      });
+      const mergedHabits = Array.from(habitsMap.values());
+
+      const refMap = new Map();
+      [...(i1.reflections || []), ...(i2.reflections || [])].forEach(r => {
+        if (!r) return;
+        const key = r.date || JSON.stringify(r);
+        refMap.set(key, r);
+      });
+      const mergedReflections = Array.from(refMap.values());
+
+      const mergedOldEvidence = [...new Set([...(i1.oldEvidence || []), ...(i2.oldEvidence || [])])];
+      const mergedActions = [...new Set([...(i1.actions || []), ...(i2.actions || [])])];
+
+      return {
+        ...i2,
+        ...i1,
+        logs: mergedLogs,
+        habits: mergedHabits,
+        reflections: mergedReflections,
+        oldEvidence: mergedOldEvidence,
+        actions: mergedActions
+      };
+    }
 
     function mergeStates(loc, cld) {
       if (!cld) return loc;
@@ -1110,18 +1161,19 @@
       if (locIds.length === 0) {
         return { ...DEF, ...cld, identities: cldIds };
       }
+
       const map = new Map();
       locIds.forEach(i => map.set(i.id, i));
       cldIds.forEach(i => {
         if (!map.has(i.id)) {
           map.set(i.id, i);
         } else {
-          const ex = map.get(i.id);
-          if ((i.logs ? i.logs.length : 0) > (ex.logs ? ex.logs.length : 0)) {
-            map.set(i.id, i);
-          }
+          const existing = map.get(i.id);
+          const merged = mergeSingleIdentity(existing, i);
+          map.set(i.id, merged);
         }
       });
+
       const mergedList = Array.from(map.values());
       const resScr = (loc.screen && loc.screen !== 'welcome') ? loc.screen : (cld.screen || 'hub');
       const resId = loc.currentId || cld.currentId || (mergedList.length > 0 ? mergedList[0].id : null);
