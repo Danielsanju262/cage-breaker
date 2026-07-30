@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -608,7 +608,13 @@ window.copyDayExample=function(textareaId, habitName){
   if(!ta)return;
   var name=habitName||'my new habit';
   var template='Morning (7:30 AM): I wake up feeling clear and energized. Instead of defaulting to old distractions, I start my morning focusing on '+name+'.\n\n'
-    +'Afternoon (2:00 PM): When midday stress or temptat// ═══════════════════════════════════════════════
+    +'Afternoon (2:00 PM): When midday stress or temptation hits, I stay grounded. I navigate my afternoon calmly without breaking momentum.\n\n'
+    +'Evening (10:00 PM): I review my day with a feeling of quiet pride. I check off my proof and go to sleep knowing my actions match who I am becoming.';
+  ta.value=template;
+  if(typeof qhSaveFields==='function')qhSaveFields();
+};
+
+// ═══════════════════════════════════════════════
 // WELCOME
 // ═══════════════════════════════════════════════
 function rWelcome(a){
@@ -2123,7 +2129,7 @@ window.exitCreate=function(){
 // ═══════════════════════════════════════════════
 function rQuickCreate(a){
   // Load temp data
-  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[],dailyAction:''};
+  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[]};
   var q=S._qh;
   
   a.innerHTML='<div class="fade">'
@@ -2217,16 +2223,6 @@ function rQuickCreate(a){
     +'<div style="display:flex;gap:8px;margin-top:6px"><input type="text" id="qh-act-input" placeholder="e.g., Set alarm for 5:50am right now" style="flex:1"/><button class="b bp bs" onclick="qhAddAct()">Add</button></div>'
     +'</div>'
     
-    // Q8: Daily action
-    +'<div style="margin-top:20px">'
-    +'<label class="lb">8. What exactly will you do EACH DAY?</label>'
-    +'<p class="h">Be ultra-specific. The clearer the action, the easier to follow.</p>'
-    +'<div class="c cd" style="padding:10px 14px;margin-bottom:8px;font-size:12px;color:#5e5a56;line-height:1.5">'
-    +'<strong style="color:#6e6862">Example:</strong> "Alarm at 5:50am. Feet on floor within 10 seconds. No snooze. Drink water. Start the day."'
-    +'</div>'
-    +'<textarea rows="2" id="qh-action" placeholder="Your exact daily action\u2026">'+esc(q.dailyAction)+'</textarea>'
-    +'</div>'
-    
     +'<div style="margin-top:28px">'
     +'<button type="button" class="b bp bw" id="qh-submit-btn" onclick="createQuickHabit()" style="font-size:15px;padding:16px">Start my '+q.days+'-day journey</button>'
     +'</div>'
@@ -2238,11 +2234,11 @@ window.createQuickHabit=function(){
   var oldId=$('#qh-old')?.value?.trim()||'';
   var vision=$('#qh-vision')?.value?.trim()||'';
   var anti=$('#qh-anti')?.value?.trim()||'';
-  var action=$('#qh-action')?.value?.trim()||'';
   var q=S._qh||{};
   
   if(!name){$('#qh-name')?.focus();return}
-  if(!action){$('#qh-action')?.focus();return}
+  
+  var habitText = (q.actions && q.actions.length > 0) ? q.actions[0] : name;
   
   var id={
     id:'id_'+Date.now(),
@@ -2254,12 +2250,12 @@ window.createQuickHabit=function(){
     oldEvidence:q.oldEvidence||[],
     antiVisionText:anti||'What my life looks like if I never build this habit.',
     newIdentity:name,
-    crackAction:action,
+    crackAction:habitText,
     actions:q.actions||[],
     createdDate:new Date().toISOString(),
     logs:[],
     reflections:[],
-    habits:[{text:action,createdDate:new Date().toISOString(),checks:[]}],
+    habits:[{text:habitText,createdDate:new Date().toISOString(),checks:[]}],
     goalDays:q.days||30,
     goalVision:vision,
     goalActions:q.actions||[],
@@ -2306,13 +2302,13 @@ function renderQhActList(q){
 }
 window.qhAddEv=function(){
   var v=$('#qh-ev-input')?.value?.trim();if(!v)return;
-  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[],dailyAction:''};
+  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[]};
   S._qh.oldEvidence.push(v);qhSaveFields();render();
 };
 window.qhDelEv=function(i){if(!S._qh)return;S._qh.oldEvidence.splice(i,1);save();render()};
 window.qhAddAct=function(){
   var v=$('#qh-act-input')?.value?.trim();if(!v)return;
-  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[],dailyAction:''};
+  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[]};
   S._qh.actions.push(v);qhSaveFields();render();
 };
 window.qhDelAct=function(i){if(!S._qh)return;S._qh.actions.splice(i,1);save();render()};
@@ -2354,7 +2350,7 @@ window.qhStartAntiVis=function(){
   nextStep();
 };
 window.qhSetDays=function(d, fromInput){
-  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[],dailyAction:''};
+  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[]};
   var num=parseInt(d)||30;
   S._qh.days=num;
   qhSaveFields();
@@ -2375,13 +2371,12 @@ window.qhSetDays=function(d, fromInput){
   if(btnSub) btnSub.textContent='Start my '+num+'-day journey';
 };
 function qhSaveFields(){
-  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[],dailyAction:''};
+  if(!S._qh)S._qh={name:'',oldIdentity:'',oldEvidence:[],days:30,vision:'',antiVision:'',actions:[]};
   var q=S._qh;
   q.name=$('#qh-name')?.value||q.name;
   q.oldIdentity=$('#qh-old')?.value||q.oldIdentity;
   q.vision=$('#qh-vision')?.value||q.vision;
   q.antiVision=$('#qh-anti')?.value||q.antiVision;
-  q.dailyAction=$('#qh-action')?.value||q.dailyAction;
   save();
 }
 
