@@ -1181,16 +1181,20 @@
     const today = () => new Date().toISOString().split('T')[0];
     function daysBetween(d1, d2) { return Math.max(0, Math.floor((new Date(d2) - new Date(d1)) / 864e5)) }
     function daysOld(id) { return daysBetween(id.createdDate, new Date().toISOString()) + 1 }
-    function loggedToday(id) { return id.logs.some(l => l.date.split('T')[0] === today()) }
+    function loggedToday(id) {
+      if (!id || !id.logs) return false;
+      return id.logs.some(l => l && l.date && l.date.split('T')[0] === today());
+    }
     function needsReflection(id) {
+      if (!id) return false;
       if (daysOld(id) < 7) return false;
-      if (id.reflections.length === 0) return true;
+      if (!id.reflections || id.reflections.length === 0) return true;
       const last = id.reflections[id.reflections.length - 1].date;
       return daysBetween(last, new Date().toISOString()) >= 7;
     }
     function getStreak(id) {
-      if (!id.logs.length) return 0;
-      const days = [...new Set(id.logs.map(l => l.date.split('T')[0]))].sort().reverse();
+      if (!id || !id.logs || !id.logs.length) return 0;
+      const days = [...new Set(id.logs.map(l => l && l.date ? l.date.split('T')[0] : ''))].filter(Boolean).sort().reverse();
       let s = 0, d = new Date();
       for (let i = 0; i < 90; i++) {
         const ds = d.toISOString().split('T')[0];
@@ -1201,7 +1205,8 @@
       return s;
     }
     function streakDots(id) {
-      const set = new Set(id.logs.map(l => l.date.split('T')[0]));
+      if (!id || !id.logs) return '';
+      const set = new Set(id.logs.map(l => l && l.date ? l.date.split('T')[0] : ''));
       const t = today(); let h = '';
       for (let i = 27; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
@@ -1310,7 +1315,13 @@
     // HUB
     // ═══════════════════════════════════════════════
     function rHub(a) {
-      const ids = S.identities;
+      const ids = S.identities || [];
+      ids.forEach(id => {
+        if (!id.logs) id.logs = [];
+        if (!id.reflections) id.reflections = [];
+        if (!id.habits) id.habits = [];
+      });
+
       const sorted = [...ids].sort((a, b) => {
         const al = loggedToday(a) ? 1 : 0, bl = loggedToday(b) ? 1 : 0;
         return al - bl;
@@ -1328,13 +1339,24 @@
       a.innerHTML = `<div class="fade">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <h2 style="margin:0">Your Identities</h2>
-      <button class="b bd bs" onclick="openSyncModal()" style="font-size:12px;padding:6px 12px">☁️ Sync & Backup</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="sm" style="color:#4ede80;font-weight:600;margin-right:4px">☁️ Live Synced</span>
+        <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
+        <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
+        <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>
+      </div>
     </div>
     <p class="d">${ids.length === 0 ? 'You haven\'t created any identities yet. Start your first exercise below.' : ids.length + ' identity' + (ids.length > 1 ? 's' : '')}</p>
     ${resumeBanner}
     ${S.identities.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">\u26a1 Quick add evidence</button></div>' : ''}
     ${sorted.map(id => {
+        id.logs = id.logs || [];
+        id.reflections = id.reflections || [];
+        id.habits = id.habits || [];
         const st = getStage(id.logs.length);
+        const streak = getStreak(id);
+        const logged = loggedToday(id);
+        const days = daysOld(id);
         const streak = getStreak(id);
         const logged = loggedToday(id);
         const days = daysOld(id);
