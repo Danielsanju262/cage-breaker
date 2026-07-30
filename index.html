@@ -2917,6 +2917,13 @@
       </div>
     </div>
 
+    <!-- Overall Save All Button -->
+    <div style="margin-top:28px;margin-bottom:24px;padding:22px;background:linear-gradient(145deg, rgba(74,222,128,0.12), rgba(20,24,38,0.95));border:1px solid rgba(74,222,128,0.4);border-radius:16px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+      <h3 style="color:#4ede80;margin-bottom:6px;font-size:17px">Ready to update your identity?</h3>
+      <p class="h" style="font-size:13px;color:#d1d5db;margin-bottom:16px">Click below to save all edits across every section at once.</p>
+      <button class="b bp bw" id="mg-save-all-btn" onclick="mgSaveAll()" style="font-size:16px;padding:14px 28px;background:linear-gradient(135deg, #2e7d32, #1b5e20);border:1px solid #4ede80;box-shadow:0 4px 16px rgba(74,222,128,0.25)">💾 Save All Changes & Update Identity</button>
+    </div>
+
     <!-- Archive -->
     <div style="margin-top:32px;text-align:center">
       <button class="bg" style="color:#6e4a4a" onclick="go('history')">View full history / delete identity</button>
@@ -3570,6 +3577,54 @@
         save();
         const list = $('#mg-act-list');
         if (list) list.innerHTML = renderMgActionsList(id);
+      }
+    };
+
+    window.mgSaveAll = function () {
+      const id = cur(); if (!id) return;
+
+      const ni = $('#mg-ni')?.value?.trim();
+      const gv = $('#mg-gv')?.value?.trim();
+      const av14 = $('#mg-av14')?.value?.trim();
+      const av = $('#mg-av')?.value?.trim();
+      const ck = $('#mg-ck')?.value?.trim();
+      const oi = $('#mg-oi')?.value?.trim();
+
+      if (ni) id.newIdentity = ni;
+      if (gv) id.goalVision = gv;
+      if (av14) id.antiVision14Day = av14;
+      if (av) id.antiVisionText = av;
+      if (ck) id.crackAction = ck;
+      if (oi) id.oldIdentity = oi;
+
+      const oldEvVal = $('#mg-oldev-input')?.value?.trim();
+      if (oldEvVal) {
+        if (!id.oldEvidence) id.oldEvidence = [];
+        id.oldEvidence.push(oldEvVal);
+        const inp = $('#mg-oldev-input');
+        if (inp) inp.value = '';
+      }
+
+      const actVal = $('#mg-act-input')?.value?.trim();
+      if (actVal) {
+        if (!id.actions) id.actions = [];
+        id.actions.push(actVal);
+        const inp = $('#mg-act-input');
+        if (inp) inp.value = '';
+      }
+
+      save();
+
+      const btn = $('#mg-save-all-btn');
+      if (btn) {
+        btn.textContent = '✓ All Changes Saved Successfully!';
+        btn.style.background = '#1b5e20';
+        btn.style.borderColor = '#4ede80';
+        setTimeout(() => {
+          go('identity');
+        }, 600);
+      } else {
+        go('identity');
       }
     };
 
