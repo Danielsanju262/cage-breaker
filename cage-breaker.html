@@ -1040,9 +1040,9 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // AUTOMATIC GLOBAL CLOUD SYNC ENGINE (SHARED LIVE LINK)
+    // PERMANENT LIVE CLOUD STORAGE ENGINE (JSONBLOB)
     // ═══════════════════════════════════════════════
-    const GLOBAL_CLOUD_ID = 'ff8081819f7e10ae019fb271a6b44bf0';
+    const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fb278-c045-7f04-b337-ddd5f9eeb9d2';
     var syncTimeout = null;
 
     function triggerCloudAutoSync() {
@@ -1050,18 +1050,15 @@
       clearTimeout(syncTimeout);
       syncTimeout = setTimeout(function () {
         pushToCloud();
-      }, 800);
+      }, 600);
     }
 
     window.pushToCloud = async function () {
       try {
-        await fetch('https://api.restful-api.dev/objects/' + GLOBAL_CLOUD_ID, {
+        await fetch(CLOUD_URL, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: 'cage-breaker-global-live',
-            data: { payload: JSON.stringify(S) }
-          })
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(S)
         });
         return true;
       } catch (e) {
@@ -1072,20 +1069,19 @@
 
     window.pullFromCloud = async function () {
       try {
-        var res = await fetch('https://api.restful-api.dev/objects/' + GLOBAL_CLOUD_ID);
+        var res = await fetch(CLOUD_URL, {
+          headers: { 'Accept': 'application/json' }
+        });
         if (!res.ok) return false;
-        var data = await res.json();
-        if (data && data.data && data.data.payload) {
-          var parsed = JSON.parse(data.data.payload);
-          if (parsed && (parsed.identities || parsed.screen)) {
-            S = { ...DEF, ...parsed };
-            if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
-              S.screen = 'hub';
-            }
-            localStorage.setItem(SK, JSON.stringify(S));
-            render();
-            return true;
+        var parsed = await res.json();
+        if (parsed && (parsed.identities || parsed.screen)) {
+          S = { ...DEF, ...parsed };
+          if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
+            S.screen = 'hub';
           }
+          localStorage.setItem(SK, JSON.stringify(S));
+          render();
+          return true;
         }
       } catch (e) {
         console.warn('Cloud pull error:', e);
