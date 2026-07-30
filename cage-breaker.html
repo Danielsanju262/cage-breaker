@@ -997,38 +997,7 @@
     // ═══════════════════════════════════════════════
     // STATE
     // ═══════════════════════════════════════════════
-    const DEFAULT_SKIN_HABIT = {
-      id: "id_1785404282212",
-      type: "quick",
-      path: "habit",
-      behaviors: [],
-      feelings: [],
-      oldIdentity: "Not caring for my skin",
-      oldEvidence: [
-        "Not drinking enough water",
-        "Not waking up early",
-        "Not doing any facial",
-        "Not finding ways to care for my skin"
-      ],
-      antiVisionText: "A life where I will be without trying anything, a life without any confidence.",
-      newIdentity: "Have A Clean, Glowing, & Smooth Skin",
-      crackAction: "Drink water",
-      actions: ["Drink water"],
-      createdDate: "2026-07-30T09:38:02.212Z",
-      logs: [
-        { date: "2026-07-30T09:38:15.005Z", note: "Drank amla juice", weight: "medium" },
-        { date: "2026-07-30T09:38:26.449Z", note: "Drank one litre of water already", weight: "medium" },
-        { date: "2026-07-30T09:39:15.371Z", note: "Applied vitamin e oil", weight: "medium" }
-      ],
-      reflections: [],
-      habits: [{ text: "Drink water", createdDate: "2026-07-30T09:38:02.213Z", checks: [] }],
-      goalDays: 12,
-      goalVision: "1. Wake up, go to the bath, and look at my skin with regret for not doing anything earlier.\n2. Afternoon after bath or makeup, getting angry at myself for not caring for my skin long ago \n3. Evening during photoshoots, looking at my skin and loosing my confidence not able to smile cleanly not able to speak with everyone with confidence etc.",
-      goalActions: ["Drink water"],
-      goalSetDate: "2026-07-30T09:38:02.213Z"
-    };
-
-    const DEF = { screen: "hub", identities: [DEFAULT_SKIN_HABIT], creating: null, currentId: "id_1785404282212" };
+    const DEF = { screen: "welcome", identities: [], creating: null, currentId: null };
     let S = load();
 
     function sanitizeIdentity(id) {
@@ -1061,10 +1030,11 @@
     }
     function save() {
       try {
+        S._updatedAt = Date.now();
         const data = JSON.stringify(S);
         localStorage.setItem(SK, data);
         localStorage.setItem(SK + '_backup', data);
-        triggerCloudAutoSync();
+        pushToCloud();
       } catch (e) { }
     }
     function go(scr) { clearTimers(); S.screen = scr; save(); window.scrollTo(0, 0); render() }
@@ -1149,12 +1119,15 @@
 
     function mergeStates(loc, cld) {
       if (!cld) return loc;
+      if (loc && loc._updatedAt && cld._updatedAt && loc._updatedAt >= cld._updatedAt) {
+        return loc;
+      }
       const locIds = (loc && Array.isArray(loc.identities) ? loc.identities : []).map(sanitizeIdentity).filter(Boolean);
       const cldIds = (cld && Array.isArray(cld.identities) ? cld.identities : []).map(sanitizeIdentity).filter(Boolean);
 
       if (cldIds.length === 0) {
         if (locIds.length > 0) {
-          triggerCloudAutoSync();
+          pushToCloud();
         }
         return { ...DEF, ...loc, identities: locIds };
       }
