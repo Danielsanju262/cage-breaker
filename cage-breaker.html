@@ -1405,10 +1405,9 @@
     };
 
     // ═══════════════════════════════════════════════
-    // STATE
+    // STATE & ROUTING
     // ═══════════════════════════════════════════════
-    const DEF = { screen: "welcome", identities: [], creating: null, currentId: null, deletedIds: [] };
-    let S = load();
+    const DEF = { screen: "hub", identities: [], creating: null, currentId: null, deletedIds: [] };
 
     function sanitizeIdentity(id) {
       if (!id || typeof id !== 'object') return null;
@@ -1420,24 +1419,44 @@
       };
     }
 
+    function getScreenFromUrl() {
+      try {
+        const hash = (window.location.hash || '').replace('#', '').trim();
+        if (hash) return hash;
+      } catch (e) { }
+      return null;
+    }
+
     function load() {
       try {
         setTimeout(function () { pullFromCloud(); }, 300);
         let r = localStorage.getItem(SK);
         if (!r) r = localStorage.getItem(SK + '_backup');
+        let res = { ...DEF };
         if (r) {
           const p = JSON.parse(r);
-          const res = { ...DEF, ...p };
+          res = { ...DEF, ...p };
           if (Array.isArray(res.identities)) {
             res.identities = res.identities.map(sanitizeIdentity).filter(Boolean);
           } else {
             res.identities = [];
           }
-          return res;
         }
+        // Route Persistence: If URL Hash is present (e.g. #identity, #practice, #history), honor it on refresh!
+        // Default to 'hub' (Your Identities) as Home Screen for fresh visits.
+        const urlScr = getScreenFromUrl();
+        if (urlScr) {
+          res.screen = urlScr;
+        } else if (!res.screen || res.screen === 'welcome') {
+          res.screen = 'hub';
+        }
+        return res;
       } catch (e) { }
       return { ...DEF };
     }
+
+    let S = load();
+
     function save() {
       try {
         S._updatedAt = Date.now();
@@ -1453,7 +1472,36 @@
         pushToCloud();
       } catch (e) { }
     }
-    function go(scr) { clearTimers(); S.screen = scr; save(); window.scrollTo(0, 0); render() }
+
+    function go(scr) {
+      clearTimers();
+      S.screen = scr;
+      save();
+      try {
+        if (window.location.hash !== '#' + scr) {
+          history.pushState(null, '', '#' + scr);
+        }
+      } catch (e) { }
+      window.scrollTo(0, 0);
+      render();
+    }
+
+    window.addEventListener('popstate', function () {
+      const scr = getScreenFromUrl() || 'hub';
+      if (S && S.screen !== scr) {
+        S.screen = scr;
+        save();
+        render();
+      }
+    });
+    window.addEventListener('hashchange', function () {
+      const scr = getScreenFromUrl() || 'hub';
+      if (S && S.screen !== scr) {
+        S.screen = scr;
+        save();
+        render();
+      }
+    });
     function cur() {
       const ids = Array.isArray(S.identities) ? S.identities : [];
       const found = ids.find(i => i && i.id === S.currentId);
