@@ -1,0 +1,6 @@
+.vercel
+*.zip
+node22_tmp/
+test_out*.html
+test_unfill*.html
+check_syntax.py

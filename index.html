@@ -1734,13 +1734,51 @@
     }
     function streakDots(id) {
       if (!id || !id.logs) return '';
-      const set = new Set(id.logs.map(l => l && l.date ? l.date.split('T')[0] : ''));
-      const t = today(); let h = '';
+      const t = today();
+      let h = '';
+
+      const dayPts = {};
+      const dayCount = {};
+      (id.logs || []).forEach(l => {
+        if (l && l.date) {
+          const ds = l.date.split('T')[0];
+          const w = (l.weight || l.impact || 'medium').toLowerCase();
+          const p = (w === 'strong' ? 4 : w === 'medium' ? 2 : 1);
+          dayPts[ds] = (dayPts[ds] || 0) + p;
+          dayCount[ds] = (dayCount[ds] || 0) + 1;
+        }
+      });
+
       for (let i = 27; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const ds = d.toISOString().split('T')[0];
-        const cls = set.has(ds) ? (ds === t ? 't' : 'f') : '';
-        h += `<div class="sd ${cls}" title="${ds}"></div>`;
+        const pts = dayPts[ds] || 0;
+        const cnt = dayCount[ds] || 0;
+        const isToday = (ds === t);
+
+        let style = '';
+        let title = ds + ': 0 proof';
+
+        if (pts > 0) {
+          title = ds + ': ' + pts + ' pts (' + cnt + ' proof' + (cnt > 1 ? 's' : '') + ')';
+          if (pts >= 8) {
+            style = 'background:#4ede80;opacity:1;border:1px solid #bbf7d0;box-shadow:0 0 16px rgba(74,222,128,0.95), 0 0 4px #ffffff;';
+          } else if (pts >= 5) {
+            style = 'background:#22c55e;opacity:0.95;border:1px solid #4ede80;box-shadow:0 0 12px rgba(74,222,128,0.7);';
+          } else if (pts >= 3) {
+            style = 'background:#16a34a;opacity:0.85;border:1px solid #22c55e;box-shadow:0 0 8px rgba(34,197,94,0.5);';
+          } else {
+            style = 'background:#065f46;opacity:0.75;border:1px solid #047857;box-shadow:0 0 4px rgba(16,185,129,0.3);';
+          }
+        } else {
+          style = 'background:rgba(255,255,255,0.04);opacity:0.35;border:1px solid rgba(255,255,255,0.05);';
+        }
+
+        if (isToday) {
+          style += 'transform:scale(1.15);border:1.5px solid #86efac;box-shadow:0 0 14px #4ede80;';
+        }
+
+        h += '<div class="sd" style="width:13px;height:13px;border-radius:3px;transition:all 0.3s ease;' + style + '" title="' + title + '"></div>';
       }
       return h;
     }
@@ -3745,17 +3783,15 @@
       var logs = getEvidencePoints(id);
       var entryCount = id.logs ? id.logs.length : 0;
 
-      var lvlNames = ['Seed', 'Sprout', 'Sapling', 'Young Tree', 'Strong Tree', 'Deep Roots', 'Mighty Oak', 'Ancient', 'Legendary', 'Mythic', 'Eternal', 'Transcendent', 'Infinite'];
-      var oldNames = ['Dominant', 'Rooted', 'Holding', 'Shaking', 'Cracking', 'Crumbling', 'Fading', 'Broken', 'Dust', 'Gone'];
+      var lvlNames = ['Seed', 'Sprout', 'Sapling', 'Young Tree', 'Strong Tree', 'Deep Roots', 'Mighty Oak', 'Ancient', 'Legendary', 'Mythic', 'Mastered'];
+      var oldNames = ['Freedom', 'Dust', 'Broken', 'Fading', 'Crumbling', 'Cracking', 'Shaking', 'Holding', 'Rooted', 'Dominant', 'Peak Control'];
 
-      // DYNAMIC LEVEL PROGRESSION: Each level has its OWN target points needed
-      // Level 0: 4 pts (25% per pt) | Level 1: 6 pts (16.7% per pt) | Level 2: 8 pts (12.5% per pt)
-      // Level 3: 10 pts (10% per pt) | Level 4: 14 pts (7.1% per pt) | Level 5: 18 pts (5.6% per pt)...
-      var levelReqs = [4, 6, 8, 10, 14, 18, 24, 30, 40, 50, 60, 75, 100];
+      // LEVEL 0 TO 10 PROGRESSION (Motivating progression curve capped at Level 10)
+      var levelReqs = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 25];
 
       function getLevelInfo(total) {
         var lvl = 0, used = 0;
-        while (lvl < levelReqs.length) {
+        while (lvl < levelReqs.length - 1) {
           var req = levelReqs[lvl];
           if (used + req > total) {
             return {
@@ -3768,11 +3804,11 @@
           used += req;
           lvl++;
         }
-        var lastReq = levelReqs[levelReqs.length - 1];
+        var maxReq = levelReqs[levelReqs.length - 1];
         return {
-          level: levelReqs.length - 1,
-          progress: (total - used) % lastReq,
-          needed: lastReq,
+          level: 10,
+          progress: Math.min(maxReq, total - used),
+          needed: maxReq,
           total: total
         };
       }
@@ -3781,67 +3817,114 @@
       var nPct = Math.min(100, Math.round((nLvl.progress / nLvl.needed) * 100));
       var nName = lvlNames[Math.min(nLvl.level, lvlNames.length - 1)];
 
-      // Old identity: loses levels as proof points increase
-      var oLevelRaw = Math.max(0, 5 - Math.floor(logs / 10));
-      var oWithinLevel = logs % 10;
-      var oPct = Math.max(0, Math.round(100 - (oWithinLevel / 10) * 100));
-      if (oLevelRaw === 0) oPct = Math.max(0, Math.round(100 - (logs / 50) * 100));
-      var oName = oldNames[Math.min(5 - oLevelRaw, oldNames.length - 1)];
-      if (logs >= 50) oName = oldNames[oldNames.length - 1];
+      // Old identity: un-fills (drains) as new identity fills up (Level 10 down to Level 0)
+      var oLevelRaw = Math.max(0, 10 - nLvl.level);
+      var oPct = Math.max(0, 100 - nPct);
+      var oName = oldNames[Math.min(10, Math.max(0, oLevelRaw))];
 
-      // Build the level-up bar SVG (ensures visible minimum fill chunk per point)
-      function makeBar(pct, color, glowColor, direction) {
-        var w = Math.max(pct > 0 ? 12 : 0, Math.round(pct * 2.2)); // visible fill chunk
-        return '<svg viewBox="0 0 220 28" width="100%" height="28" style="display:block">'
-          + '<rect x="0" y="4" width="220" height="20" rx="10" fill="#0e1220"/>'
-          + '<rect x="' + (direction === 'rtl' ? 220 - w : 0) + '" y="4" width="' + w + '" height="20" rx="10" fill="' + color + '"'
-          + ' style="filter:drop-shadow(0 0 ' + (pct > 50 ? '8' : '4') + 'px ' + glowColor + ');transition:width 0.4s ease"/>'
+      // COLOSSAL DYNAMIC CIRCLE SIZING (EXTREME LEVEL PROGRESSION)
+      // Level 0 = 70px | Level 3 = 157px | Level 7 = 273px | Level 10 = 360px!
+      var nSize = Math.round(70 + (nLvl.level / 10) * 290);
+      var oSize = Math.round(70 + (oLevelRaw / 10) * 290);
+
+      // Build circular segmented progress indicator (donut ring format with dynamic level sizing and universal point scaling)
+      function makeCircleProgress(totalPts, filledPts, color, glowColor, bgTrackColor, size, mainLabel, isComplementary) {
+        var cx = size / 2;
+        var cy = size / 2;
+        var strokeW = Math.max(6, Math.round(size * 0.095));
+        var r = (size - strokeW - 10) / 2;
+
+        var total = Math.max(1, parseInt(totalPts) || 1);
+        var filled = Math.max(0, Math.min(total, parseInt(filledPts) || 0));
+
+        var degPerSeg = 360 / total;
+        // Dynamic gap degrees proportional to segment count (always clean, distinct & visible gaps for any N)
+        var gapDeg = total === 1 ? 0 : Math.max(1.5, Math.min(10, degPerSeg * 0.16));
+        var arcDeg = degPerSeg - gapDeg;
+
+        var paths = '';
+        for (var i = 0; i < total; i++) {
+          // If complementary (Red side): fill indices i >= (total - filled)
+          // That means filled Red segments occupy the EXACT positions where Green is blank!
+          var isFilled = isComplementary ? (i >= (total - filled)) : (i < filled);
+          var segColor = isFilled ? color : (bgTrackColor || '#1c2333');
+          var filterStyle = isFilled ? ('filter:drop-shadow(0 0 5px ' + glowColor + ');') : '';
+
+          if (total === 1) {
+            paths += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + segColor + '" stroke-width="' + strokeW + '" style="' + filterStyle + '"/>';
+          } else {
+            var startDeg = -90 + (i * degPerSeg) + (gapDeg / 2);
+            var endDeg = startDeg + arcDeg;
+            var startRad = (startDeg * Math.PI) / 180;
+            var endRad = (endDeg * Math.PI) / 180;
+            var x1 = cx + r * Math.cos(startRad);
+            var y1 = cy + r * Math.sin(startRad);
+            var x2 = cx + r * Math.cos(endRad);
+            var y2 = cy + r * Math.sin(endRad);
+
+            var largeArc = arcDeg > 180 ? 1 : 0;
+            var d = 'M ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' A ' + r.toFixed(2) + ' ' + r.toFixed(2) + ' 0 ' + largeArc + ' 1 ' + x2.toFixed(2) + ' ' + y2.toFixed(2);
+
+            paths += '<path d="' + d + '" fill="none" stroke="' + segColor + '" stroke-width="' + strokeW + '" stroke-linecap="butt" style="' + filterStyle + 'transition:stroke 0.3s ease;"/>';
+          }
+        }
+
+        var fontSize = Math.max(12, Math.round(size * 0.17));
+
+        return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" style="display:block;margin:0 auto;overflow:visible;transition:width 0.4s ease, height 0.4s ease">'
+          + paths
+          + '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + color + '" font-size="' + fontSize + '" font-weight="700" font-family="system-ui, -apple-system, sans-serif">' + mainLabel + '</text>'
           + '</svg>';
       }
 
-      function makePips(count, max, color) {
-        var h = '<div style="display:flex;gap:4px;justify-content:center;margin-top:6px">';
+      function makePips(count, max, color, isRightAligned) {
+        var unfilled = max - count;
+        var h = '<div style="display:flex;gap:4px;justify-content:center;margin-top:10px">';
         for (var p = 0; p < max; p++) {
-          h += '<div style="width:8px;height:8px;border-radius:50%;background:' + (p < count ? color : '#27273a') + ';transition:background 0.3s"></div>';
+          var isFilled = isRightAligned ? (p >= unfilled) : (p < count);
+          h += '<div style="width:7px;height:7px;border-radius:50%;background:' + (isFilled ? color : '#27273a') + ';transition:background 0.3s"></div>';
         }
         h += '</div>';
         return h;
       }
 
-      return '<div class="tow" style="padding:18px 14px">'
-        + '<div style="display:flex;gap:20px">'
+      var oPtsRemaining = nLvl.needed - nLvl.progress;
+
+      return '<div class="tow" style="padding:22px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.4s ease">'
+        + '<div style="display:flex;gap:20px;align-items:center;justify-content:space-around;flex-wrap:wrap;transition:all 0.4s ease">'
 
         // OLD IDENTITY
-        + '<div style="flex:1">'
-        + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:4px">OLD IDENTITY</p>'
-        + '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">'
+        + '<div style="flex:1;min-width:130px;text-align:center;transition:all 0.4s ease">'
+        + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:6px">OLD IDENTITY</p>'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px">'
         + '<span style="font-size:20px;font-weight:700;color:#ff7a59;font-family:Georgia,serif">Lv.' + oLevelRaw + '</span>'
         + '<span style="font-size:12px;color:#fca5a5;font-weight:600">' + oName + '</span>'
         + '</div>'
-        + makeBar(oPct, '#dc2626', '#7f1d1d', 'rtl')
-        + '<p style="font-size:11px;color:#d1d5db;margin-top:4px">' + oPct + '% remaining</p>'
-        + makePips(oLevelRaw, 5, '#ef4444')
+        + makeCircleProgress(nLvl.needed, oPtsRemaining, '#ff7a59', 'rgba(255, 122, 89, 0.5)', '#1c2333', oSize, oPct + '%', true)
+        + '<p style="font-size:12px;color:#9ca3af;font-weight:600;margin-top:8px">' + oPtsRemaining + '/' + nLvl.needed + ' pts</p>'
+        + makePips(oLevelRaw, 10, '#ef4444', true)
         + '</div>'
 
         // NEW IDENTITY
-        + '<div style="flex:1">'
-        + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:4px">NEW IDENTITY</p>'
-        + '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">'
+        + '<div style="flex:1;min-width:130px;text-align:center;transition:all 0.4s ease">'
+        + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:6px">NEW IDENTITY</p>'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px">'
         + '<span style="font-size:20px;font-weight:700;color:#4ede80;font-family:Georgia,serif">Lv.' + nLvl.level + '</span>'
         + '<span style="font-size:12px;color:#86efac;font-weight:600">' + nName + '</span>'
         + '</div>'
-        + makeBar(nPct, '#22c55e', '#14532d', 'ltr')
-        + '<p style="font-size:11px;color:#d1d5db;margin-top:4px">' + nLvl.progress + '/' + nLvl.needed + ' pts (' + nPct + '% filled)</p>'
-        + makePips(nLvl.level, Math.max(5, nLvl.level + 2), '#22c55e')
+        + makeCircleProgress(nLvl.needed, nLvl.progress, '#4ede80', 'rgba(74, 222, 128, 0.5)', '#1c2333', nSize, nPct + '%', false)
+        + '<p style="font-size:12px;color:#9ca3af;font-weight:600;margin-top:8px">' + nLvl.progress + '/' + nLvl.needed + ' pts</p>'
+        + makePips(nLvl.level, 10, '#22c55e', false)
         + '</div>'
 
         + '</div>'
 
-        + '<p style="font-size:12px;color:#cbd5e1;text-align:center;margin-top:14px;font-style:italic">'
+        + '<p style="font-size:12px;color:#cbd5e1;text-align:center;margin-top:16px;font-style:italic">'
         + (entryCount === 0 ? 'Add your first proof to begin leveling up'
-          : nPct >= 80 ? 'Almost there — ' + (nLvl.needed - nLvl.progress) + ' more pts to Level Up!'
+          : nPct >= 80 ? (nLvl.level >= 10 ? '🎉 Congratulations! You reached Level 10 Mastered Identity!' : 'Almost there — ' + (nLvl.needed - nLvl.progress) + ' more pts to Level Up!')
             : nLvl.level === 0 ? 'Building momentum — ' + nLvl.progress + ' of ' + nLvl.needed + ' pts to Level 1'
-              : 'Level ' + nLvl.level + ' ' + nName + ' — ' + nLvl.progress + ' of ' + nLvl.needed + ' pts to Lv.' + (nLvl.level + 1) + ' (' + logs + ' total pts)')
+              : nLvl.level >= 10 ? 'Level 10 Mastered Identity — Peak Self Achieved (' + logs + ' total pts)'
+                : 'Level ' + nLvl.level + ' ' + nName + ' — ' + nLvl.progress + ' of ' + nLvl.needed + ' pts to Lv.' + (nLvl.level + 1) + ' (' + logs + ' total pts)')
         + '</p>'
         + '</div>';
     }
