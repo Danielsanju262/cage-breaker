@@ -1542,7 +1542,7 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // FIREBASE REALTIME CLOUD SYNC ENGINE (FIRESTORE WEBSOCKETS + 6-DIGIT SYNC CODE)
+    // GLOBAL COMMON CLOUD SYNC ENGINE (SINGLE SHARED MASTER DATASET)
     // ═══════════════════════════════════════════════
     const FIREBASE_CONFIG = {
       projectId: "testing-project-d451a",
@@ -1554,9 +1554,9 @@
       messagingSenderId: "685182492455"
     };
 
+    const MASTER_DOC_ID = 'global_master';
     var fbApp = null, fbDb = null, unsubscribeFirestore = null;
-    var _syncStatus = 'idle'; // 'idle' | 'syncing' | 'synced' | 'error'
-    var _lastSyncTime = 0;
+    var _syncStatus = 'idle';
     var _isRemoteUpdate = false;
 
     function mergeSingleIdentity(i1, i2) {
@@ -1653,48 +1653,20 @@
       return { ...DEF, ...cld, ...loc, identities: mergedList, deletedIds: allDeleted, screen: resScr, currentId: resId };
     }
 
-    function getSyncCode() {
-      try {
-        var hash = (window.location.hash || '').replace('#', '');
-        var match = hash.match(/sync=([a-zA-Z0-9_-]+)/i);
-        if (match && match[1]) {
-          var codeFromUrl = match[1].trim();
-          localStorage.setItem('cage_sync_code', codeFromUrl);
-          return codeFromUrl;
-        }
-      } catch (e) {}
-
-      var code = localStorage.getItem('cage_sync_code');
-      if (!code) {
-        code = Math.floor(100000 + Math.random() * 900000).toString();
-        localStorage.setItem('cage_sync_code', code);
-      }
-      return code;
-    }
-
-    function setSyncCode(newCode) {
-      if (!newCode || !newCode.trim()) return;
-      var clean = newCode.trim().replace(/[^a-zA-Z0-9_-]/g, '');
-      localStorage.setItem('cage_sync_code', clean);
-      initFirebaseSync();
-    }
-    window.setSyncCode = setSyncCode;
-
     function updateSyncStatusUI() {
       var els = document.querySelectorAll('.cloud-sync-indicator');
-      var code = getSyncCode();
       els.forEach(function (el) {
         if (_syncStatus === 'syncing') {
-          el.textContent = '⚡ Syncing… (' + code + ')';
+          el.textContent = '⚡ Syncing…';
           el.style.color = '#fbbf24';
         } else if (_syncStatus === 'synced') {
-          el.textContent = '🟢 Live Synced (' + code + ')';
+          el.textContent = '🟢 Live Connected';
           el.style.color = '#4ede80';
         } else if (_syncStatus === 'error') {
-          el.textContent = '🔴 Sync Error';
+          el.textContent = '🔴 Offline';
           el.style.color = '#f87171';
         } else {
-          el.textContent = '🟢 Live Synced (' + code + ')';
+          el.textContent = '🟢 Live Connected';
           el.style.color = '#4ede80';
         }
       });
@@ -1702,10 +1674,7 @@
 
     function initFirebaseSync() {
       try {
-        if (typeof firebase === 'undefined') {
-          console.warn('[CageBreaker Firebase] Firebase SDK script not loaded.');
-          return;
-        }
+        if (typeof firebase === 'undefined') return;
         if (!firebase.apps.length) {
           fbApp = firebase.initializeApp(FIREBASE_CONFIG);
         } else {
@@ -1713,16 +1682,13 @@
         }
         fbDb = firebase.firestore();
 
-        var syncCode = getSyncCode();
         updateSyncStatusUI();
 
-        if (unsubscribeFirestore) {
-          unsubscribeFirestore();
-        }
+        if (unsubscribeFirestore) unsubscribeFirestore();
 
         _syncStatus = 'syncing'; updateSyncStatusUI();
 
-        unsubscribeFirestore = fbDb.collection('cage_sync').doc(syncCode).onSnapshot(function (doc) {
+        unsubscribeFirestore = fbDb.collection('cage_sync').doc(MASTER_DOC_ID).onSnapshot(function (doc) {
           if (_isRemoteUpdate) return;
           if (doc.exists) {
             var data = doc.data();
@@ -1736,12 +1702,11 @@
                     S.screen = 'hub';
                   }
                   localStorage.setItem(SK, JSON.stringify(S));
-                  _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
+                  _syncStatus = 'synced'; updateSyncStatusUI();
                   render();
                   setTimeout(function () { _isRemoteUpdate = false; }, 300);
                 }
               } catch (err) {
-                console.warn('[CageBreaker Firebase] Snapshot parse error:', err);
                 _isRemoteUpdate = false;
               }
             }
@@ -1774,7 +1739,6 @@
 
     window.pushToCloud = async function () {
       if (_isRemoteUpdate) return false;
-      var syncCode = getSyncCode();
       if (!fbDb) {
         initFirebaseSync();
         if (!fbDb) return false;
@@ -1782,13 +1746,12 @@
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
         var payloadStr = JSON.stringify(S);
-        await fbDb.collection('cage_sync').doc(syncCode).set({
+        await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).set({
           payload: payloadStr,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          code: syncCode
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
+        _syncStatus = 'synced'; updateSyncStatusUI();
         return true;
       } catch (err) {
         console.warn('[CageBreaker Firebase] Push error:', err);
@@ -1798,12 +1761,11 @@
     };
 
     window.pullFromCloud = async function () {
-      var syncCode = getSyncCode();
       if (!fbDb) initFirebaseSync();
       if (!fbDb) return false;
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
-        var doc = await fbDb.collection('cage_sync').doc(syncCode).get();
+        var doc = await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).get();
         if (doc.exists) {
           var data = doc.data();
           if (data && data.payload) {
@@ -2160,8 +2122,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0">Your Identities</h2>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">🟢 Live Synced</span>
-        <button class="b bp bs" onclick="openSyncModal()" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.3)">📱 Link Phone</button>
+        <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">🟢 Live Connected</span>
         <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync</button>
         <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
         <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
@@ -2802,7 +2763,6 @@
         + switcherHtml
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
-        + '<button class="b bp bs" onclick="openSyncModal()" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.25)">📱 Link Phone</button>'
         + '<button class="b bb bs" onclick="syncNow()" style="font-size:12px;padding:6px 12px" title="Push & Pull latest data instantly">🔄 Sync</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:6px 10px;color:#9ca3af">All Cards →</button>'
