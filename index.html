@@ -1460,7 +1460,7 @@
 
     let S = load();
 
-    function save() {
+    function save(immediate) {
       try {
         S._updatedAt = Date.now();
         const id = cur();
@@ -1472,7 +1472,12 @@
         const data = JSON.stringify(S);
         localStorage.setItem(SK, data);
         localStorage.setItem(SK + '_backup', data);
-        pushToCloud();
+        if (immediate) {
+          clearTimeout(syncTimeout);
+          pushToCloud();
+        } else {
+          triggerCloudAutoSync();
+        }
       } catch (e) { }
     }
 
@@ -1672,6 +1677,8 @@
       });
     }
 
+    var _lastPushedPayload = null;
+
     function initFirebaseSync() {
       try {
         if (typeof firebase === 'undefined') return;
@@ -1688,12 +1695,24 @@
 
         _syncStatus = 'syncing'; updateSyncStatusUI();
 
-        unsubscribeFirestore = fbDb.collection('cage_sync').doc(MASTER_DOC_ID).onSnapshot(function (doc) {
+        unsubscribeFirestore = fbDb.collection('cage_sync').doc(MASTER_DOC_ID).onSnapshot({ includeMetadataChanges: true }, function (doc) {
           if (_isRemoteUpdate) return;
+          // CRITICAL FIX: Ignore local pending write snapshots to prevent blinking & input destruction!
+          if (doc.metadata && doc.metadata.hasPendingWrites) return;
+
           if (doc.exists) {
             var data = doc.data();
             if (data && data.payload) {
               try {
+                var payloadStr = typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
+                var currentLocalData = localStorage.getItem(SK);
+
+                // If remote payload is identical to our local state or our last push, ignore
+                if (payloadStr === currentLocalData || payloadStr === _lastPushedPayload) {
+                  _syncStatus = 'synced'; updateSyncStatusUI();
+                  return;
+                }
+
                 var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
                 if (parsed) {
                   _isRemoteUpdate = true;
@@ -1703,7 +1722,13 @@
                   }
                   localStorage.setItem(SK, JSON.stringify(S));
                   _syncStatus = 'synced'; updateSyncStatusUI();
-                  render();
+
+                  // Avoid wiping DOM if user is actively typing in an input/textarea
+                  var activeTag = document.activeElement ? document.activeElement.tagName : '';
+                  if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+                    render();
+                  }
+
                   setTimeout(function () { _isRemoteUpdate = false; }, 300);
                 }
               } catch (err) {
@@ -1734,7 +1759,7 @@
       clearTimeout(syncTimeout);
       syncTimeout = setTimeout(function () {
         pushToCloud();
-      }, 600);
+      }, 1500); // 1.5 second debounce after typing stops
     }
 
     window.pushToCloud = async function () {
@@ -1746,6 +1771,7 @@
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
         var payloadStr = JSON.stringify(S);
+        _lastPushedPayload = payloadStr;
         await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).set({
           payload: payloadStr,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1769,12 +1795,22 @@
         if (doc.exists) {
           var data = doc.data();
           if (data && data.payload) {
+            var payloadStr = typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
+            var currentLocalData = localStorage.getItem(SK);
+            if (payloadStr === currentLocalData || payloadStr === _lastPushedPayload) {
+              _syncStatus = 'synced'; updateSyncStatusUI();
+              return true;
+            }
+
             var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
             if (parsed) {
               S = mergeStates(S, parsed);
               localStorage.setItem(SK, JSON.stringify(S));
               _syncStatus = 'synced'; updateSyncStatusUI();
-              render();
+              var activeTag = document.activeElement ? document.activeElement.tagName : '';
+              if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+                render();
+              }
               return true;
             }
           }
@@ -2606,7 +2642,34 @@
 
     window.setInlineSearchQuery = function (q) {
       window.inlineFilterState.searchQuery = q;
-      render();
+      var container = document.getElementById('inline-evidence-entries');
+      var id = cur();
+      if (container && id) {
+        var logs = id.logs || [];
+        var filteredItems = filterInlineLogs(logs);
+        var entriesHtml = '';
+        if (logs.length === 0) {
+          entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0">No evidence logged yet. Add your first proof above!</p>';
+        } else if (filteredItems.length === 0) {
+          entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0;color:#9ca3af">No proofs match this date/search filter.</p>';
+        } else {
+          entriesHtml = filteredItems.slice(-5).reverse().map(function (item) {
+            var l = item.l;
+            var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1f2436;gap:8px">'
+              + '<div style="display:flex;gap:6px;align-items:baseline;flex:1;overflow:hidden">'
+              + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">📅 ' + dateStr + '</span>'
+              + renderWeightBadge(l.weight)
+              + '<span style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.note) + '</span>'
+              + '</div>'
+              + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModal()">view</button>'
+              + '</div>';
+          }).join('');
+        }
+        container.innerHTML = entriesHtml;
+      } else {
+        render();
+      }
     };
 
     function renderInlineEvidenceSection(id) {
@@ -2635,7 +2698,7 @@
         entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0;color:#9ca3af">No proofs match this date/search filter.</p>';
       } else {
         entriesHtml = filteredItems.slice(-5).reverse().map(function (item) {
-          var l = item.l, ri = item.realIdx;
+          var l = item.l;
           var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1f2436;gap:8px">'
             + '<div style="display:flex;gap:6px;align-items:baseline;flex:1;overflow:hidden">'
@@ -2655,7 +2718,7 @@
         + '</div>'
         + '<div class="sb" style="margin-bottom:10px">' + streakDots(id) + '</div>'
         + filterHtml
-        + '<div style="margin-bottom:12px">' + entriesHtml + '</div>'
+        + '<div id="inline-evidence-entries" style="margin-bottom:12px">' + entriesHtml + '</div>'
         + '<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Full Evidence Modal & Filter (' + logs.length + ' entries)</button>'
         + '</div>';
     }
@@ -3610,8 +3673,43 @@
 
     window.setModalSearchQuery = function (value) {
       window.modalFilterState.searchQuery = value;
-      var modal = document.getElementById('evidence-modal');
-      if (modal) renderEvidenceModalContent(modal, cur());
+      var listEl = document.getElementById('modal-logs-list');
+      var id = cur();
+      if (listEl && id) {
+        var logs = id.logs || [];
+        var filteredItems = filterModalLogs(logs);
+        var logsHtml = '';
+        if (logs.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
+        } else if (filteredItems.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="h" style="margin-bottom:12px">No evidence logs found matching your filter criteria.</p>'
+            + '<button class="b bb bs" onclick="resetModalFilters()">Reset Filters</button>'
+            + '</div>';
+        } else {
+          logsHtml = filteredItems.reverse().map(function (item) {
+            var l = item.l, ri = item.realIdx;
+            var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            return '<div class="ev-card">'
+              + '<div class="ev-card-top">'
+              + '<div class="ev-card-meta">'
+              + '<span class="ev-card-date">📅 ' + dateStr + '</span>'
+              + renderWeightBadge(l.weight)
+              + '</div>'
+              + '<div class="ev-card-actions">'
+              + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
+              + '<button class="ev-btn-del" onclick="delModalLog(' + ri + ')">Delete</button>'
+              + '</div>'
+              + '</div>'
+              + '<div class="ev-card-note">' + esc(l.note) + '</div>'
+              + '</div>';
+          }).join('');
+        }
+        listEl.innerHTML = logsHtml;
+      } else {
+        var modal = document.getElementById('evidence-modal');
+        if (modal) renderEvidenceModalContent(modal, cur());
+      }
     };
 
     window.resetModalFilters = function () {
@@ -4066,10 +4164,10 @@
       var oPct = Math.max(0, 100 - nPct);
       var oName = oldNames[Math.min(10, Math.max(0, oLevelRaw))];
 
-      // COLOSSAL DYNAMIC CIRCLE SIZING (EXTREME LEVEL PROGRESSION)
-      // Level 0 = 70px | Level 3 = 157px | Level 7 = 273px | Level 10 = 360px!
-      var nSize = Math.round(70 + (nLvl.level / 10) * 290);
-      var oSize = Math.round(70 + (oLevelRaw / 10) * 290);
+      // RESPONSIVE DYNAMIC CIRCLE SIZING (CLEAN & PERFECT PROPORTIONS ON ALL SCREENS)
+      // Level 0 = 80px | Level 5 = 130px | Level 10 = 180px
+      var nSize = Math.round(80 + (nLvl.level / 10) * 100);
+      var oSize = Math.round(80 + (oLevelRaw / 10) * 100);
 
       // Build circular segmented progress indicator (donut ring format with dynamic level sizing and universal point scaling)
       function makeCircleProgress(totalPts, filledPts, color, glowColor, bgTrackColor, size, mainLabel, isComplementary) {
@@ -4115,7 +4213,7 @@
 
         var fontSize = Math.max(12, Math.round(size * 0.17));
 
-        return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" style="display:block;margin:0 auto;overflow:visible;transition:width 0.4s ease, height 0.4s ease">'
+        return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" style="display:block;margin:0 auto;max-width:100%;height:auto;overflow:visible;transition:width 0.4s ease, height 0.4s ease">'
           + paths
           + '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + color + '" font-size="' + fontSize + '" font-weight="700" font-family="system-ui, -apple-system, sans-serif">' + mainLabel + '</text>'
           + '</svg>';
@@ -4134,13 +4232,13 @@
 
       var oPtsRemaining = nLvl.needed - nLvl.progress;
 
-      return '<div class="tow" style="padding:22px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.4s ease">'
-        + '<div style="display:flex;gap:20px;align-items:center;justify-content:space-around;flex-wrap:wrap;transition:all 0.4s ease">'
+      return '<div class="tow" style="padding:22px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.4s ease;overflow:hidden">'
+        + '<div style="display:flex;gap:10px;align-items:center;justify-content:space-around;flex-wrap:nowrap;width:100%;box-sizing:border-box;transition:all 0.4s ease">'
 
         // OLD IDENTITY
-        + '<div style="flex:1;min-width:130px;text-align:center;transition:all 0.4s ease">'
+        + '<div style="flex:1;min-width:0;max-width:50%;text-align:center;box-sizing:border-box;transition:all 0.4s ease">'
         + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:6px">OLD IDENTITY</p>'
-        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px">'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
         + '<span style="font-size:20px;font-weight:700;color:#ff7a59;font-family:Georgia,serif">Lv.' + oLevelRaw + '</span>'
         + '<span style="font-size:12px;color:#fca5a5;font-weight:600">' + oName + '</span>'
         + '</div>'
@@ -4150,9 +4248,9 @@
         + '</div>'
 
         // NEW IDENTITY
-        + '<div style="flex:1;min-width:130px;text-align:center;transition:all 0.4s ease">'
+        + '<div style="flex:1;min-width:0;max-width:50%;text-align:center;box-sizing:border-box;transition:all 0.4s ease">'
         + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:6px">NEW IDENTITY</p>'
-        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px">'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
         + '<span style="font-size:20px;font-weight:700;color:#4ede80;font-family:Georgia,serif">Lv.' + nLvl.level + '</span>'
         + '<span style="font-size:12px;color:#86efac;font-weight:600">' + nName + '</span>'
         + '</div>'
