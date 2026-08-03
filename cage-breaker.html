@@ -1450,12 +1450,15 @@
         const urlScr = getScreenFromUrl();
         if (urlScr) {
           res.screen = urlScr;
-        } else if (!res.screen || res.screen === 'welcome') {
+        } else {
           res.screen = 'hub';
+        }
+        if (!res.currentId && res.identities && res.identities.length > 0) {
+          res.currentId = res.identities[0].id;
         }
         return res;
       } catch (e) { }
-      return { ...DEF };
+      return { ...DEF, screen: 'hub' };
     }
 
     let S = load();
@@ -3186,19 +3189,20 @@
       // Initialize Firebase Firestore Realtime engine
       initFirebaseSync();
 
-      // Smart routing on load
-      if (S.identities.length > 0) {
-        const scr = S.screen;
-        // If they were mid-creation, stay there
-        if (scr.startsWith('create-') && S.creating) { render(); return }
-        // If on identity/practice/reflect/history, validate currentId
-        if (['identity', 'practice', 'reflect', 'history', 'manage', 'quick-create'].includes(scr)) {
-          if (cur()) { render(); return }
+      const urlScr = getScreenFromUrl();
+      if (urlScr) {
+        // Honor URL extension on reload (e.g. #identity, #manage, #history, #practice, #reflect, #quick)
+        S.screen = urlScr;
+        if (!S.currentId && S.identities && S.identities.length > 0) {
+          S.currentId = S.identities[0].id;
         }
-        // Default to Main Menu (hub) as home screen!
-        S.screen = 'hub'; save();
-      } else if (!S.creating) {
-        S.screen = 'welcome'; save();
+      } else {
+        // Fresh link visit without extension (https://cagebreaker-kappa.vercel.app): Always show 'hub' (Your Identities screen)!
+        S.screen = 'hub';
+        if (!S.currentId && S.identities && S.identities.length > 0) {
+          S.currentId = S.identities[0].id;
+        }
+        save();
       }
       render();
 
