@@ -1635,7 +1635,6 @@
         .filter(i => i && i.id && !allDeleted.includes(i.id));
 
       if (cldIds.length === 0 && locIds.length > 0) {
-        pushToCloud();
         return { ...DEF, ...loc, identities: locIds, deletedIds: allDeleted };
       }
       if (locIds.length === 0 && cldIds.length > 0) {
@@ -1719,6 +1718,9 @@
         }
         var parsed = await res.json();
         if (parsed) {
+          var localHasData = S && Array.isArray(S.identities) && S.identities.length > 0;
+          var cloudHasData = parsed && Array.isArray(parsed.identities) && parsed.identities.length > 0;
+
           S = mergeStates(S, parsed);
           if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
             S.screen = 'hub';
@@ -1726,6 +1728,11 @@
           localStorage.setItem(SK, JSON.stringify(S));
           _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
           render();
+
+          // Push to cloud if local device had data and cloud was empty/behind
+          if (localHasData && !cloudHasData) {
+            await pushToCloud();
+          }
           return true;
         }
       } catch (e) {
@@ -1733,6 +1740,14 @@
         console.warn('[CageBreaker Sync] Pull error:', e.message || e);
       }
       return false;
+    };
+
+    window.syncNow = async function () {
+      _syncStatus = 'syncing'; updateSyncStatusUI();
+      if (S && Array.isArray(S.identities) && S.identities.length > 0) {
+        await pushToCloud();
+      }
+      await pullFromCloud();
     };
 
     window.exportDataJSON = function () {
@@ -1993,6 +2008,7 @@
       <h2 style="margin:0">Your Identities</h2>
       <div style="display:flex;gap:6px;align-items:center">
         <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">☁️ Live Sync</span>
+        <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync Now</button>
         <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
         <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
         <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>
@@ -2632,6 +2648,7 @@
         + switcherHtml
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<button class="b bb bs" onclick="syncNow()" style="font-size:12px;padding:6px 12px" title="Push & Pull latest data instantly">🔄 Sync Now</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:6px 10px;color:#9ca3af">All Cards →</button>'
         + '</div>'
