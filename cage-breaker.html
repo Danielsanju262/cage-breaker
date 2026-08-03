@@ -1541,8 +1541,28 @@
     // ═══════════════════════════════════════════════
     // PERMANENT LIVE CLOUD STORAGE ENGINE (ADDITIVE UNION MERGE + TOMBSTONES)
     // ═══════════════════════════════════════════════
-    const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fb278-c045-7f04-b337-ddd5f9eeb9d2';
+    const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fc625-4e49-7a6c-88dd-6b0b63d5b8ce';
     var syncTimeout = null;
+    var _syncStatus = 'idle'; // 'idle' | 'syncing' | 'synced' | 'error'
+    var _lastSyncTime = 0;
+    function updateSyncStatusUI() {
+      var els = document.querySelectorAll('.cloud-sync-indicator');
+      els.forEach(function (el) {
+        if (_syncStatus === 'syncing') {
+          el.textContent = '☁️ Syncing…';
+          el.style.color = '#fbbf24';
+        } else if (_syncStatus === 'synced') {
+          el.textContent = '☁️ Synced';
+          el.style.color = '#4ede80';
+        } else if (_syncStatus === 'error') {
+          el.textContent = '☁️ Sync failed';
+          el.style.color = '#f87171';
+        } else {
+          el.textContent = '☁️ Live Sync';
+          el.style.color = '#4ede80';
+        }
+      });
+    }
 
     function mergeSingleIdentity(i1, i2) {
       if (!i1) return i2;
@@ -1615,7 +1635,6 @@
         .filter(i => i && i.id && !allDeleted.includes(i.id));
 
       if (cldIds.length === 0 && locIds.length > 0) {
-        pushToCloud();
         return { ...DEF, ...loc, identities: locIds, deletedIds: allDeleted };
       }
       if (locIds.length === 0 && cldIds.length > 0) {
@@ -1652,6 +1671,7 @@
 
     window.pushToCloud = async function () {
       if (Date.now() < cloudCooldownUntil) return false;
+      _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
         var res = await fetch(CLOUD_URL, {
           method: 'PUT',
@@ -1660,38 +1680,74 @@
         });
         if (res.status === 429) {
           cloudCooldownUntil = Date.now() + 60000;
+          _syncStatus = 'error'; updateSyncStatusUI();
+          console.warn('[CageBreaker Sync] Push rate-limited (429). Cooldown 60s.');
           return false;
+        }
+        if (res.ok) {
+          _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
+        } else {
+          _syncStatus = 'error'; updateSyncStatusUI();
+          console.warn('[CageBreaker Sync] Push failed, status:', res.status);
         }
         return res.ok;
       } catch (e) {
+        _syncStatus = 'error'; updateSyncStatusUI();
+        console.warn('[CageBreaker Sync] Push error:', e.message || e);
         return false;
       }
     };
 
     window.pullFromCloud = async function () {
       if (Date.now() < cloudCooldownUntil) return false;
+      _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
         var res = await fetch(CLOUD_URL, {
           headers: { 'Accept': 'application/json' }
         });
         if (res.status === 429) {
           cloudCooldownUntil = Date.now() + 60000;
+          _syncStatus = 'error'; updateSyncStatusUI();
+          console.warn('[CageBreaker Sync] Pull rate-limited (429). Cooldown 60s.');
           return false;
         }
-        if (!res.ok) return false;
+        if (!res.ok) {
+          _syncStatus = 'error'; updateSyncStatusUI();
+          console.warn('[CageBreaker Sync] Pull failed, status:', res.status);
+          return false;
+        }
         var parsed = await res.json();
         if (parsed) {
+          var localHasData = S && Array.isArray(S.identities) && S.identities.length > 0;
+          var cloudHasData = parsed && Array.isArray(parsed.identities) && parsed.identities.length > 0;
+
           S = mergeStates(S, parsed);
           if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
             S.screen = 'hub';
           }
           localStorage.setItem(SK, JSON.stringify(S));
+          _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
           render();
+
+          // Push to cloud if local device had data and cloud was empty/behind
+          if (localHasData && !cloudHasData) {
+            await pushToCloud();
+          }
           return true;
         }
       } catch (e) {
+        _syncStatus = 'error'; updateSyncStatusUI();
+        console.warn('[CageBreaker Sync] Pull error:', e.message || e);
       }
       return false;
+    };
+
+    window.syncNow = async function () {
+      _syncStatus = 'syncing'; updateSyncStatusUI();
+      if (S && Array.isArray(S.identities) && S.identities.length > 0) {
+        await pushToCloud();
+      }
+      await pullFromCloud();
     };
 
     window.exportDataJSON = function () {
@@ -1921,7 +1977,7 @@
         + viewHubHtml
         + '<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">' + (S.creating ? 'Start a new identity instead' : 'Full identity exercise') + '</button>'
         + '<button class="b bd" onclick="go(\'quick-create\')" style="margin-top:0;margin-bottom:10px">Quick habit tracker \u2014 start in 30 seconds</button>'
-        + '<p class="sm" style="margin-top:12px;color:#4ede80;font-weight:600">\u2601\ufe0f Automatic Live Sync Active \u2014 open this link on any device to view</p>'
+        + '<p class="sm cloud-sync-indicator" style="margin-top:12px;color:#4ede80;font-weight:600">☁️ Live Sync</p>'
         + '</div>';
     }
 
@@ -1951,7 +2007,8 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <h2 style="margin:0">Your Identities</h2>
       <div style="display:flex;gap:6px;align-items:center">
-        <span class="sm" style="color:#4ede80;font-weight:600;margin-right:4px">☁️ Live Synced</span>
+        <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">☁️ Live Sync</span>
+        <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync Now</button>
         <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
         <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
         <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>
@@ -2591,6 +2648,7 @@
         + switcherHtml
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<button class="b bb bs" onclick="syncNow()" style="font-size:12px;padding:6px 12px" title="Push & Pull latest data instantly">🔄 Sync Now</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:6px 10px;color:#9ca3af">All Cards →</button>'
         + '</div>'
@@ -2962,6 +3020,26 @@
         S.screen = 'welcome'; save();
       }
       render();
+
+      // ── Cross-device sync: Re-pull when tab becomes visible again ──
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          pullFromCloud();
+        }
+      });
+      // ── Cross-device sync: Also re-pull on window focus (covers alt-tab) ──
+      window.addEventListener('focus', function () {
+        // Avoid double-pull if visibilitychange already fired
+        if (Date.now() - _lastSyncTime > 5000) {
+          pullFromCloud();
+        }
+      });
+      // ── Cross-device sync: Periodic background poll every 45 seconds ──
+      setInterval(function () {
+        if (document.visibilityState === 'visible') {
+          pullFromCloud();
+        }
+      }, 45000);
     });
 
     // ═══════════════════════════════════════════════
