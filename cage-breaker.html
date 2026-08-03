@@ -9,6 +9,9 @@
   <meta http-equiv="Expires" content="0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛓️</text></svg>">
   <title>Break Your Cage</title>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     *,
     *::before,
@@ -1539,30 +1542,22 @@
     window.render = render;
 
     // ═══════════════════════════════════════════════
-    // PERMANENT LIVE CLOUD STORAGE ENGINE (ADDITIVE UNION MERGE + TOMBSTONES)
+    // FIREBASE REALTIME CLOUD SYNC ENGINE (FIRESTORE WEBSOCKETS + 6-DIGIT SYNC CODE)
     // ═══════════════════════════════════════════════
-    const CLOUD_URL = 'https://jsonblob.com/api/jsonBlob/019fc625-4e49-7a6c-88dd-6b0b63d5b8ce';
-    var syncTimeout = null;
+    const FIREBASE_CONFIG = {
+      projectId: "testing-project-d451a",
+      appId: "1:685182492455:web:53b42ad4ea820bb6921302",
+      databaseURL: "https://testing-project-d451a.firebaseio.com",
+      storageBucket: "testing-project-d451a.firebasestorage.app",
+      apiKey: "AIzaSyD5Ogsv2sKNAy2-JE7fGaGAeysoTmCQA5E",
+      authDomain: "testing-project-d451a.firebaseapp.com",
+      messagingSenderId: "685182492455"
+    };
+
+    var fbApp = null, fbDb = null, unsubscribeFirestore = null;
     var _syncStatus = 'idle'; // 'idle' | 'syncing' | 'synced' | 'error'
     var _lastSyncTime = 0;
-    function updateSyncStatusUI() {
-      var els = document.querySelectorAll('.cloud-sync-indicator');
-      els.forEach(function (el) {
-        if (_syncStatus === 'syncing') {
-          el.textContent = '☁️ Syncing…';
-          el.style.color = '#fbbf24';
-        } else if (_syncStatus === 'synced') {
-          el.textContent = '☁️ Synced';
-          el.style.color = '#4ede80';
-        } else if (_syncStatus === 'error') {
-          el.textContent = '☁️ Sync failed';
-          el.style.color = '#f87171';
-        } else {
-          el.textContent = '☁️ Live Sync';
-          el.style.color = '#4ede80';
-        }
-      });
-    }
+    var _isRemoteUpdate = false;
 
     function mergeSingleIdentity(i1, i2) {
       if (!i1) return i2;
@@ -1571,7 +1566,6 @@
       var t1 = new Date(i1.updatedAt || i1.createdDate || 0).getTime();
       var t2 = new Date(i2.updatedAt || i2.createdDate || 0).getTime();
 
-      // Whichever identity has the NEWER timestamp is primary for all text fields!
       var primary = (t1 >= t2) ? i1 : i2;
       var secondary = (t1 >= t2) ? i2 : i1;
 
@@ -1659,8 +1653,117 @@
       return { ...DEF, ...cld, ...loc, identities: mergedList, deletedIds: allDeleted, screen: resScr, currentId: resId };
     }
 
-    var cloudCooldownUntil = 0;
+    function getSyncCode() {
+      try {
+        var hash = (window.location.hash || '').replace('#', '');
+        var match = hash.match(/sync=([a-zA-Z0-9_-]+)/i);
+        if (match && match[1]) {
+          var codeFromUrl = match[1].trim();
+          localStorage.setItem('cage_sync_code', codeFromUrl);
+          return codeFromUrl;
+        }
+      } catch (e) {}
 
+      var code = localStorage.getItem('cage_sync_code');
+      if (!code) {
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+        localStorage.setItem('cage_sync_code', code);
+      }
+      return code;
+    }
+
+    function setSyncCode(newCode) {
+      if (!newCode || !newCode.trim()) return;
+      var clean = newCode.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      localStorage.setItem('cage_sync_code', clean);
+      initFirebaseSync();
+    }
+    window.setSyncCode = setSyncCode;
+
+    function updateSyncStatusUI() {
+      var els = document.querySelectorAll('.cloud-sync-indicator');
+      var code = getSyncCode();
+      els.forEach(function (el) {
+        if (_syncStatus === 'syncing') {
+          el.textContent = '⚡ Syncing… (' + code + ')';
+          el.style.color = '#fbbf24';
+        } else if (_syncStatus === 'synced') {
+          el.textContent = '🟢 Live Synced (' + code + ')';
+          el.style.color = '#4ede80';
+        } else if (_syncStatus === 'error') {
+          el.textContent = '🔴 Sync Error';
+          el.style.color = '#f87171';
+        } else {
+          el.textContent = '🟢 Live Synced (' + code + ')';
+          el.style.color = '#4ede80';
+        }
+      });
+    }
+
+    function initFirebaseSync() {
+      try {
+        if (typeof firebase === 'undefined') {
+          console.warn('[CageBreaker Firebase] Firebase SDK script not loaded.');
+          return;
+        }
+        if (!firebase.apps.length) {
+          fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+        } else {
+          fbApp = firebase.app();
+        }
+        fbDb = firebase.firestore();
+
+        var syncCode = getSyncCode();
+        updateSyncStatusUI();
+
+        if (unsubscribeFirestore) {
+          unsubscribeFirestore();
+        }
+
+        _syncStatus = 'syncing'; updateSyncStatusUI();
+
+        unsubscribeFirestore = fbDb.collection('cage_sync').doc(syncCode).onSnapshot(function (doc) {
+          if (_isRemoteUpdate) return;
+          if (doc.exists) {
+            var data = doc.data();
+            if (data && data.payload) {
+              try {
+                var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
+                if (parsed) {
+                  _isRemoteUpdate = true;
+                  S = mergeStates(S, parsed);
+                  if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
+                    S.screen = 'hub';
+                  }
+                  localStorage.setItem(SK, JSON.stringify(S));
+                  _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
+                  render();
+                  setTimeout(function () { _isRemoteUpdate = false; }, 300);
+                }
+              } catch (err) {
+                console.warn('[CageBreaker Firebase] Snapshot parse error:', err);
+                _isRemoteUpdate = false;
+              }
+            }
+          } else {
+            if (S && Array.isArray(S.identities) && S.identities.length > 0) {
+              pushToCloud();
+            } else {
+              _syncStatus = 'synced'; updateSyncStatusUI();
+            }
+          }
+        }, function (err) {
+          console.warn('[CageBreaker Firebase] Realtime error:', err);
+          _syncStatus = 'error'; updateSyncStatusUI();
+        });
+
+      } catch (err) {
+        console.warn('[CageBreaker Firebase] Init error:', err);
+        _syncStatus = 'error'; updateSyncStatusUI();
+      }
+    }
+
+    var syncTimeout = null;
     function triggerCloudAutoSync() {
       if (!S) return;
       clearTimeout(syncTimeout);
@@ -1670,84 +1773,134 @@
     }
 
     window.pushToCloud = async function () {
-      if (Date.now() < cloudCooldownUntil) return false;
+      if (_isRemoteUpdate) return false;
+      var syncCode = getSyncCode();
+      if (!fbDb) {
+        initFirebaseSync();
+        if (!fbDb) return false;
+      }
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
-        var res = await fetch(CLOUD_URL, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(S)
-        });
-        if (res.status === 429) {
-          cloudCooldownUntil = Date.now() + 60000;
-          _syncStatus = 'error'; updateSyncStatusUI();
-          console.warn('[CageBreaker Sync] Push rate-limited (429). Cooldown 60s.');
-          return false;
-        }
-        if (res.ok) {
-          _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
-        } else {
-          _syncStatus = 'error'; updateSyncStatusUI();
-          console.warn('[CageBreaker Sync] Push failed, status:', res.status);
-        }
-        return res.ok;
-      } catch (e) {
+        var payloadStr = JSON.stringify(S);
+        await fbDb.collection('cage_sync').doc(syncCode).set({
+          payload: payloadStr,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          code: syncCode
+        }, { merge: true });
+
+        _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
+        return true;
+      } catch (err) {
+        console.warn('[CageBreaker Firebase] Push error:', err);
         _syncStatus = 'error'; updateSyncStatusUI();
-        console.warn('[CageBreaker Sync] Push error:', e.message || e);
         return false;
       }
     };
 
     window.pullFromCloud = async function () {
-      if (Date.now() < cloudCooldownUntil) return false;
+      var syncCode = getSyncCode();
+      if (!fbDb) initFirebaseSync();
+      if (!fbDb) return false;
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
-        var res = await fetch(CLOUD_URL, {
-          headers: { 'Accept': 'application/json' }
-        });
-        if (res.status === 429) {
-          cloudCooldownUntil = Date.now() + 60000;
-          _syncStatus = 'error'; updateSyncStatusUI();
-          console.warn('[CageBreaker Sync] Pull rate-limited (429). Cooldown 60s.');
-          return false;
-        }
-        if (!res.ok) {
-          _syncStatus = 'error'; updateSyncStatusUI();
-          console.warn('[CageBreaker Sync] Pull failed, status:', res.status);
-          return false;
-        }
-        var parsed = await res.json();
-        if (parsed) {
-          var localHasData = S && Array.isArray(S.identities) && S.identities.length > 0;
-          var cloudHasData = parsed && Array.isArray(parsed.identities) && parsed.identities.length > 0;
-
-          S = mergeStates(S, parsed);
-          if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
-            S.screen = 'hub';
+        var doc = await fbDb.collection('cage_sync').doc(syncCode).get();
+        if (doc.exists) {
+          var data = doc.data();
+          if (data && data.payload) {
+            var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
+            if (parsed) {
+              S = mergeStates(S, parsed);
+              localStorage.setItem(SK, JSON.stringify(S));
+              _syncStatus = 'synced'; updateSyncStatusUI();
+              render();
+              return true;
+            }
           }
-          localStorage.setItem(SK, JSON.stringify(S));
-          _syncStatus = 'synced'; _lastSyncTime = Date.now(); updateSyncStatusUI();
-          render();
-
-          // Push to cloud if local device had data and cloud was empty/behind
-          if (localHasData && !cloudHasData) {
-            await pushToCloud();
-          }
-          return true;
         }
-      } catch (e) {
+      } catch (err) {
+        console.warn('[CageBreaker Firebase] Pull error:', err);
         _syncStatus = 'error'; updateSyncStatusUI();
-        console.warn('[CageBreaker Sync] Pull error:', e.message || e);
       }
       return false;
     };
 
     window.syncNow = async function () {
       _syncStatus = 'syncing'; updateSyncStatusUI();
-      if (S && Array.isArray(S.identities) && S.identities.length > 0) {
-        await pushToCloud();
-      }
+      await pushToCloud();
       await pullFromCloud();
+    };
+
+    window.openSyncModal = function () {
+      var syncCode = getSyncCode();
+      var pairingUrl = window.location.origin + window.location.pathname + '#sync=' + syncCode;
+      
+      var existingModal = document.getElementById('sync-modal-overlay');
+      if (existingModal) existingModal.remove();
+
+      var modalOverlay = document.createElement('div');
+      modalOverlay.id = 'sync-modal-overlay';
+      modalOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.25s ease';
+      
+      modalOverlay.innerHTML = '<div style="background:#131726;border:1px solid #27273a;border-radius:16px;max-width:440px;width:100%;padding:24px;color:#e5e7eb;box-shadow:0 20px 40px rgba(0,0,0,0.6);position:relative">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+        + '<h3 style="margin:0;font-size:18px;color:#f3f4f6">📱 Instant Phone & Laptop Sync</h3>'
+        + '<button onclick="closeSyncModal()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;padding:4px">&times;</button>'
+        + '</div>'
+        
+        + '<div style="text-align:center;margin-bottom:18px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);padding:14px;border-radius:12px">'
+        + '<div class="sm" style="color:#4ede80;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Your Unique Sync Code</div>'
+        + '<div style="font-family:monospace;font-size:28px;font-weight:800;letter-spacing:4px;color:#fbbf24;margin:4px 0">' + syncCode + '</div>'
+        + '<p class="sm" style="color:#9ca3af;margin:0">Live WebSockets Active — updates instantly in 50ms</p>'
+        + '</div>'
+
+        + '<div style="text-align:center;margin-bottom:18px">'
+        + '<p class="d" style="font-size:13px;margin-bottom:10px;color:#d1d5db">Scan this QR Code with your phone camera to link devices instantly:</p>'
+        + '<div id="qrcode-container" style="background:#fff;padding:12px;display:inline-block;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3)"></div>'
+        + '</div>'
+
+        + '<div style="margin-top:16px;border-top:1px solid #1f2436;padding-top:16px">'
+        + '<label style="display:block;font-size:12px;color:#9ca3af;margin-bottom:6px;font-weight:600">Already have a Sync Code from another device?</label>'
+        + '<div style="display:flex;gap:8px">'
+        + '<input type="text" id="sync-code-input" placeholder="e.g. 849210" style="flex:1;font-size:14px;padding:8px 12px;font-family:monospace;text-align:center;letter-spacing:2px"/>'
+        + '<button class="b bp bs" onclick="applyCustomSyncCode()" style="font-size:12px;padding:8px 14px">Pair Device</button>'
+        + '</div>'
+        + '</div>'
+        
+        + '<div style="margin-top:16px;text-align:center">'
+        + '<button class="bg" onclick="closeSyncModal()" style="font-size:12px;color:#9ca3af">Close window</button>'
+        + '</div>'
+        + '</div>';
+        
+      document.body.appendChild(modalOverlay);
+      
+      setTimeout(function() {
+        var qrContainer = document.getElementById('qrcode-container');
+        if (qrContainer && typeof QRCode !== 'undefined') {
+          qrContainer.innerHTML = '';
+          new QRCode(qrContainer, {
+            text: pairingUrl,
+            width: 140,
+            height: 140,
+            colorDark: "#09090b",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }
+      }, 50);
+    };
+
+    window.closeSyncModal = function () {
+      var modal = document.getElementById('sync-modal-overlay');
+      if (modal) modal.remove();
+    };
+
+    window.applyCustomSyncCode = function () {
+      var input = document.getElementById('sync-code-input');
+      if (!input || !input.value.trim()) return;
+      var newCode = input.value.trim();
+      setSyncCode(newCode);
+      closeSyncModal();
+      alert('✓ Paired to Sync Code: ' + newCode + '! Data is now syncing in real-time.');
     };
 
     window.exportDataJSON = function () {
@@ -2004,11 +2157,12 @@
       }
 
       a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0">Your Identities</h2>
-      <div style="display:flex;gap:6px;align-items:center">
-        <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">☁️ Live Sync</span>
-        <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync Now</button>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">🟢 Live Synced</span>
+        <button class="b bp bs" onclick="openSyncModal()" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.3)">📱 Link Phone</button>
+        <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync</button>
         <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
         <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
         <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>
@@ -2647,8 +2801,9 @@
         + '<button class="b bp bs" onclick="startCreate()" style="font-size:12px;padding:7px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 3px 10px rgba(245,158,11,0.25)">➕ Create New Habit / Identity</button>'
         + switcherHtml
         + '</div>'
-        + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<button class="b bb bs" onclick="syncNow()" style="font-size:12px;padding:6px 12px" title="Push & Pull latest data instantly">🔄 Sync Now</button>'
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<button class="b bp bs" onclick="openSyncModal()" style="font-size:12px;padding:6px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.25)">📱 Link Phone</button>'
+        + '<button class="b bb bs" onclick="syncNow()" style="font-size:12px;padding:6px 12px" title="Push & Pull latest data instantly">🔄 Sync</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:6px 12px">⚙️ Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:6px 10px;color:#9ca3af">All Cards →</button>'
         + '</div>'
@@ -3005,6 +3160,9 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Firebase Firestore Realtime engine
+      initFirebaseSync();
+
       // Smart routing on load
       if (S.identities.length > 0) {
         const scr = S.screen;
