@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(resourceData) {
+      return isAuthenticated() && resourceData.owner == request.auth.uid;
+    }
+    
+    function hasAccess(resourceData, level) {
+      return isOwner(resourceData) ||
+             (level == 'read' && (resourceData.collaborators[request.auth.token.email] == 'read' || resourceData.collaborators[request.auth.token.email] == 'edit')) ||
+             (level == 'edit' && resourceData.collaborators[request.auth.token.email] == 'edit');
+    }
+    
+
+    match /timelines/{timelineId} {
+      // Public read — anyone with the link can view (like Google Sheets)
+      allow read: if true;
+      
+      // Allow create if authenticated and claiming ownership
+      allow create: if isAuthenticated() && (
+        request.resource.data.owner == request.auth.uid
+      );
+      
+      // Allow update if they are owner or have 'edit' access
+      allow update: if isAuthenticated() && (
+        (!('owner' in resource.data) && request.resource.data.owner == request.auth.uid) ||
+        isOwner(resource.data) || 
+        hasAccess(resource.data, 'edit')
+      );
+      
+      match /presence/{userId} {
+        // Public read & write — anonymous and logged-in viewers can broadcast presence
+        allow read: if true;
+        allow write, delete: if true;
+      }
+      
+    }
+    
+    // Top-level requests collection
+    match /requests/{requestId} {
+      // Anyone authenticated can create a request for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Owner of the referenced timeline can read and delete requests
+      // Users can also read their own requests (to show "Request Sent" state)
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isOwner(get(/databases/$(database)/documents/timelines/$(resource.data.timelineId)).data)
+      );
+      allow delete: if isAuthenticated() && (
+        isOwner(get(/databases/$(database)/documents/timelines/$(resource.data.timelineId)).data)
+      );
+    }
+  }
+}

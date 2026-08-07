@@ -1,0 +1,24 @@
+{
+  "name": "Wedding Timeline Planner",
+  "short_name": "Wedding Plan",
+  "description": "Collaborative wedding timeline planner — plan your perfect day together in real-time.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#202124",
+  "theme_color": "#202124",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
