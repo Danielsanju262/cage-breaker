@@ -1649,7 +1649,33 @@ const app = {
     toggleTask(taskId) {
         this.modifyStateAndRender('Toggled task completion', () => {
             const task = state.tasks.find(t => t.id === taskId);
-            if (task) task.completed = !task.completed;
+            if (task) {
+                task.completed = !task.completed;
+
+                // Sync parent event completion if all tasks in the event are completed
+                const parentCat = (state.categories || []).find(c => c.id === task.categoryId);
+                if (parentCat) {
+                    const parentEvent = (state.events || []).find(e => e.id === parentCat.eventId);
+                    if (parentEvent) {
+                        const eventCatIds = new Set(
+                            (state.categories || [])
+                                .filter(c => c.eventId === parentEvent.id)
+                                .map(c => c.id)
+                        );
+                        const eventTasks = (state.tasks || []).filter(t => eventCatIds.has(t.categoryId));
+                        if (eventTasks.length > 0) {
+                            const allCompleted = eventTasks.every(t => t.completed);
+                            if (allCompleted && !parentEvent.completed) {
+                                parentEvent.completed = true;
+                                parentEvent.completedAt = Date.now();
+                            } else if (!allCompleted && parentEvent.completed) {
+                                parentEvent.completed = false;
+                                delete parentEvent.completedAt;
+                            }
+                        }
+                    }
+                }
+            }
         });
     },
 
@@ -1658,6 +1684,11 @@ const app = {
             const event = state.events.find(e => e.id === eventId);
             if (event) {
                 event.completed = !event.completed;
+                if (event.completed) {
+                    event.completedAt = Date.now();
+                } else {
+                    delete event.completedAt;
+                }
                 const eventCatIds = new Set(
                     (state.categories || [])
                         .filter(c => c.eventId === eventId)
@@ -2468,10 +2499,16 @@ const app = {
                 onEnd: (evt) => {
                     const eventEls = Array.from(eventsListEl.querySelectorAll(':scope > .event-block'));
                     this.modifyStateAndRender('Reordered events', () => {
+                        const now = Date.now();
                         eventEls.forEach((el, idx) => {
                             const evId = el.getAttribute('data-event-id');
                             const ev = state.events.find(e => e.id === evId);
-                            if (ev) ev.order = idx;
+                            if (ev) {
+                                ev.order = idx;
+                                if (ev.completed) {
+                                    ev.completedAt = now - (eventEls.length - idx) * 1000;
+                                }
+                            }
                         });
                     });
                 }
@@ -2579,13 +2616,21 @@ const app = {
                 return evTitleMatch || matchingCats.length > 0;
             });
 
-            // Sort events by day order first, then by event order
+            // Sort events by day order first, then by completed status and event order
             const daysMap = new Map((state.days || []).map((d, idx) => [d.id, d.order !== undefined ? d.order : idx]));
             activeEvents.sort((a, b) => {
                 const dayOrderA = daysMap.get(a.dayId) ?? 999;
                 const dayOrderB = daysMap.get(b.dayId) ?? 999;
                 if (dayOrderA !== dayOrderB) return dayOrderA - dayOrderB;
-                return (a.order || 0) - (b.order || 0);
+
+                const compA = a.completed ? 1 : 0;
+                const compB = b.completed ? 1 : 0;
+                if (compA !== compB) return compA - compB;
+                if (!a.completed) {
+                    return (a.order ?? 0) - (b.order ?? 0) || (a.createdAt ?? 0) - (b.createdAt ?? 0) || a.id.localeCompare(b.id);
+                } else {
+                    return (a.completedAt ?? a.order ?? 0) - (b.completedAt ?? b.order ?? 0) || (a.order ?? 0) - (b.order ?? 0) || a.id.localeCompare(b.id);
+                }
             });
 
             if (activeEvents.length === 0) {
@@ -2602,7 +2647,16 @@ const app = {
         } else {
             activeEvents = events
                 .filter(e => e.dayId === state.activeDayId)
-                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt ?? 0) - (b.createdAt ?? 0) || a.id.localeCompare(b.id));
+                .sort((a, b) => {
+                    const compA = a.completed ? 1 : 0;
+                    const compB = b.completed ? 1 : 0;
+                    if (compA !== compB) return compA - compB;
+                    if (!a.completed) {
+                        return (a.order ?? 0) - (b.order ?? 0) || (a.createdAt ?? 0) - (b.createdAt ?? 0) || a.id.localeCompare(b.id);
+                    } else {
+                        return (a.completedAt ?? a.order ?? 0) - (b.completedAt ?? b.order ?? 0) || (a.order ?? 0) - (b.order ?? 0) || a.id.localeCompare(b.id);
+                    }
+                });
         }
 
         if (activeEvents.length === 0) {
@@ -2610,17 +2664,10 @@ const app = {
             return;
         }
 
-        // Find the last consecutive completed event from the top for timeline fill
-        let lastCompletedIndex = -1;
-        for (let i = 0; i < activeEvents.length; i++) {
-            if (activeEvents[i].completed) lastCompletedIndex = i;
-            else break;
-        }
-
-        let activeEventIndex = lastCompletedIndex + 1;
-        if (activeEventIndex >= activeEvents.length && activeEvents.length > 0) {
-            activeEventIndex = activeEvents.length - 1;
-        }
+        // Active event is the first uncompleted event, or the last event if all are completed
+        let firstUncompletedIdx = activeEvents.findIndex(e => !e.completed);
+        let activeEventIndex = firstUncompletedIdx !== -1 ? firstUncompletedIdx : (activeEvents.length - 1);
+        let lastCompletedIndex = activeEvents.reduce((last, e, idx) => e.completed ? idx : last, -1);
 
         this.eventsList.innerHTML = activeEvents.map((event, index) => {
             let categories = (state.categories || [])
