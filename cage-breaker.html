@@ -1296,7 +1296,57 @@
       line-height: 1.55;
       overflow-wrap: break-word;
       word-break: normal;
-      white-space: pre-wrap
+    /* Daily Greatest Crack Modal */
+    #greatest-crack-modal.modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 11, 20, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    #greatest-crack-modal .gc-modal-card {
+      background: #0f1423;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(245, 158, 11, 0.2);
+      margin: auto;
+      max-height: 90vh;
+      width: 100%;
+      max-width: 560px;
+    }
+    .gc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .gc-card-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid #282f45;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+    .gc-card-box-green {
+      background: rgba(74, 222, 128, 0.05);
+      border: 1px solid rgba(74, 222, 128, 0.25);
     }
   </style>
 </head>
@@ -1353,17 +1403,75 @@
       }, 0);
     }
 
+    const STAGES_25 = [
+      { level: 1, max: 5, name: "Lvl 1: Spark of Intent", desc: "First crack declared. Proof is beginning." },
+      { level: 2, max: 15, name: "Lvl 2: Fragile Momentum", desc: "Early steps. Resistance will attempt to return." },
+      { level: 3, max: 30, name: "Lvl 3: Taking Root", desc: "The old identity feels slight tremors of change." },
+      { level: 4, max: 50, name: "Lvl 4: Pattern Disrupter", desc: "You are actively breaking old habit loops." },
+      { level: 5, max: 80, name: "Lvl 5: Cage Fracture", desc: "The bars of the old cage are visibly weakening." },
+      { level: 6, max: 120, name: "Lvl 6: Solidifying Will", desc: "Evidence is accumulating day by day." },
+      { level: 7, max: 170, name: "Lvl 7: Resilient Identity", desc: "Distractions and cravings are losing power." },
+      { level: 8, max: 230, name: "Lvl 8: Mindset Shift", desc: "New identity choices are becoming natural." },
+      { level: 9, max: 300, name: "Lvl 9: Deep Anchoring", desc: "The old pattern is fading into memory." },
+      { level: 10, max: 390, name: "Lvl 10: Iron Foundation", desc: "Double-digit mastery! You have built real grit." },
+      { level: 11, max: 500, name: "Lvl 11: Steel Will", desc: "Escalating challenge. Consistency is your armor." },
+      { level: 12, max: 630, name: "Lvl 12: Unbending Resolve", desc: "Old temptations no longer move you easily." },
+      { level: 13, max: 780, name: "Lvl 13: Identity Architect", desc: "You actively design your daily decisions." },
+      { level: 14, max: 950, name: "Lvl 14: Dominant Trajectory", desc: "Progress feels deliberate and unstoppable." },
+      { level: 15, max: 1150, name: "Lvl 15: Halfway Sovereign", desc: "Massive milestone! Over 1,000 proof points built." },
+      { level: 16, max: 1400, name: "Lvl 16: Unshakable Focus", desc: "High-level mastery requiring deep focus." },
+      { level: 17, max: 1700, name: "Lvl 17: Vanguard Mindset", desc: "Leading yourself with complete clarity." },
+      { level: 18, max: 2050, name: "Lvl 18: Fortress of Habit", desc: "Extremely difficult to break. True discipline." },
+      { level: 19, max: 2450, name: "Lvl 19: Master of Impulse", desc: "Impervious to old triggers and excuses." },
+      { level: 20, max: 2900, name: "Lvl 20: Titan Identity", desc: "Level 20 Elite! A powerhouse of personal proof." },
+      { level: 21, max: 3450, name: "Lvl 21: Legendary Willpower", desc: "Escalating requirements test your ultimate conviction." },
+      { level: 22, max: 4100, name: "Lvl 22: Mythic Consistency", desc: "Over 4,000 points. You operate on a higher plane." },
+      { level: 23, max: 4850, name: "Lvl 23: Grandmaster", desc: "Sublime mastery over your actions and identity." },
+      { level: 24, max: 5750, name: "Lvl 24: Apex Threshold", desc: "The final stretch before total transcendence." },
+      { level: 25, max: Infinity, name: "Lvl 25: Apex Transcendent", desc: "Ultimate Peak! The old cage is completely erased." }
+    ];
+
     function getStage(n) {
-      var pts = (typeof n === 'object') ? getEvidencePoints(n) : (parseInt(n) || 0);
-      if (pts === 0) return { name: "Declared", desc: "Just words for now. Start creating proof.", pct: 3 };
-      if (pts <= 6) return { name: "Fragile", desc: "First cracks are forming. Keep going.", pct: 8 };
-      if (pts <= 15) return { name: "Taking Root", desc: "Patterns are starting to form.", pct: 20 };
-      if (pts <= 28) return { name: "Building", desc: "The old cage is weakening.", pct: 38 };
-      if (pts <= 45) return { name: "Solidifying", desc: "Your new identity is becoming real.", pct: 52 };
-      if (pts <= 65) return { name: "Strong", desc: "This is starting to feel like who you are.", pct: 67 };
-      if (pts <= 120) return { name: "Rooted", desc: "The old identity is losing its grip.", pct: 82 };
-      if (pts <= 180) return { name: "Natural", desc: "This isn't effort anymore. It's you.", pct: 93 };
-      return { name: "Unshakeable", desc: "The cage is gone.", pct: 100 };
+      var pts = 0;
+      if (typeof n === 'object' && n !== null) {
+        pts = getEvidencePoints(n);
+      } else {
+        pts = parseInt(n) || 0;
+      }
+
+      var stage = STAGES_25[0];
+      var stageIdx = 0;
+
+      for (var i = 0; i < STAGES_25.length; i++) {
+        if (pts <= STAGES_25[i].max) {
+          stage = STAGES_25[i];
+          stageIdx = i;
+          break;
+        }
+      }
+      if (pts > STAGES_25[STAGES_25.length - 2].max) {
+        stage = STAGES_25[STAGES_25.length - 1];
+        stageIdx = STAGES_25.length - 1;
+      }
+
+      var levelMin = (stageIdx === 0) ? 0 : STAGES_25[stageIdx - 1].max + 1;
+      var levelMax = stage.max;
+      var ptsInLevel = Math.max(0, pts - levelMin);
+      var levelSpan = (levelMax === Infinity) ? 1000 : (levelMax - levelMin + 1);
+      var levelPct = Math.min(100, Math.round((ptsInLevel / levelSpan) * 100));
+      var overallPct = Math.min(100, Math.round(((stageIdx + (levelPct / 100)) / 25) * 100));
+
+      return {
+        level: stage.level,
+        maxLevel: 25,
+        name: stage.name,
+        desc: stage.desc,
+        pct: Math.max(3, overallPct),
+        levelPct: levelPct,
+        pts: pts,
+        nextPts: stage.max === Infinity ? pts : stage.max + 1,
+        minPts: levelMin
+      };
     }
 
     function renderWeightBadge(w) {
@@ -1466,11 +1574,9 @@
     function save(immediate) {
       try {
         S._updatedAt = Date.now();
-        const id = cur();
+        const id = getCurRef();
         if (id) {
           id.updatedAt = new Date().toISOString();
-          const idx = (S.identities || []).findIndex(i => i && i.id === id.id);
-          if (idx >= 0) S.identities[idx] = id;
         }
         const data = JSON.stringify(S);
         localStorage.setItem(SK, data);
@@ -1536,13 +1642,12 @@
       const scr = S.screen;
       if (scr === 'welcome') return rWelcome(a);
       if (scr === 'hub') return rHub(a);
-      if (scr.startsWith('create-')) return rCreate(a, scr);
+      if (scr.startsWith('create-') || scr === 'quick-create') return rQuickCreate(a);
       if (scr === 'identity') return rIdentity(a);
       if (scr === 'practice') return rPractice(a);
       if (scr === 'reflect') return rReflect(a);
       if (scr === 'history') return rHistory(a);
       if (scr === 'manage') return rManage(a);
-      if (scr === 'quick-create') return rQuickCreate(a);
       if (scr === 'quick') return rQuick(a);
       if (scr === 'goal') return rGoal(a);
       rWelcome(a);
@@ -1610,9 +1715,17 @@
       const mergedOldEvidence = [...new Set([...(i1.oldEvidence || []), ...(i2.oldEvidence || [])])];
       const mergedActions = [...new Set([...(i1.actions || []), ...(i2.actions || [])])];
 
+      var mergedDailyCrack = i1.dailyCrack || i2.dailyCrack || null;
+      if (i1.dailyCrack && i2.dailyCrack) {
+        var d1 = i1.dailyCrack.date || '';
+        var d2 = i2.dailyCrack.date || '';
+        mergedDailyCrack = (d1 >= d2) ? i1.dailyCrack : i2.dailyCrack;
+      }
+
       return {
         ...secondary,
         ...primary,
+        dailyCrack: mergedDailyCrack,
         logs: mergedLogs,
         habits: mergedHabits,
         reflections: mergedReflections,
@@ -2044,26 +2157,6 @@
       const d = daysOld(id);
       return PROMPTS[d % PROMPTS.length];
     }
-    function filledB() { return (S.creating?.behaviors || []).filter(b => b.trim()) }
-    function renderFeelingChips(c) {
-      var h = '';
-      FEELINGS.forEach(function (f) {
-        h += '<button class="ch ' + (c.feelings.includes(f.id) ? 'on' : '') + '" onclick="tF(\'' + f.id + '\')"><div class="chl">' + f.l + '</div><div class="chd">' + f.d + '</div></button>';
-      });
-      (c.customFeelings || []).forEach(function (cf, i) {
-        h += '<div class="ch on" style="display:flex;justify-content:space-between;align-items:center"><div><div class="chl">' + e(cf) + '</div><div class="chd">Your own feeling</div></div><button class="ev-del" onclick="delCustomFeeling(' + i + ')">×</button></div>';
-      });
-      h += '<div style="display:flex;gap:8px;margin-top:6px"><input type="text" id="custom-feeling" placeholder="Or type your own feeling…" style="flex:1;font-size:13px;padding:10px 12px"/><button class="b bp bs" onclick="addCustomFeeling()">Add</button></div>';
-      return h;
-    }
-    function renderOldEvList(c) {
-      var evs = c.oldEvidence || []; if (!evs.length) return '';
-      return evs.map(function (ev, i) { return '<div class="ev-item"><span class="ev-text">' + e(ev) + '</span><button class="ev-edit" onclick="editOldEv(' + i + ', this)">edit</button><button class="ev-del" onclick="delOldEv(' + i + ')">delete</button></div>' }).join('');
-    }
-    function renderActionList(acts) {
-      if (!acts || !acts.length) return '';
-      return acts.map(function (ac, i) { return '<div class="act-item"><span class="act-text">' + e(ac) + '</span><button class="ev-del" onclick="delAction(' + i + ')">delete</button></div>' }).join('');
-    }
     function getHabitsToday(id) { if (!id.habits) return 0; const t = today(); return id.habits.filter(h => h.checks && h.checks.some(c => c.split('T')[0] === t)).length }
 
     function renderStrongExampleCard(textareaId, habitName) {
@@ -2097,20 +2190,6 @@
     // WELCOME
     // ═══════════════════════════════════════════════
     function rWelcome(a) {
-      var resumeHtml = '';
-      if (S.creating) {
-        var step = 'the beginning';
-        if (S.creating.path) step = 'Step 1';
-        if (S.creating.behaviors && S.creating.behaviors.some(function (b) { return b.trim() })) step = 'Step 2';
-        if (S.creating.oldIdentity && S.creating.oldIdentity.trim()) step = 'Step 3';
-        if (S.creating.antiVisionText && S.creating.antiVisionText.trim()) step = 'Step 4';
-        if (S.creating.newIdentity && S.creating.newIdentity.trim()) step = 'Step 5';
-        resumeHtml = '<div class="rfc" style="width:100%;max-width:440px;margin-bottom:20px;text-align:left">'
-          + '<p class="d" style="margin-bottom:10px">You have an identity exercise in progress (at ' + step + ').</p>'
-          + '<button class="b bp bs" onclick="resumeCreate()">Continue where I left off</button>'
-          + '<button class="bg" style="margin-left:10px" onclick="discardCreate();render()">Discard</button>'
-          + '</div>';
-      }
       var viewHubHtml = '';
       if (S.identities && S.identities.length > 0) {
         viewHubHtml = '<div style="margin-bottom:16px;width:100%;max-width:440px;margin-left:auto;margin-right:auto">'
@@ -2125,12 +2204,9 @@
         + '</svg>'
         + '<h1>Break Your Cage</h1>'
         + '<p class="d" style="max-width:440px;margin:14px auto 18px">You are not lazy. You are not broken. You are living inside a familiar identity that keeps you stuck \u2014 and today, you crack it open.</p>'
-        + '<p class="h" style="max-width:420px;margin:0 auto 10px">A guided 5-step practice based on the psychology of Quantum Change. Everything is saved locally on your device \u2014 no server, no account, completely private and offline.</p>'
-        + '<p class="sm" style="margin-bottom:20px;font-style:italic">Allow 15\u201320 minutes of honest reflection.</p>'
-        + resumeHtml
+        + '<p class="h" style="max-width:420px;margin:0 auto 20px">Break old patterns and build powerful new identities with daily proof. Everything is saved locally on your device \u2014 no server, no account, completely private and offline.</p>'
         + viewHubHtml
-        + '<button class="b bp" onclick="startCreate()" style="margin-bottom:10px">' + (S.creating ? 'Start a new identity instead' : 'Full identity exercise') + '</button>'
-        + '<button class="b bd" onclick="go(\'quick-create\')" style="margin-top:0;margin-bottom:10px">Quick habit tracker \u2014 start in 30 seconds</button>'
+        + '<button class="b bp" onclick="go(\'quick-create\')" style="width:100%;max-width:440px;padding:15px;font-size:15px;font-weight:700;margin-bottom:10px">+ Create New Habit / Identity</button>'
         + '<p class="sm cloud-sync-indicator" style="margin-top:12px;color:#4ede80;font-weight:600">☁️ Live Sync</p>'
         + '</div>';
     }
@@ -2148,15 +2224,6 @@
         return al - bl;
       });
 
-      let resumeBanner = '';
-      if (S.creating) {
-        resumeBanner = `<div class="rfc">
-      <p class="d" style="margin-bottom:10px">You have an identity exercise in progress.</p>
-      <button class="b bp bs" onclick="resumeCreate()">Continue where I left off</button>
-      <button class="bg" style="margin-left:10px" onclick="discardCreate()">Discard it</button>
-    </div>`;
-      }
-
       a.innerHTML = `<div class="fade">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0">Your Identities</h2>
@@ -2168,11 +2235,10 @@
         <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>
       </div>
     </div>
-    <p class="d">${ids.length === 0 ? 'You haven\'t created any identities yet. Start your first exercise below.' : ids.length + ' identity' + (ids.length > 1 ? 's' : '')}</p>
-    ${resumeBanner}
+    <p class="d">${ids.length === 0 ? 'You haven\'t created any habits or identities yet. Start by creating one below.' : ids.length + ' identity' + (ids.length > 1 ? 's' : '')}</p>
     ${ids.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">\u26a1 Quick add evidence</button></div>' : ''}
     ${sorted.map(id => {
-        const st = getStage(id.logs.length);
+        const st = getStage(id);
         const streak = getStreak(id);
         const logged = loggedToday(id);
         const days = daysOld(id);
@@ -2191,409 +2257,32 @@
         </div>
       </div>`}).join('')}
     <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
-      <button class="b bd" onclick="startCreate()" style="flex:1;min-width:200px;text-align:center">+ Full identity exercise</button>
-      <button class="b bp" onclick="go('quick-create')" style="flex:1;min-width:200px;text-align:center">+ Quick habit tracker</button>
+      <button class="b bp" onclick="go('quick-create')" style="flex:1;min-width:200px;text-align:center">+ Create New Habit / Identity</button>
     </div>
   </div>`;
     }
 
-    window.openIdentity = function (id) { S.currentId = id; save(); go('identity') };
+    window.openIdentity = function (id) {
+      S.currentId = id;
+      save();
+      go('identity');
+    };
     window.startCreate = function () {
-      S.creating = { path: null, behaviors: ['', '', ''], feelings: [], customFeelings: [], oldIdentity: '', oldEvidence: [], antiVisionText: '', newIdentity: '', dayVisionText: '', crackAction: '', actions: [] };
-      save(); go('create-path');
+      go('quick-create');
     };
     window.resumeCreate = function () {
-      // figure out which step to resume
-      const c = S.creating;
-      if (!c) return startCreate();
-      if (!c.path) return go('create-path');
-      if (!c.behaviors.some(b => b.trim())) return go('create-step1');
-      if (!c.oldIdentity.trim()) return go('create-step2');
-      if (!c.antiVisionText.trim()) return go('create-step3');
-      if (!c.newIdentity.trim()) return go('create-step4');
-      return go('create-step5');
+      go('quick-create');
     };
-    window.discardCreate = function () { S.creating = null; save(); render() };
-
-    // ═══════════════════════════════════════════════
-    // CREATION FLOW
-    // ═══════════════════════════════════════════════
-    function rCreate(a, scr) {
-      const c = S.creating;
-      if (!c) return go(S.identities.length ? 'hub' : 'welcome');
-      if (scr === 'create-path') return rCPath(a, c);
-      if (scr === 'create-step1') return rCS1(a, c);
-      if (scr === 'create-step2') return rCS2(a, c);
-      if (scr === 'create-step3') return rCS3(a, c);
-      if (scr === 'create-step4') return rCS4(a, c);
-      if (scr === 'create-step5') return rCS5(a, c);
-      if (scr === 'create-done') return rCDone(a);
-      go('hub');
-    }
-    function backTarget() { return S.identities.length ? 'hub' : 'welcome' }
-
-    // PATH
-    function rCPath(a, c) {
-      a.innerHTML = `<div class="fade">
-    <div class="sn">BEFORE WE START</div>
-    <h2>What brings you here?</h2>
-    <p class="d" style="margin-bottom:20px">Pick the one that feels closest. This shapes the examples you'll see throughout.</p>
-    ${Object.entries(PATHS).map(([k, p]) => `<button class="pc" onclick="pickPath('${k}')"><h3>${e(p.title)}</h3><p>${e(p.desc)}</p></button>`).join('')}
-    <div class="nav"><button class="b bb" onclick="go('${backTarget()}')">Back</button><div></div></div>
-  </div>`;
-    }
-    window.pickPath = function (k) { S.creating.path = k; save(); go('create-step1') };
-
-    // STEP 1
-    function rCS1(a, c) {
-      const p = PATHS[c.path] || PATHS.habit;
-      const ok = c.behaviors.some(b => b.trim());
-      a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 1 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
-    <h2>Name Your Chains</h2>
-    <p class="d">What do you keep doing even though you <em>know</em> it's hurting you? The things you repeat, feel guilty about, then repeat again. No judgment — just name them.</p>
-    <div id="blist">${c.behaviors.map((b, i) => `<div class="ir"><span class="inum">${i + 1}</span><input type="text" value="${e(b)}" placeholder="${e(p.ph[i] || 'Another pattern…')}" oninput="uB(${i},this.value)"/></div>`).join('')}</div>
-    ${c.behaviors.length < 6 ? '<button class="bg" onclick="addB()" style="margin-top:2px">+ Add another</button>' : ''}
-    <div class="nav"><button class="b bb" onclick="go('create-path')">Back</button><button class="b ${ok ? 'bp' : 'bx'}" id="s1n" ${ok ? 'onclick="pS1()"' : ''}>Next — Find the Pattern</button></div>
-  </div>`;
-    }
-    window.uB = function (i, v) { S.creating.behaviors[i] = v; save(); const ok = S.creating.behaviors.some(b => b.trim()); const btn = $('#s1n'); if (btn) { btn.className = 'b ' + (ok ? 'bp' : 'bx'); ok ? btn.setAttribute('onclick', 'pS1()') : btn.removeAttribute('onclick') } };
-    window.addB = function () { S.creating.behaviors.push(''); save(); render() };
-    window.pS1 = function () { S.creating.behaviors = S.creating.behaviors.filter(b => b.trim()); if (!S.creating.behaviors.length) return; save(); go('create-step2') };
-
-    // STEP 2
-    function rCS2(a, c) {
-      const behaviors = c.behaviors.filter(b => b.trim());
-      const hasFeelings = c.feelings.length > 0 || (c.customFeelings || []).length > 0;
-      const hasId = c.oldIdentity.trim().length > 0;
-      const hasEv = (c.oldEvidence || []).length > 0;
-      const ok = hasFeelings && hasId && hasEv;
-
-      a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 2 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
-    <h2>Find Your Cage</h2>
-    <p class="d">Look at what you listed:</p>
-    <div class="c cd" style="margin-bottom:16px">${behaviors.map(b => `<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#9ca3af">•</span><span style="color:#f3f4f6;font-size:14px">${e(b)}</span></div>`).join('')}</div>
-    <p class="d">When you do these things, what do they <em>give</em> you? What feeling keeps you coming back? Pick all that fit:</p>
-    <div id="flist">${renderFeelingChips(c)}</div>
-    <div id="s2part2">${(c.feelings.length > 0 || (c.customFeelings || []).length > 0) ? s2Part2(c) : ''}</div>
-    ${!ok ? '<p class="sm" style="color:#f87171;margin-top:16px">To continue: '
-          + (!hasFeelings ? 'select at least one feeling above' : '')
-          + (hasFeelings && !hasId ? 'write your old identity statement' : '')
-          + (hasFeelings && hasId && !hasEv ? 'add at least one piece of evidence for your old identity' : '')
-          + '</p>' : ''}
-    <div class="nav"><button class="b bb" onclick="go('create-step1')">Back</button><button class="b ${ok ? 'bp' : 'bx'}" id="s2n">Next — Face the Anti-Vision</button></div>
-  </div>`;
-      setTimeout(bindS2, 0);
-    }
-    function s2Part2(c) {
-      const allFeelings = [...c.feelings.map(f => FEELINGS.find(x => x.id === f)?.l || f), ...(c.customFeelings || [])];
-      const names = allFeelings.join(', ').toLowerCase();
-      const hasId = c.oldIdentity.trim().length > 0;
-      return `<div style="margin-top:28px">
-    <p class="d">The thread connecting your patterns is <strong style="color:#fbbf24">${names}</strong>. These aren't just habits — they're an identity built around staying in the known.</p>
-    <p class="d">Capture that identity in one honest sentence:</p>
-    <p class="h">Complete this: <strong>"I am someone who…"</strong></p>
-      <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#d1d5db;line-height:1.6">
-        <strong style="color:#f3f4f6">Examples:</strong><br>
-        • "I am someone who always picks the safe option because I'm terrified of failing."<br>
-        • "I am someone who hides behind busyness to avoid doing the hard, meaningful work."<br>
-        • "I am someone who stays in my comfort zone because change feels too risky."
-      </div>
-    <textarea rows="3" id="oi" placeholder='e.g., "I am someone who always picks what feels safe over what actually matters to me."' oninput="uOI_live(this.value)">${e(c.oldIdentity)}</textarea>
-    <div id="cage-preview">
-    ${hasId ? `<div class="c cr" style="margin-top:18px"><div class="cl clr">YOUR CAGE</div><p class="cq" style="color:#ff8f70">"${e(c.oldIdentity.trim())}"</p><p class="h" style="margin-top:10px;margin-bottom:0">This is the invisible identity running your decisions.</p></div>` : ''}
-    </div>
-          <div style="margin-top:20px">
-            <label class="lb">What evidence supports this old belief?</label>
-            <p class="h">List real moments, patterns, or incidents that prove this old identity has been running your life. At least one — the more honest, the more powerful the exercise.</p>
-            <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#d1d5db;line-height:1.6">
-              <strong style="color:#f3f4f6">Examples:</strong><br>
-              • "I had a startup idea 2 years ago and never opened the folder again."<br>
-              • "Every time I get motivated, I quit within 2 weeks."<br>
-              • "I chose a stable job over what excited me because my parents said so."
-            </div>
-            <div id="old-ev-list">${renderOldEvList(c)}</div>
-            <div id="old-ev-add" style="margin-top:8px">
-              <div style="display:flex;gap:8px"><input type="text" id="old-ev-input" placeholder="e.g., I've said 'I'll start Monday' at least 50 times…" style="flex:1"/><button class="b bp bs" onclick="addOldEv()">Add</button></div>
-            </div>
-            ${(c.oldEvidence || []).length === 0 ? '<p class="sm" style="margin-top:8px;color:#c9785a">Add at least one piece of evidence to continue.</p>' : ''}
-          </div>
-  </div>`;
-    }
-    window.tF = function (id) {
-      const f = S.creating.feelings;
-      const i = f.indexOf(id);
-      if (i >= 0) f.splice(i, 1); else f.push(id);
-      save(); render();
-    };
-    window.uOI_live = function (v) {
-      S.creating.oldIdentity = v; save();
-      var cagePrev = $('#cage-preview');
-      if (cagePrev) {
-        var trimmed = v.trim();
-        if (trimmed.length > 0) {
-          cagePrev.innerHTML = '<div class="c cr" style="margin-top:18px"><div class="cl clr">YOUR CAGE</div><p class="cq" style="color:#c9785a">"' + e(trimmed) + '"</p><p class="h" style="margin-top:10px;margin-bottom:0">This is the invisible identity running your decisions.</p></div>';
-        } else {
-          cagePrev.innerHTML = '';
-        }
-      }
-      bindS2();
-    };
-    window.uOI = function (v) { S.creating.oldIdentity = v; save() };
-
-    // Post-render bindings for step 2
-    function bindS2() {
-      const btn = $('#s2n');
-      if (!btn) return;
-      const c = S.creating;
-      const hasFeelings = c.feelings.length > 0 || (c.customFeelings || []).length > 0;
-      const hasId = c.oldIdentity.trim().length > 0;
-      const hasEv = (c.oldEvidence || []).length > 0;
-      const ok = hasFeelings && hasId && hasEv;
-      btn.className = 'b ' + (ok ? 'bp' : 'bx');
-      if (ok) btn.onclick = function () { go('create-step3') }; else btn.onclick = null;
-    }
-
-    // STEP 3 — ANTI-VISION
-    function rCS3(a, c) {
-      const has = c.antiVisionText.trim().length > 0;
-      a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><button class="bg" onclick="go('create-step2')">← Back to Step 2</button><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
-    <div class="sn">Step 3 of 5</div>
-    <h2>The Anti-Vision</h2>
-    <p class="d">This is the hardest step — and the most powerful. You'll project your current identity 10 years forward and <em>feel</em> where it leads. Not to punish yourself, but because change starts when the cost of staying the same becomes real.</p>
-    <p class="d">Find a quiet moment. We'll begin with a few breaths, then walk through the visualization. Each line stays for about 8–10 seconds so you can absorb it.</p>
-    <div id="avz" style="margin-top:22px">
-      <button class="b bd" onclick="avBreath()">I'm ready — begin the visualization</button>
-      ${has ? '<button class="bg" style="display:block;margin-top:8px" onclick="avWrite()">Skip to editing my previous response</button>' : ''}
-    </div>
-    <div id="avn" style="display:none;margin-top:24px"><button class="b bx" id="s3n">Next — Choose Who You'll Become</button></div>
-  </div>`;
-    }
-
-    window.avBreath = function () {
-      const z = $('#avz');
-      z.innerHTML = `<div class="bw-wrap fade"><div class="bw-ring"><div class="bw-dot"></div></div><p class="bw-txt" id="bl">Breathe in slowly…</p><p class="sm" id="bc">1 of 3</p><button class="bg" style="margin-top:14px" onclick="avNarrate()">Skip to visualization</button></div>`;
-      const labels = ["Breathe in slowly…", "Hold gently…", "Breathe out slowly…"];
-      let cy = 0, ph = 0;
-      function tick() {
-        ph++; if (ph > 2) { ph = 0; cy++ }
-        if (cy >= 3) { addT(avNarrate, 800); return }
-        const el = $('#bl'), ct = $('#bc');
-        if (el) el.textContent = labels[ph];
-        if (ct) ct.textContent = (cy + 1) + ' of 3';
-        addT(tick, 1500);
-      }
-      addT(tick, 1500);
-    };
-
-    window.avNarrate = function () {
-      clearTimers();
-      const c = S.creating, p = PATHS[c.path] || PATHS.habit;
-      const beh = c.behaviors.slice(0, 2).map(b => '"' + b + '"').join(' and ');
-      const lines = [
-        { t: "It's 10 years from now. You wake up. Same alarm. Same heaviness before the day even begins.", d: 9000 },
-        { t: beh + " — " + p.av, d: 10000 },
-        { t: "Your days blur together. Monday feels like Friday. You can't remember the last time you felt genuinely excited.", d: 10000 },
-        { t: 'You kept telling yourself: "' + c.oldIdentity + '" — and your life proved you right. Year after year.', d: 10000 },
-        { t: "That version of yourself you dreamed about — it's still just a dream. Unopened. Untouched.", d: 10000 },
-        { t: "Someone younger asks you for advice, full of excitement. You hear yourself say: \"Be practical. Don't risk it.\"", d: 11000 },
-        { t: "You've become the voice that once caged you. The bars didn't just trap you — they turned you into their guard.", d: 10000 },
-        { t: "Sit with that weight. The regret. The quiet 'what if I had just started.'", d: 9000 }
-      ];
-      const z = $('#avz');
-      z.innerHTML = `<div class="fade" style="padding:16px 0"><div id="nlines"></div><button class="bg" style="margin-top:10px" onclick="avWrite()">Skip to writing</button></div>`;
-      let i = 0;
-      function show() {
-        const box = $('#nlines');
-        if (!box || i >= lines.length) { addT(avWrite, 2500); return }
-        box.querySelectorAll('.nl').forEach(el => { el.style.opacity = '.2' });
-        const p = document.createElement('p');
-        p.className = 'nl'; p.textContent = lines[i].t; p.style.opacity = '0';
-        p.style.color = i >= 5 ? '#c9785a' : '#a09890';
-        box.appendChild(p);
-        addT(() => { p.style.opacity = '1' }, 50);
-        const dur = lines[i].d; i++;
-        addT(show, dur);
-      }
-      show();
-    };
-
-    window.avWrite = function () {
-      clearTimers();
-      const c = S.creating;
-      const z = $('#avz');
-      z.innerHTML = `<div class="fade">
-    <p class="d" style="color:#c9785a;font-style:italic;margin-bottom:6px">That future — the one where nothing changed — what does it look like for YOU?</p>
-    <p class="h">Be specific. What does that person look like physically? How do they feel each morning? What did they never build? Write as much or as little as you want.</p>
-    <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
-      <strong style="color:#6e6862">Example:</strong> "It's 10 years from today. I'm 10 years older. I still work the same job. My startup/project idea is still in that folder — I never opened it again. I have less energy, less spark, less of myself. I tell others to play it safe because I played it safe. Every Sunday night I feel that same quiet regret."
-    </div>
-    <textarea rows="7" style="min-height:150px" id="avt" placeholder="Describe the future you DON'T want…" oninput="uAV(this.value)">${e(c.antiVisionText)}</textarea>
-  </div>`;
-      $('#avn').style.display = 'block';
-      avBtnCheck();
-    };
-    window.uAV = function (v) {
-      S.creating.antiVisionText = v; save();
-      avBtnCheck();
-    };
-    function avBtnCheck() {
-      const btn = $('#s3n'); if (!btn) return;
-      btn.className = 'b bp';
-      btn.setAttribute('onclick', "go('create-step4')");
-    }
-
-    // STEP 4
-    function rCS4(a, c) {
-      const dv = c.dayVisionText || c.goalVision || '';
-      a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 4 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
-    <h2>Choose Your New Identity & Envision Your Day</h2>
-    <p class="d">Define the kind of person you're choosing to be, and visualize how your day will look after 30 days of living this habit.</p>
-    <div class="c cd" style="padding:12px 14px;margin-bottom:14px;font-size:12px;color:#5e5a56;line-height:1.6">
-      <strong style="color:#6e6862">Examples of Identity Statements:</strong><br>
-      • "I am someone who takes calculated risks and builds what matters, even when it scares me."<br>
-      • "I am someone who treats my body like it belongs to the person I want to become."<br>
-      • "I am someone who does the uncomfortable thing first, because that's where growth lives."
-    </div>
-    <div class="ct">
-      <div class="cr" style="padding:16px;border-radius:10px">
-        <div class="cl clr">OLD CAGE</div>
-        <p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#8a7e76;line-height:1.45">"${e(c.oldIdentity || 'The old pattern')}"</p>
-      </div>
-      <div style="padding:16px;border-radius:10px;background:rgba(106,191,123,.04);border:1px solid rgba(106,191,123,.12)">
-        <div class="cl clg">NEW IDENTITY</div>
-        <textarea rows="3" style="background:rgba(106,191,123,.04);border-color:rgba(106,191,123,.18)" id="ni" placeholder='"I am someone who takes calculated risks and builds what matters, even when it scares me."' oninput="uNI(this.value)">${e(c.newIdentity)}</textarea>
-      </div>
-    </div>
-
-    <!-- DAY IN YOUR LIFE VISUALIZATION -->
-    <div style="margin-top:24px">
-      <label class="lb">A Day in Your Life (After 30 Days of this Habit)</label>
-      <p class="h">How will your day look from morning to night if you continue this habit? Write it out vividly so your brain sees it as real.</p>
-      ${renderStrongExampleCard('ni-dayvision', c.newIdentity || 'my new habit')}
-      <textarea rows="4" style="min-height:100px" id="ni-dayvision" placeholder="Describe your day from morning to night after 30 days of this habit…" oninput="uNIDayVision(this.value)">${e(dv)}</textarea>
-    </div>
-
-    <div class="nav"><button class="b bb" onclick="go('create-step3')">Back</button><button class="b bp" id="s4n" onclick="go('create-step5')">Final Step — Make the First Crack</button></div>
-  </div>`;
-    }
-    window.uNI = function (v) {
-      S.creating.newIdentity = v; save();
-    };
-    window.uNIDayVision = function (v) {
-      S.creating.dayVisionText = v;
-      S.creating.goalVision = v;
-      save();
-    };
-
-    // STEP 5
-    function rCS5(a, c) {
-      const p = PATHS[c.path] || PATHS.habit;
-      const acts = c.actions || [];
-      a.innerHTML = `<div class="fade">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="sn" style="margin-bottom:0">Step 5 of 5</div><button class="bg" onclick="exitCreate()">Exit to menu →</button></div>
-    <h2>The First Crack</h2>
-    <p class="d">Don't try to be a hero. Don't overhaul your life tonight. Your old identity's favorite word is <strong>"tomorrow."</strong></p>
-    <p class="d">Two things to commit to: your <em>first crack</em> (one thing you'll do TODAY) and <em>ongoing actions</em> that will keep building the new identity over time.</p>
-
-    <div style="margin-top:18px">
-      <label class="lb">What is ONE action you will take TODAY? (Your first crack)</label>
-      <p class="h">Be specific: what, when, for how long.</p>
-      <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
-        <strong style="color:#6e6862">Examples:</strong><br>
-        • "Tonight at 9pm, open my project and write real code for 30 minutes."<br>
-        • "When the craving hits tonight, walk for 10 minutes instead."
-      </div>
-      <textarea rows="2" style="min-height:55px" id="ca" placeholder='${e(p.ck)}' oninput="uCA(this.value)">${e(c.crackAction)}</textarea>
-    </div>
-
-    <div style="margin-top:24px">
-      <label class="lb">What ongoing actions will support your new identity?</label>
-      <p class="h">List the things you'll do regularly to keep proving the new identity is real. Add as many as you want.</p>
-      <div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">
-        <strong style="color:#6e6862">Examples:</strong><br>
-        • "Spend 30 minutes every evening on my project"<br>
-        • "Replace every cigarette craving with a 5-min walk"<br>
-        • "Journal for 10 minutes every morning about my goals"
-      </div>
-      <div id="act-list">${renderActionList(acts)}</div>
-      <div style="display:flex;gap:8px;margin-top:8px"><input type="text" id="act-input" placeholder="e.g., Work on my project 30 min every evening" style="flex:1"/><button class="b bp bs" onclick="addAction()">Add</button></div>
-    </div>
-
-    <p class="h" style="margin-top:22px">When you seal this, the old identity no longer rules you.</p>
-    <div class="nav"><button class="b bb" onclick="go('create-step4')">Back</button><button class="b bp" id="s5seal" onclick="sealIdentity()" style="animation:glowK 2s ease infinite">I commit — seal it</button></div>
-  </div>`;
-    }
-    window.uCA = function (v) {
-      S.creating.crackAction = v; save();
-    };
-    window.sealIdentity = function () {
-      const c = S.creating;
-      const newIdName = (c.newIdentity && c.newIdentity.trim()) ? c.newIdentity.trim() : 'My New Identity';
-      const oldIdName = (c.oldIdentity && c.oldIdentity.trim()) ? c.oldIdentity.trim() : 'The old pattern';
-      const crackAct = (c.crackAction && c.crackAction.trim()) ? c.crackAction.trim() : 'First action toward my new identity';
-      const antiText = (c.antiVisionText && c.antiVisionText.trim()) ? c.antiVisionText.trim() : 'What my life looks like if I never change.';
-      const actionsList = (c.actions && c.actions.length > 0) ? c.actions : [crackAct];
-
-      const id = {
-        id: 'id_' + Date.now(),
-        path: c.path || 'habit',
-        behaviors: c.behaviors || [],
-        feelings: c.feelings || [],
-        oldIdentity: oldIdName,
-        oldEvidence: c.oldEvidence || [],
-        antiVisionText: antiText,
-        newIdentity: newIdName,
-        crackAction: crackAct,
-        actions: actionsList,
-        createdDate: new Date().toISOString(),
-        logs: [],
-        reflections: [],
-        habits: actionsList.map(a => ({ text: a, createdDate: new Date().toISOString(), checks: [] })),
-        goalDays: 30,
-        goalVision: c.dayVisionText || c.goalVision || 'Morning (7:30 AM): I start my day focused and energized.\nAfternoon (2:00 PM): I handle challenges with calm focus.\nEvening (10:00 PM): I end my day proud of my progress.',
-        goalActions: c.actions || [],
-        goalSetDate: new Date().toISOString()
-      };
-      S.identities.push(id);
-      S.currentId = id.id;
+    window.discardCreate = function () {
       S.creating = null;
-      save(); go('create-done');
+      save();
+      render();
+    };
+    window.exitCreate = function () {
+      go(S.identities.length ? 'identity' : 'hub');
     };
 
-    // DONE — FIRST EVIDENCE
-    function rCDone(a) {
-      const id = cur(); if (!id) return go('hub');
-      a.innerHTML = `<div class="center fade" style="padding-top:16px">
-    <svg width="56" height="56" viewBox="0 0 72 72" fill="none" style="margin-bottom:18px"><circle cx="36" cy="36" r="34" stroke="#6abf7b" stroke-width="1.5" opacity=".3"/><path d="M36 8L34 26L40 30L33 46L39 50L32 64" stroke="#6abf7b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <h2 style="margin-bottom:10px">The cage is cracked.</h2>
-    <p class="d" style="max-width:420px;margin:0 auto 20px">You looked at your cage honestly, felt where it leads, chose a new identity, and committed to a first crack. That already makes today different from every other day.</p>
-    <div class="c cy" style="text-align:left;width:100%;max-width:440px;margin-bottom:22px">
-      <div class="cl cly">YOUR COMMITMENT</div>
-      <p style="font-size:15px;color:#c8c2b8;line-height:1.5">${e(id.crackAction)}</p>
-    </div>
-    <div style="width:100%;max-width:440px;text-align:left">
-      <h3 style="margin-bottom:6px">Log your first evidence</h3>
-      <p class="h">Your new identity needs proof to survive. Did you do your crack action, or anything the old you wouldn't have done? Log it.</p>
-      ${renderWeightSelector('fl')}
-      <textarea rows="3" id="fl" placeholder="What did the new you do today?" style="margin-bottom:10px"></textarea>
-      <button class="b bp bs" onclick="logFirst()">Save my first evidence</button>
-      <button class="bg" style="display:block;margin-top:8px" onclick="go('hub')">I'll log it later tonight</button>
-    </div>
-  </div>`;
-    }
-    window.logFirst = function () {
-      const v = $('#fl')?.value?.trim(); if (!v) return;
-      const w = $('#fl-weight')?.value || 'medium';
-      const id = cur(); if (!id) return;
-      id.logs.push({ date: new Date().toISOString(), note: v, weight: w });
-      save(); go('hub');
-    };
-
-    window.inlineFilterState = window.inlineFilterState || { preset: 'all', searchQuery: '' };
+    window.inlineFilterState = window.inlineFilterState || { preset: 'all', searchQuery: '', tab: 'daily', weeklySearch: '' };
 
     function filterInlineLogs(logs) {
       var state = window.inlineFilterState;
@@ -2643,6 +2332,24 @@
       render();
     };
 
+    window.setInlineJournalTab = function (tab) {
+      window.inlineFilterState = window.inlineFilterState || { preset: 'all', searchQuery: '', tab: 'daily', weeklySearch: '' };
+      window.inlineFilterState.tab = tab;
+      render();
+    };
+
+    window.setInlineWeeklySearch = function (q) {
+      window.inlineFilterState = window.inlineFilterState || { preset: 'all', searchQuery: '', tab: 'weekly', weeklySearch: '' };
+      window.inlineFilterState.weeklySearch = q;
+      var container = document.getElementById('inline-weekly-entries');
+      var id = cur();
+      if (container && id) {
+        container.innerHTML = renderInlineWeeklyContent(id);
+      } else {
+        render();
+      }
+    };
+
     window.setInlineSearchQuery = function (q) {
       window.inlineFilterState.searchQuery = q;
       var container = document.getElementById('inline-evidence-entries');
@@ -2665,7 +2372,7 @@
               + renderWeightBadge(l.weight)
               + '<span style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.note) + '</span>'
               + '</div>'
-              + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModal()">view</button>'
+              + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModalTab(\'daily\')">view</button>'
               + '</div>';
           }).join('');
         }
@@ -2675,54 +2382,144 @@
       }
     };
 
-    function renderInlineEvidenceSection(id) {
-      var logs = id.logs || [];
-      var streak = getStreak(id);
-      var state = window.inlineFilterState;
-      var filteredItems = filterInlineLogs(logs);
+    function renderInlineWeeklyContent(id) {
+      var reflections = id.reflections || [];
+      var q = (window.inlineFilterState?.weeklySearch || '').trim().toLowerCase();
 
-      var filterHtml = '<div class="ev-filter-section" style="margin-top:10px;margin-bottom:12px;padding:10px 12px">'
-        + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<input type="text" class="ev-search-input" placeholder="🔍 Search proofs on page..." value="' + esc(state.searchQuery) + '" oninput="setInlineSearchQuery(this.value)" style="font-size:12px;padding:6px 10px"/>'
-        + (state.searchQuery ? '<button class="bg" style="font-size:11px;padding:2px 6px;color:#9ca3af" onclick="setInlineSearchQuery(\'\')">Clear</button>' : '')
-        + '</div>'
-        + '<div class="ev-filter-pills" style="gap:4px;margin-top:6px">'
-        + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'all\')">All Time</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'today\')">Today</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'7days\')">Last 7 Days</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'30days\')">Last 30 Days</button>'
-        + '</div>'
-        + '</div>';
-
-      var entriesHtml = '';
-      if (logs.length === 0) {
-        entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0">No evidence logged yet. Add your first proof above!</p>';
-      } else if (filteredItems.length === 0) {
-        entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0;color:#9ca3af">No proofs match this date/search filter.</p>';
-      } else {
-        entriesHtml = filteredItems.slice(-5).reverse().map(function (item) {
-          var l = item.l;
-          var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1f2436;gap:8px">'
-            + '<div style="display:flex;gap:6px;align-items:baseline;flex:1;overflow:hidden">'
-            + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">📅 ' + dateStr + '</span>'
-            + renderWeightBadge(l.weight)
-            + '<span style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.note) + '</span>'
-            + '</div>'
-            + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModal()">view</button>'
-            + '</div>';
-        }).join('');
+      var filtered = reflections.map(function (r, i) { return { r: r, realIdx: i }; });
+      if (q) {
+        filtered = filtered.filter(function (item) {
+          var r = item.r;
+          return (r.oldPatterns || '').toLowerCase().includes(q) ||
+                 (r.newMoments || '').toLowerCase().includes(q) ||
+                 (r.nextCrack || '').toLowerCase().includes(q);
+        });
       }
 
-      return '<div style="margin-top:18px;padding:16px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:12px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<h3 style="color:#f3f4f6;font-size:15px;margin:0">Evidence Log History</h3>'
-        + '<span class="sm" style="color:#d1d5db">' + logs.length + ' proofs · ' + streak + '-day streak</span>'
+      if (reflections.length === 0) {
+        return '<div style="text-align:center;padding:20px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:10px;margin:10px 0">'
+          + '<p class="d" style="margin-bottom:8px;color:#d1d5db">No weekly reflections recorded yet.</p>'
+          + '<p class="h" style="margin-bottom:12px">Reflecting each week on what worked and what didn\'t locks in your identity growth!</p>'
+          + '<button class="b bp bs" onclick="go(\'reflect\')">✍️ Write First Weekly Reflection</button>'
+          + '</div>';
+      }
+
+      if (filtered.length === 0) {
+        return '<p class="h" style="font-style:italic;margin:12px 0;color:#9ca3af">No reflections match search criteria.</p>';
+      }
+
+      return filtered.slice().reverse().map(function (item) {
+        var r = item.r, ri = item.realIdx;
+        var dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        var weekNum = ri + 1;
+
+        return '<div class="c cd" style="margin-bottom:12px;padding:14px;background:rgba(20,26,44,0.7);border:1px solid #283046;border-radius:12px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)">'
+          + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<span class="sm" style="font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.15);padding:2px 8px;border-radius:6px">Week ' + weekNum + '</span>'
+          + '<span class="sm" style="color:#9ca3af">📅 ' + dateStr + '</span>'
+          + '</div>'
+          + '<button class="ev-edit" style="font-size:11px;padding:3px 8px" onclick="openEvidenceModalTab(\'weekly\')">manage</button>'
+          + '</div>'
+
+          + (r.newMoments ?
+            '<div style="margin-bottom:8px;padding:8px 10px;background:rgba(34,197,94,0.08);border-left:3px solid #22c55e;border-radius:6px">'
+            + '<span style="font-size:11px;font-weight:700;color:#4ede80;display:block;margin-bottom:2px">🟢 WHAT WORKED (New Identity Moments)</span>'
+            + '<p style="font-size:13px;color:#e5e7eb;margin:0;line-height:1.4">' + esc(r.newMoments) + '</p>'
+            + '</div>' : '')
+
+          + (r.oldPatterns ?
+            '<div style="margin-bottom:8px;padding:8px 10px;background:rgba(239,68,68,0.08);border-left:3px solid #ef4444;border-radius:6px">'
+            + '<span style="font-size:11px;font-weight:700;color:#fca5a5;display:block;margin-bottom:2px">🔴 WHAT DIDN\'T WORK (Old Cage Patterns)</span>'
+            + '<p style="font-size:13px;color:#e5e7eb;margin:0;line-height:1.4">' + esc(r.oldPatterns) + '</p>'
+            + '</div>' : '')
+
+          + (r.nextCrack ?
+            '<div style="padding:8px 10px;background:rgba(245,158,11,0.08);border-left:3px solid #f59e0b;border-radius:6px">'
+            + '<span style="font-size:11px;font-weight:700;color:#fbbf24;display:block;margin-bottom:2px">⚡ NEXT LEVEL CRACK</span>'
+            + '<p style="font-size:13px;color:#e5e7eb;margin:0;line-height:1.4">' + esc(r.nextCrack) + '</p>'
+            + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    function renderInlineEvidenceSection(id) {
+      var logs = id.logs || [];
+      var reflections = id.reflections || [];
+      var streak = getStreak(id);
+      var state = window.inlineFilterState || { preset: 'all', searchQuery: '', tab: 'daily' };
+      var activeTab = state.tab || 'daily';
+
+      var headerTabsHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap">'
+        + '<div style="display:flex;gap:6px;align-items:center">'
+        + '<button class="ev-filter-pill ' + (activeTab === 'daily' ? 'active' : '') + '" style="font-size:12px;padding:5px 12px" onclick="setInlineJournalTab(\'daily\')">📜 Daily Cracks & Proofs (' + logs.length + ')</button>'
+        + '<button class="ev-filter-pill ' + (activeTab === 'weekly' ? 'active' : '') + '" style="font-size:12px;padding:5px 12px" onclick="setInlineJournalTab(\'weekly\')">📓 Weekly Journal (' + reflections.length + ')</button>'
         + '</div>'
-        + '<div class="sb" style="margin-bottom:10px">' + streakDots(id) + '</div>'
-        + filterHtml
-        + '<div id="inline-evidence-entries" style="margin-bottom:12px">' + entriesHtml + '</div>'
-        + '<button class="b bd bw" onclick="openEvidenceModal()" style="margin-top:4px">📜 Open Full Evidence Modal & Filter (' + logs.length + ' entries)</button>'
+        + '<button class="b bp bs" style="font-size:12px;padding:5px 12px" onclick="go(\'reflect\')">✍️ Do Reflection</button>'
+        + '</div>';
+
+      var contentHtml = '';
+
+      if (activeTab === 'daily') {
+        var filteredItems = filterInlineLogs(logs);
+        var filterHtml = '<div class="ev-filter-section" style="margin-top:4px;margin-bottom:12px;padding:10px 12px">'
+          + '<div style="display:flex;gap:8px;align-items:center">'
+          + '<input type="text" class="ev-search-input" placeholder="🔍 Search daily proofs..." value="' + esc(state.searchQuery || '') + '" oninput="setInlineSearchQuery(this.value)" style="font-size:12px;padding:6px 10px"/>'
+          + (state.searchQuery ? '<button class="bg" style="font-size:11px;padding:2px 6px;color:#9ca3af" onclick="setInlineSearchQuery(\'\')">Clear</button>' : '')
+          + '</div>'
+          + '<div class="ev-filter-pills" style="gap:4px;margin-top:6px">'
+          + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'all\')">All Time</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'today\')">Today</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'7days\')">Last 7 Days</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" style="font-size:11px;padding:4px 10px" onclick="setInlineFilterPreset(\'30days\')">Last 30 Days</button>'
+          + '</div>'
+          + '</div>';
+
+        var entriesHtml = '';
+        if (logs.length === 0) {
+          entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0">No evidence logged yet. Add your first proof above!</p>';
+        } else if (filteredItems.length === 0) {
+          entriesHtml = '<p class="h" style="font-style:italic;margin:8px 0;color:#9ca3af">No proofs match this date/search filter.</p>';
+        } else {
+          entriesHtml = filteredItems.slice(-5).reverse().map(function (item) {
+            var l = item.l;
+            var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1f2436;gap:8px">'
+              + '<div style="display:flex;gap:6px;align-items:baseline;flex:1;overflow:hidden">'
+              + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">📅 ' + dateStr + '</span>'
+              + renderWeightBadge(l.weight)
+              + '<span style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.note) + '</span>'
+              + '</div>'
+              + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModalTab(\'daily\')">view</button>'
+              + '</div>';
+          }).join('');
+        }
+
+        contentHtml = filterHtml
+          + '<div id="inline-evidence-entries" style="margin-bottom:12px">' + entriesHtml + '</div>'
+          + '<button class="b bd bw" onclick="openEvidenceModalTab(\'daily\')" style="margin-top:4px">📜 Open Full Evidence & Journal Modal (' + logs.length + ' entries)</button>';
+
+      } else {
+        var weeklyFilterHtml = '<div class="ev-filter-section" style="margin-top:4px;margin-bottom:12px;padding:10px 12px">'
+          + '<div style="display:flex;gap:8px;align-items:center">'
+          + '<input type="text" class="ev-search-input" placeholder="🔍 Search what worked & didn\'t..." value="' + esc(state.weeklySearch || '') + '" oninput="setInlineWeeklySearch(this.value)" style="font-size:12px;padding:6px 10px"/>'
+          + (state.weeklySearch ? '<button class="bg" style="font-size:11px;padding:2px 6px;color:#9ca3af" onclick="setInlineWeeklySearch(\'\')">Clear</button>' : '')
+          + '</div>'
+          + '</div>';
+
+        contentHtml = weeklyFilterHtml
+          + '<div id="inline-weekly-entries">' + renderInlineWeeklyContent(id) + '</div>'
+          + '<button class="b bd bw" onclick="openEvidenceModalTab(\'weekly\')" style="margin-top:4px">📓 Open Full Weekly Journal Modal (' + reflections.length + ' reflections)</button>';
+      }
+
+      return '<div style="margin-top:18px;padding:18px;background:rgba(255,255,255,0.025);border:1px solid #27273a;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.2)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+        + '<h3 style="color:#f3f4f6;font-size:16px;margin:0">Journal & Evidence History</h3>'
+        + '<span class="sm" style="color:#d1d5db">' + logs.length + ' proofs · ' + reflections.length + ' reflections</span>'
+        + '</div>'
+        + '<div class="sb" style="margin-bottom:14px">' + streakDots(id) + '</div>'
+        + headerTabsHtml
+        + contentHtml
         + '</div>';
     }
 
@@ -2742,25 +2539,11 @@
       go('identity');
     };
 
-    window.startCreate = function () {
-      S.creating = {
-        path: 'habit',
-        behaviors: ['', '', ''],
-        feelings: [],
-        oldIdentity: '',
-        oldEvidence: [],
-        antiVisionText: '',
-        newIdentity: '',
-        crackAction: '',
-        actions: []
-      };
-      save();
-      go('create-path');
-    };
-
-    window.exitCreate = function () {
-      if (confirm('Exit creation flow? Your progress will be saved.')) {
-        go(S.identities.length ? 'identity' : 'hub');
+    window.focusEvidenceInput = function () {
+      var el = document.getElementById('idlog') || document.getElementById('qlog') || document.getElementById('fl');
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     };
 
@@ -2774,6 +2557,29 @@
       var needsR = needsReflection(id);
 
       var dayVisionStr = (id.goalVision || id.dayVisionText || '').trim();
+
+      var motivationPrompts = [
+        "What is the single boldest move you can make today that proves this identity is real?",
+        "Take the action your old identity is trying to postpone until tomorrow.",
+        "Today's Biggest Crack: Do one thing so decisive that self-doubt loses all its power.",
+        "Small excuses keep old cages alive. Break one excuse right now with direct action.",
+        "Who would you be today if hesitation was impossible? Go deliver that proof.",
+        "Make today's evidence so undeniable that you don't even need motivation tomorrow.",
+        "Your future identity is forged by today's toughest choice. Make the bold call."
+      ];
+      var promptIndex = Math.abs(daysOld(id)) % motivationPrompts.length;
+      var dailyMotivation = motivationPrompts[promptIndex];
+
+      var motivationCardHtml = '<div class="c cy" style="border-left:4px solid #f59e0b;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(217,119,6,0.02));padding:16px 20px;border-radius:12px;margin-bottom:18px;box-shadow:0 4px 16px rgba(0,0,0,0.25)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">'
+        + '<span style="font-size:11px;font-weight:800;color:#fbbf24;letter-spacing:1.2px;display:flex;align-items:center;gap:5px">⚡ TODAY\'S BIGGEST CRACK MOTIVATION</span>'
+        + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' Focus</span>'
+        + '</div>'
+        + '<p style="font-size:15px;color:#f3f4f6;font-family:Georgia,serif;font-style:italic;line-height:1.55;margin:0 0 12px 0">"' + dailyMotivation + '"</p>'
+        + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+        + '<button class="b bp bs" onclick="focusEvidenceInput()" style="font-size:12px;padding:7px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">⚡ Take My Bold Move & Log Evidence →</button>'
+        + '</div>'
+        + '</div>';
 
       var oldEvHtml = '';
       if (id.oldEvidence && id.oldEvidence.length > 0) {
@@ -2825,7 +2631,7 @@
 
       var headerNavHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;flex-wrap:wrap">'
         + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<button class="b bp bs" onclick="startCreate()" style="font-size:12px;padding:7px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 3px 10px rgba(245,158,11,0.25)">➕ Create New Habit / Identity</button>'
+        + '<button class="b bp bs" onclick="startCreate()" style="font-size:12px;padding:7px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 3px 10px rgba(245,158,11,0.25)">➕ Create New Identity</button>'
         + switcherHtml
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
@@ -2837,6 +2643,7 @@
 
       a.innerHTML = '<div class="fade">'
         + headerNavHtml
+        + motivationCardHtml
 
         + '<div class="two-paths-container">'
 
@@ -2848,7 +2655,7 @@
 
         + '<div class="path-section">'
         + '<span class="path-sublabel">THE CAGE YOU BROKE (OLD IDENTITY)</span>'
-        + '<h3 class="path-quote-red">"' + e(id.oldIdentity) + '"</h3>'
+        + '<h3 class="path-quote-red">"' + e(id.oldIdentity || 'The pattern of hesitation and delay') + '"</h3>'
         + '</div>'
 
         + oldEvHtml
@@ -2867,7 +2674,7 @@
         + '<span class="timeline-badge red-dark">💀 IN 10 YEARS (THE ANTI-VISION)</span>'
         + '</div>'
         + '<p class="timeline-text red-dark">'
-        + '"' + e(id.antiVisionText || 'What your life looks like if you never change.') + '"'
+        + '"' + e(id.antiVisionText || 'Living beneath my potential and repeating the same excuses for another decade.') + '"'
         + '</p>'
         + '</div>'
         + '</div>'
@@ -2900,17 +2707,6 @@
 
         + renderTugOfWar(id)
         + reflectHtml
-
-        + '<div class="evidence-log-card">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<h3 style="color:#fbbf24;margin:0;font-size:16px">⚡ Log Today\'s Evidence</h3>'
-        + '<span class="sm" style="color:#4ede80;font-weight:600">' + (logged ? '✓ Evidence logged today' : 'Add proof for today') + '</span>'
-        + '</div>'
-        + '<p class="d" style="font-size:13px;color:#d1d5db;margin-bottom:12px">Every proof entry weakens the old identity and levels up your new self.</p>'
-        + renderWeightSelector('idlog')
-        + '<textarea rows="3" id="idlog" placeholder="What did the new you do today? (e.g., Drank 2L water, washed face with cleanser, woke up early...)" style="margin-bottom:12px"></textarea>'
-        + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:14px">⚡ Save Evidence & Level Up</button>'
-        + '</div>'
 
         + renderInlineEvidenceSection(id)
 
@@ -3598,8 +3394,15 @@
       preset: 'all',
       startDate: '',
       endDate: '',
-      searchQuery: ''
+      searchQuery: '',
+      tab: 'daily',
+      reflectionQuery: ''
     };
+
+    // Stubbed for safe legacy compatibility
+    window.checkAndTriggerGreatestCrackModal = function () {};
+    window.closeGreatestCrackModal = function () {};
+    window.openGreatestCrackModal = function () {};
 
     function getLocalYYYYMMDD(dObj) {
       if (!dObj || isNaN(dObj.getTime())) return '';
@@ -3668,6 +3471,24 @@
       if (modal) renderEvidenceModalContent(modal, cur());
     };
 
+    window.setModalTab = function (tab) {
+      window.modalFilterState.tab = tab;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.setModalReflectionQuery = function (q) {
+      window.modalFilterState.reflectionQuery = q;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.openEvidenceModalTab = function (tab) {
+      window.modalFilterState = window.modalFilterState || { preset: 'all', startDate: '', endDate: '', searchQuery: '', tab: 'daily', reflectionQuery: '' };
+      if (tab) window.modalFilterState.tab = tab;
+      openEvidenceModal();
+    };
+
     window.setModalCustomDate = function (field, value) {
       if (field === 'start') window.modalFilterState.startDate = value;
       if (field === 'end') window.modalFilterState.endDate = value;
@@ -3721,7 +3542,9 @@
         preset: 'all',
         startDate: '',
         endDate: '',
-        searchQuery: ''
+        searchQuery: '',
+        tab: 'daily',
+        reflectionQuery: ''
       };
       var modal = document.getElementById('evidence-modal');
       if (modal) renderEvidenceModalContent(modal, cur());
@@ -3739,92 +3562,240 @@
       renderEvidenceModalContent(modal, id);
     };
 
+    window.delModalReflection = function (i) {
+      var id = cur();
+      if (!id || !id.reflections || i < 0 || i >= id.reflections.length) return;
+      if (confirm('Delete this weekly reflection entry?')) {
+        id.reflections.splice(i, 1);
+        save();
+        var modal = document.getElementById('evidence-modal');
+        if (modal) renderEvidenceModalContent(modal, id);
+        render();
+      }
+    };
+
+    window.editModalReflection = function (i, btnEl) {
+      var id = cur();
+      if (!id || !id.reflections || !id.reflections[i]) return;
+      var r = id.reflections[i];
+      var card = btnEl ? btnEl.closest('.c.cd') || btnEl.closest('.ev-card') : null;
+      if (!card) return;
+
+      var dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      card.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:4px 0">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<span class="sm" style="color:#fbbf24;font-weight:700">Edit Week ' + (i + 1) + ' Reflection</span>'
+        + '<span class="ev-card-date">📅 ' + dateStr + '</span>'
+        + '</div>'
+        + '<div>'
+        + '<label class="lb" style="font-size:11px;color:#fca5a5">1. What patterns from OLD identity showed up? (What didn\'t work)</label>'
+        + '<textarea id="modal-refl-old-' + i + '" rows="2" style="width:100%;font-size:13px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:8px;color:#f9fafb;font-family:inherit;margin-top:4px">' + esc(r.oldPatterns || '') + '</textarea>'
+        + '</div>'
+        + '<div>'
+        + '<label class="lb" style="font-size:11px;color:#86efac">2. When did NEW identity feel natural? (What worked)</label>'
+        + '<textarea id="modal-refl-new-' + i + '" rows="2" style="width:100%;font-size:13px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:8px;color:#f9fafb;font-family:inherit;margin-top:4px">' + esc(r.newMoments || '') + '</textarea>'
+        + '</div>'
+        + '<div>'
+        + '<label class="lb" style="font-size:11px;color:#fbbf24">3. What\'s one BIGGER crack for next week?</label>'
+        + '<textarea id="modal-refl-next-' + i + '" rows="2" style="width:100%;font-size:13px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:8px;color:#f9fafb;font-family:inherit;margin-top:4px">' + esc(r.nextCrack || '') + '</textarea>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
+        + '<button class="b bp bs" style="padding:6px 14px;font-size:12px" onclick="saveModalReflectionEdit(' + i + ')">Save Reflection</button>'
+        + '<button class="bg" style="font-size:12px" onclick="renderEvidenceModalContent(document.getElementById(\'evidence-modal\'), cur())">Cancel</button>'
+        + '</div>'
+        + '</div>';
+    };
+
+    window.saveModalReflectionEdit = function (i) {
+      var id = cur();
+      if (!id || !id.reflections || !id.reflections[i]) return;
+      var oldVal = $('#modal-refl-old-' + i)?.value?.trim() || '';
+      var newVal = $('#modal-refl-new-' + i)?.value?.trim() || '';
+      var nextVal = $('#modal-refl-next-' + i)?.value?.trim() || '';
+
+      id.reflections[i].oldPatterns = oldVal;
+      id.reflections[i].newMoments = newVal;
+      id.reflections[i].nextCrack = nextVal;
+      save();
+
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, id);
+      render();
+    };
+
     function renderEvidenceModalContent(modal, id) {
       var logs = id.logs || [];
-      var st = getStage(logs.length);
+      var reflections = id.reflections || [];
+      var st = getStage(id);
       var streak = getStreak(id);
-      var state = window.modalFilterState;
+      var state = window.modalFilterState || { tab: 'daily', preset: 'all', searchQuery: '', reflectionQuery: '' };
+      var activeTab = state.tab || 'daily';
 
       modal.className = 'modal-overlay';
       modal.onclick = function (e) {
         if (e.target === modal) closeEvidenceModal();
       };
 
-      var filteredItems = filterModalLogs(logs);
-      var hasActiveFilter = state.preset !== 'all' || state.startDate || state.endDate || (state.searchQuery && state.searchQuery.trim().length > 0);
-
-      var filterHtml = '<div class="ev-filter-section">'
-        + '<div style="display:flex;gap:8px;align-items:center">'
-        + '<input type="text" class="ev-search-input" placeholder="🔍 Search proof notes..." value="' + esc(state.searchQuery) + '" oninput="setModalSearchQuery(this.value)" />'
-        + (state.searchQuery ? '<button class="bg" style="font-size:12px;white-space:nowrap;padding:4px 8px;color:#9ca3af" onclick="setModalSearchQuery(\'\')">Clear</button>' : '')
-        + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
-        + '<div class="ev-filter-pills">'
-        + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" onclick="setModalFilterPreset(\'all\')">All Time</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" onclick="setModalFilterPreset(\'today\')">Today</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'7days\')">Last 7 Days</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'30days\')">Last 30 Days</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === 'custom' ? 'active' : '') + '" onclick="setModalFilterPreset(\'custom\')">Custom Date</button>'
-        + '</div>'
-        + (hasActiveFilter ? '<button class="bg" style="font-size:12px;color:#f59e0b;font-weight:600" onclick="resetModalFilters()">Reset Filters</button>' : '')
-        + '</div>'
-        + (state.preset === 'custom' ?
-          '<div class="ev-custom-date-row">'
-          + '<span class="sm" style="color:#9ca3af">From:</span>'
-          + '<input type="date" class="ev-date-input" value="' + state.startDate + '" onchange="setModalCustomDate(\'start\', this.value)" />'
-          + '<span class="sm" style="color:#9ca3af">To:</span>'
-          + '<input type="date" class="ev-date-input" value="' + state.endDate + '" onchange="setModalCustomDate(\'end\', this.value)" />'
-          + '</div>'
-          : '')
+      var tabNavHtml = '<div style="display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap">'
+        + '<button class="ev-filter-pill ' + (activeTab === 'daily' ? 'active' : '') + '" onclick="setModalTab(\'daily\')">📜 Daily Cracks & Proofs (' + logs.length + ')</button>'
+        + '<button class="ev-filter-pill ' + (activeTab === 'weekly' ? 'active' : '') + '" onclick="setModalTab(\'weekly\')">📓 Weekly Journal (' + reflections.length + ')</button>'
+        + '<button class="b bp bs" style="font-size:12px;padding:4px 12px;margin-left:auto" onclick="closeEvidenceModal();go(\'reflect\')">✍️ Write Reflection</button>'
         + '</div>';
 
-      var logsHtml = '';
-      if (logs.length === 0) {
-        logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
-      } else if (filteredItems.length === 0) {
-        logsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
-          + '<p class="h" style="margin-bottom:12px">No evidence logs found matching your filter criteria.</p>'
-          + '<button class="b bb bs" onclick="resetModalFilters()">Reset Filters</button>'
+      var bodyContentHtml = '';
+
+      if (activeTab === 'daily') {
+        var filteredItems = filterModalLogs(logs);
+        var hasActiveFilter = state.preset !== 'all' || state.startDate || state.endDate || (state.searchQuery && state.searchQuery.trim().length > 0);
+
+        var filterHtml = '<div class="ev-filter-section">'
+          + '<div style="display:flex;gap:8px;align-items:center">'
+          + '<input type="text" class="ev-search-input" placeholder="🔍 Search proof notes..." value="' + esc(state.searchQuery) + '" oninput="setModalSearchQuery(this.value)" />'
+          + (state.searchQuery ? '<button class="bg" style="font-size:12px;white-space:nowrap;padding:4px 8px;color:#9ca3af" onclick="setModalSearchQuery(\'\')">Clear</button>' : '')
+          + '</div>'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+          + '<div class="ev-filter-pills">'
+          + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" onclick="setModalFilterPreset(\'all\')">All Time</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" onclick="setModalFilterPreset(\'today\')">Today</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'7days\')">Last 7 Days</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'30days\')">Last 30 Days</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === 'custom' ? 'active' : '') + '" onclick="setModalFilterPreset(\'custom\')">Custom Date</button>'
+          + '</div>'
+          + (hasActiveFilter ? '<button class="bg" style="font-size:12px;color:#f59e0b;font-weight:600" onclick="resetModalFilters()">Reset Filters</button>' : '')
+          + '</div>'
+          + (state.preset === 'custom' ?
+            '<div class="ev-custom-date-row">'
+            + '<span class="sm" style="color:#9ca3af">From:</span>'
+            + '<input type="date" class="ev-date-input" value="' + state.startDate + '" onchange="setModalCustomDate(\'start\', this.value)" />'
+            + '<span class="sm" style="color:#9ca3af">To:</span>'
+            + '<input type="date" class="ev-date-input" value="' + state.endDate + '" onchange="setModalCustomDate(\'end\', this.value)" />'
+            + '</div>'
+            : '')
           + '</div>';
-      } else {
-        logsHtml = filteredItems.reverse().map(function (item) {
-          var l = item.l, ri = item.realIdx;
-          var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          return '<div class="ev-card">'
-            + '<div class="ev-card-top">'
-            + '<div class="ev-card-meta">'
-            + '<span class="ev-card-date">📅 ' + dateStr + '</span>'
-            + renderWeightBadge(l.weight)
-            + '</div>'
-            + '<div class="ev-card-actions">'
-            + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
-            + '<button class="ev-btn-del" onclick="delModalLog(' + ri + ')">Delete</button>'
-            + '</div>'
-            + '</div>'
-            + '<div class="ev-card-note">' + esc(l.note) + '</div>'
+
+        var logsHtml = '';
+        if (logs.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
+        } else if (filteredItems.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="h" style="margin-bottom:12px">No evidence logs found matching your filter criteria.</p>'
+            + '<button class="b bb bs" onclick="resetModalFilters()">Reset Filters</button>'
             + '</div>';
-        }).join('');
+        } else {
+          logsHtml = filteredItems.reverse().map(function (item) {
+            var l = item.l, ri = item.realIdx;
+            var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            return '<div class="ev-card">'
+              + '<div class="ev-card-top">'
+              + '<div class="ev-card-meta">'
+              + '<span class="ev-card-date">📅 ' + dateStr + '</span>'
+              + renderWeightBadge(l.weight)
+              + '</div>'
+              + '<div class="ev-card-actions">'
+              + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
+              + '<button class="ev-btn-del" onclick="delModalLog(' + ri + ')">Delete</button>'
+              + '</div>'
+              + '</div>'
+              + '<div class="ev-card-note">' + esc(l.note) + '</div>'
+              + '</div>';
+          }).join('');
+        }
+
+        bodyContentHtml = filterHtml + '<div id="modal-logs-list">' + logsHtml + '</div>';
+
+      } else {
+        // Weekly Journal Tab in Modal
+        var q = (state.reflectionQuery || '').trim().toLowerCase();
+        var filteredReflections = reflections.map(function (r, i) { return { r: r, realIdx: i }; });
+        if (q) {
+          filteredReflections = filteredReflections.filter(function (item) {
+            var r = item.r;
+            return (r.oldPatterns || '').toLowerCase().includes(q) ||
+                   (r.newMoments || '').toLowerCase().includes(q) ||
+                   (r.nextCrack || '').toLowerCase().includes(q);
+          });
+        }
+
+        var reflFilterHtml = '<div class="ev-filter-section">'
+          + '<div style="display:flex;gap:8px;align-items:center">'
+          + '<input type="text" class="ev-search-input" placeholder="🔍 Search what worked & didn\'t work..." value="' + esc(state.reflectionQuery || '') + '" oninput="setModalReflectionQuery(this.value)" />'
+          + (state.reflectionQuery ? '<button class="bg" style="font-size:12px;white-space:nowrap;padding:4px 8px;color:#9ca3af" onclick="setModalReflectionQuery(\'\')">Clear</button>' : '')
+          + '</div>'
+          + '</div>';
+
+        var reflectionsHtml = '';
+        if (reflections.length === 0) {
+          reflectionsHtml = '<div style="text-align:center;padding:40px 10px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="d" style="margin-bottom:8px">No weekly reflections written yet.</p>'
+            + '<p class="h" style="margin-bottom:14px">Write a weekly reflection to review what worked, what didn\'t, and set your next crack.</p>'
+            + '<button class="b bp bs" onclick="closeEvidenceModal();go(\'reflect\')">✍️ Write First Weekly Reflection</button>'
+            + '</div>';
+        } else if (filteredReflections.length === 0) {
+          reflectionsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="h" style="margin-bottom:12px">No reflections found matching your search query.</p>'
+            + '<button class="b bb bs" onclick="setModalReflectionQuery(\'\')">Clear Search</button>'
+            + '</div>';
+        } else {
+          reflectionsHtml = filteredReflections.slice().reverse().map(function (item) {
+            var r = item.r, ri = item.realIdx;
+            var dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            var weekNum = ri + 1;
+
+            return '<div class="c cd" style="margin-bottom:14px;padding:16px;background:rgba(20,26,44,0.7);border:1px solid #283046;border-radius:12px">'
+              + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08)">'
+              + '<div style="display:flex;align-items:center;gap:8px">'
+              + '<span class="sm" style="font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.18);padding:3px 10px;border-radius:6px;font-size:12px">Week ' + weekNum + '</span>'
+              + '<span class="sm" style="color:#9ca3af">📅 ' + dateStr + '</span>'
+              + '</div>'
+              + '<div style="display:flex;gap:6px">'
+              + '<button class="ev-btn-edit" onclick="editModalReflection(' + ri + ', this)">Edit</button>'
+              + '<button class="ev-btn-del" onclick="delModalReflection(' + ri + ')">Delete</button>'
+              + '</div>'
+              + '</div>'
+
+              + (r.newMoments ?
+                '<div style="margin-bottom:10px;padding:10px 12px;background:rgba(34,197,94,0.08);border-left:3px solid #22c55e;border-radius:6px">'
+                + '<span style="font-size:11px;font-weight:700;color:#4ede80;display:block;margin-bottom:4px">🟢 WHAT WORKED (New Identity Moments)</span>'
+                + '<p style="font-size:14px;color:#e5e7eb;margin:0;line-height:1.5">' + esc(r.newMoments) + '</p>'
+                + '</div>' : '')
+
+              + (r.oldPatterns ?
+                '<div style="margin-bottom:10px;padding:10px 12px;background:rgba(239,68,68,0.08);border-left:3px solid #ef4444;border-radius:6px">'
+                + '<span style="font-size:11px;font-weight:700;color:#fca5a5;display:block;margin-bottom:4px">🔴 WHAT DIDN\'T WORK (Old Cage Patterns)</span>'
+                + '<p style="font-size:14px;color:#e5e7eb;margin:0;line-height:1.5">' + esc(r.oldPatterns) + '</p>'
+                + '</div>' : '')
+
+              + (r.nextCrack ?
+                '<div style="padding:10px 12px;background:rgba(245,158,11,0.08);border-left:3px solid #f59e0b;border-radius:6px">'
+                + '<span style="font-size:11px;font-weight:700;color:#fbbf24;display:block;margin-bottom:4px">⚡ NEXT LEVEL CRACK</span>'
+                + '<p style="font-size:14px;color:#e5e7eb;margin:0;line-height:1.5">' + esc(r.nextCrack) + '</p>'
+                + '</div>' : '')
+              + '</div>';
+          }).join('');
+        }
+
+        bodyContentHtml = reflFilterHtml + '<div id="modal-refl-list">' + reflectionsHtml + '</div>';
       }
 
-      var statsSummary = hasActiveFilter
-        ? ('Showing <strong style="color:#fbbf24">' + filteredItems.length + '</strong> of ' + logs.length + ' proofs · ' + streak + '-day streak · ' + st.name)
-        : (logs.length + ' total proofs · ' + streak + '-day streak · ' + st.name);
+      var statsSummary = activeTab === 'daily'
+        ? (logs.length + ' total proofs · ' + streak + '-day streak · ' + st.name)
+        : (reflections.length + ' total reflections · ' + daysOld(id) + ' days on journey');
 
       modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
         + '<div class="modal-header">'
         + '<div>'
-        + '<h3 style="margin-bottom:2px">All Evidence Logs</h3>'
+        + '<h3 style="margin-bottom:2px">Journal & Evidence History</h3>'
         + '<p class="sm" style="color:#9ca3af;margin:0">' + statsSummary + '</p>'
+        + tabNavHtml
         + '</div>'
         + '<button class="modal-close" onclick="closeEvidenceModal()" title="Close">×</button>'
         + '</div>'
         + '<div class="modal-body">'
         + '<div class="sb" style="margin-bottom:14px;justify-content:flex-start">' + streakDots(id) + '</div>'
-        + filterHtml
-        + '<div id="modal-logs-list">' + logsHtml + '</div>'
+        + bodyContentHtml
         + '</div>'
         + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px;display:flex;justify-content:space-between;align-items:center">'
-        + '<span class="sm" style="color:#9ca3af">' + (hasActiveFilter ? filteredItems.length + ' entries shown' : logs.length + ' total entries') + '</span>'
+        + '<span class="sm" style="color:#9ca3af">' + (activeTab === 'daily' ? logs.length + ' daily proofs' : reflections.length + ' weekly reflections') + '</span>'
         + '<button class="b bb bs" onclick="closeEvidenceModal()">Done / Close</button>'
         + '</div>'
         + '</div>';
@@ -4236,42 +4207,40 @@
 
       var oPtsRemaining = nLvl.needed - nLvl.progress;
 
-      return '<div class="tow" style="padding:22px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.4s ease;overflow:hidden">'
+      return '<div class="tow" style="padding:18px 14px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.4s ease;overflow:hidden">'
         + '<div style="display:flex;gap:10px;align-items:center;justify-content:space-around;flex-wrap:nowrap;width:100%;box-sizing:border-box;transition:all 0.4s ease">'
 
         // OLD IDENTITY
         + '<div style="flex:1;min-width:0;max-width:50%;text-align:center;box-sizing:border-box;transition:all 0.4s ease">'
-        + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:6px">OLD IDENTITY</p>'
-        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
-        + '<span style="font-size:20px;font-weight:700;color:#ff7a59;font-family:Georgia,serif">Lv.' + oLevelRaw + '</span>'
+        + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:4px">OLD IDENTITY</p>'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+        + '<span style="font-size:18px;font-weight:700;color:#ff7a59;font-family:Georgia,serif">Lv.' + oLevelRaw + '</span>'
         + '<span style="font-size:12px;color:#fca5a5;font-weight:600">' + oName + '</span>'
         + '</div>'
         + makeCircleProgress(nLvl.needed, oPtsRemaining, '#ff7a59', 'rgba(255, 122, 89, 0.5)', '#1c2333', oSize, oPct + '%', true)
-        + '<p style="font-size:12px;color:#9ca3af;font-weight:600;margin-top:8px">' + oPtsRemaining + '/' + nLvl.needed + ' pts</p>'
-        + makePips(oLevelRaw, 10, '#ef4444', true)
         + '</div>'
 
         // NEW IDENTITY
         + '<div style="flex:1;min-width:0;max-width:50%;text-align:center;box-sizing:border-box;transition:all 0.4s ease">'
-        + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:6px">NEW IDENTITY</p>'
-        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">'
-        + '<span style="font-size:20px;font-weight:700;color:#4ede80;font-family:Georgia,serif">Lv.' + nLvl.level + '</span>'
+        + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:4px">NEW IDENTITY</p>'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+        + '<span style="font-size:18px;font-weight:700;color:#4ede80;font-family:Georgia,serif">Lv.' + nLvl.level + '</span>'
         + '<span style="font-size:12px;color:#86efac;font-weight:600">' + nName + '</span>'
         + '</div>'
         + makeCircleProgress(nLvl.needed, nLvl.progress, '#4ede80', 'rgba(74, 222, 128, 0.5)', '#1c2333', nSize, nPct + '%', false)
-        + '<p style="font-size:12px;color:#9ca3af;font-weight:600;margin-top:8px">' + nLvl.progress + '/' + nLvl.needed + ' pts</p>'
-        + makePips(nLvl.level, 10, '#22c55e', false)
         + '</div>'
 
         + '</div>'
 
-        + '<p style="font-size:12px;color:#cbd5e1;text-align:center;margin-top:16px;font-style:italic">'
-        + (entryCount === 0 ? 'Add your first proof to begin leveling up'
-          : nPct >= 80 ? (nLvl.level >= 10 ? '🎉 Congratulations! You reached Level 10 Mastered Identity!' : 'Almost there — ' + (nLvl.needed - nLvl.progress) + ' more pts to Level Up!')
-            : nLvl.level === 0 ? 'Building momentum — ' + nLvl.progress + ' of ' + nLvl.needed + ' pts to Level 1'
-              : nLvl.level >= 10 ? 'Level 10 Mastered Identity — Peak Self Achieved (' + logs + ' total pts)'
-                : 'Level ' + nLvl.level + ' ' + nName + ' — ' + nLvl.progress + ' of ' + nLvl.needed + ' pts to Lv.' + (nLvl.level + 1) + ' (' + logs + ' total pts)')
-        + '</p>'
+        + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">'
+        + '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;margin-bottom:10px">'
+        + '<span style="font-size:14px">🎯</span>'
+        + '<div style="flex:1;overflow:hidden"><span style="font-size:11px;color:#fbbf24;font-weight:700;letter-spacing:0.5px;display:block">TODAY\'S CRACK FOCUS</span><span style="font-size:13px;color:#f3f4f6;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">' + esc((id.crackAction && id.crackAction.trim()) ? id.crackAction.trim() : 'Take one action toward your new identity') + '</span></div>'
+        + '</div>'
+        + renderWeightSelector('idlog')
+        + '<textarea rows="2" id="idlog" placeholder="What did the new you do today? (e.g., Drank 2L water, washed face with cleanser, woke up early...)" style="margin-bottom:10px;min-height:52px"></textarea>'
+        + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:12px">⚡ Save Evidence & Level Up</button>'
+        + '</div>'
         + '</div>';
     }
 
@@ -4312,260 +4281,83 @@
 
 
     // ═══════════════════════════════════════════════
-    // QUICK HABIT TRACKER
+    // ONE-LINE IDENTITY CREATOR
     // ═══════════════════════════════════════════════
     function rQuickCreate(a) {
-      // Load temp data
-      if (!S._qh) S._qh = { name: '', oldIdentity: '', oldEvidence: [], days: 30, vision: '', antiVision: '', actions: [] };
-      var q = S._qh;
+      a.innerHTML = '<div class="fade" style="max-width:560px;margin:0 auto;padding-top:8px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
+        + '<button class="bg" onclick="go(S.identities && S.identities.length?\'hub\':\'welcome\')">\u2190 Back</button>'
+        + (S.identities && S.identities.length > 0 ? '<button class="bg" onclick="go(\'hub\')" style="color:#fbbf24;font-weight:600">All Identities \u2192</button>' : '')
+        + '</div>'
+        + '<div class="sn" style="letter-spacing:1.5px;color:#fbbf24">ONE-LINE IDENTITY</div>'
+        + '<h2 style="margin-bottom:8px;font-size:26px">Who are you choosing to be?</h2>'
+        + '<p class="d" style="margin-bottom:20px;line-height:1.55;font-size:14px;color:#9ca3af">Write your identity statement in one clear sentence. You will immediately start reinforcing it with daily evidence.</p>'
 
-      a.innerHTML = '<div class="fade">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go(S.identities.length?\'hub\':\'welcome\')">\u2190 Back</button><button class="bg" onclick="go(\'hub\')" style="color:#d4a04a">Main menu \u2192</button></div>'
-        + '<div class="sn">QUICK HABIT</div>'
-        + '<h2>Build a habit, fast.</h2>'
-        + '<p class="d">Answer these questions honestly. Everything you write here will be visible every day when you add evidence.</p>'
-
-        // Q1: What habit
-        + '<div style="margin-top:20px">'
-        + '<label class="lb">1. What new habit or identity are you building?</label>'
-        + '<p class="h">Name it clearly.</p>'
-        + '<div class="c cd" style="padding:10px 14px;margin-bottom:8px;font-size:12px;color:#5e5a56;line-height:1.5">'
-        + '<strong style="color:#6e6862">Examples:</strong> Wake up at 6am \u00b7 Read 20 pages daily \u00b7 No phone after 10pm \u00b7 Exercise 30 min \u00b7 Build my startup'
-        + '</div>'
-        + '<input type="text" id="qh-name" placeholder="e.g., I am someone who wakes up at 6am every day" value="' + esc(q.name) + '"/>'
-        + '</div>'
-
-        // Q2: What old identity
-        + '<div style="margin-top:20px">'
-        + '<label class="lb">2. What old habit or identity are you leaving behind?</label>'
-        + '<p class="h">What pattern has been running your life until now?</p>'
-        + '<div class="c cd" style="padding:10px 14px;margin-bottom:8px;font-size:12px;color:#5e5a56;line-height:1.5">'
-        + '<strong style="color:#6e6862">Examples:</strong> "I am someone who hits snooze 5 times and wastes every morning" \u00b7 "I am someone who scrolls instead of reading"'
-        + '</div>'
-        + '<input type="text" id="qh-old" placeholder="e.g., I am someone who wastes mornings sleeping in" value="' + esc(q.oldIdentity) + '"/>'
-        + '</div>'
-
-        // Q3: Evidence for old identity
-        + '<div style="margin-top:20px">'
-        + '<label class="lb">3. What proof do you have that the old habit controls you?</label>'
-        + '<p class="h">Real moments or patterns that prove it. Add at least one.</p>'
-        + '<div id="qh-ev-list">' + renderQhEvList(q) + '</div>'
-        + '<div style="display:flex;gap:8px;margin-top:6px"><input type="text" id="qh-ev-input" placeholder="e.g., I have not woken up before 9am in 6 months" style="flex:1"/><button class="b bp bs" onclick="qhAddEv()">Add</button></div>'
-        + '</div>'
-
-        // Q4: Timeline
-        + '<div style="margin-top:20px">'
-        + '<label class="lb">4. In how many days do you want to see real change?</label>'
-        + '<div id="qh-preset-btns" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
-        + '<button type="button" class="b bs ' + (q.days === 21 ? 'bp' : 'bb') + '" onclick="qhSetDays(21)">21 days</button>'
-        + '<button type="button" class="b bs ' + (q.days === 30 ? 'bp' : 'bb') + '" onclick="qhSetDays(30)">30 days</button>'
-        + '<button type="button" class="b bs ' + (q.days === 60 ? 'bp' : 'bb') + '" onclick="qhSetDays(60)">60 days</button>'
-        + '<button type="button" class="b bs ' + (q.days === 90 ? 'bp' : 'bb') + '" onclick="qhSetDays(90)">90 days</button>'
-        + '</div>'
-        + '<div style="display:flex;gap:8px;align-items:center"><input type="number" id="qh-days" value="' + q.days + '" style="width:120px" oninput="qhSetDays(this.value, true)"/><span class="sm">days</span></div>'
-        + '</div>'
-
-        // Q5: A Day in Your Life
-        + '<div style="margin-top:20px">'
-        + '<label class="lb" id="qh-l5-text">5. A Day in Your Life: How will your day look after ' + q.days + ' days of continuing this habit?</label>'
-        + '<p class="h">Visualize a full day from morning to night. How has your routine changed? How do you handle stress or cravings? How do you feel at night?</p>'
-        + renderStrongExampleCard('qh-vision', q.name || 'this habit')
-        + '<textarea rows="4" id="qh-vision" placeholder="Describe your day from morning to night after ' + q.days + ' days of this habit\u2026">' + esc(q.vision) + '</textarea>'
-        + '</div>'
-
-        // Q6: 10-Year Anti-vision with Self-Discovery
-        + '<div style="margin-top:24px">'
-        + '<label class="lb" style="color:#c9785a">6. The 10-Year Anti-Vision: What happens if you DON\'T change for another 10 years?</label>'
-        + '<p class="h">Project yourself 10 years into the future. Discover the hidden cost of staying in this cage on your energy, potential, and self-worth.</p>'
-
-        // Guided Self-Discovery Box
-        + '<div id="qh-vis-box" style="margin-bottom:12px;padding:12px 14px;background:rgba(200,120,90,0.06);border:1px solid rgba(200,120,90,0.2);border-radius:8px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-        + '<span style="font-size:11px;font-weight:700;color:#c9785a;letter-spacing:1px">🧘 10-YEAR SELF-DISCOVERY VISUALIZATION</span>'
-        + '<button type="button" class="b bd bs" style="font-size:11px;padding:4px 10px" onclick="qhStartAntiVis()">Start 30s Guided Reflection</button>'
-        + '</div>'
-        + '<div id="qh-vis-body" style="font-size:12px;color:#a08a80;line-height:1.5;font-style:italic">'
-        + 'Tap "Start 30s Guided Reflection" to experience a step-by-step self-discovery before writing.'
+        + '<div class="c cd" style="padding:14px 16px;margin-bottom:20px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08)">'
+        + '<div style="font-size:11px;font-weight:800;color:#fbbf24;margin-bottom:6px;letter-spacing:0.8px">💡 EXAMPLES:</div>'
+        + '<div style="font-size:13px;color:#d1d5db;line-height:1.65">'
+        + '• <em>"I am someone who reads 20 pages of high-value books every single day."</em><br>'
+        + '• <em>"I am someone who exercises 30 minutes every morning before work."</em><br>'
+        + '• <em>"I am someone who executes the hardest work first without delay."</em>'
         + '</div>'
         + '</div>'
 
-        + '<div class="c cd" style="padding:12px 14px;margin-bottom:10px;font-size:12px;color:#5e5a56;line-height:1.6">'
-        + '<strong style="color:#6e6862">Questions for Self-Discovery:</strong><br>'
-        + '• <strong>Energy & Health:</strong> How do you feel physically waking up 10 years older with this pattern intact?<br>'
-        + '• <strong>Unbuilt Potential:</strong> What project, skill, or ambition is still completely untouched 10 years later?<br>'
-        + '• <strong>Identity:</strong> What excuse have you repeated so often that it became who you are?<br><br>'
-        + '<strong style="color:#c9785a">10-Year Example:</strong> "It\'s 10 years from today. A decade of \'I\'ll start next month\' passed. I\'m 10 years older, still waking up with that quiet heaviness. The project I promised I\'d build is still an untouched folder. I\'ve normalized living far beneath my potential, and I quiet the voice inside me that wanted more."'
-        + '</div>'
-        + '<textarea rows="4" id="qh-anti" placeholder="Describe your life 10 years from now if nothing changes\u2026">' + esc(q.antiVision) + '</textarea>'
+        + '<div style="margin-top:12px">'
+        + '<label class="lb" style="font-size:13px;font-weight:700;color:#f3f4f6;margin-bottom:8px;display:block">Your Identity Statement</label>'
+        + '<textarea id="one-identity-input" rows="3" placeholder=\'e.g., "I am someone who stays focused and builds what matters every day."\' style="font-size:15px;line-height:1.5;padding:14px 16px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(251,191,36,0.3);color:#ffffff;box-sizing:border-box" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key===\'Enter\')createOneLineIdentity()"></textarea>'
         + '</div>'
 
-        // Q7: Immediate actions
-        + '<div style="margin-top:20px">'
-        + '<label class="lb">7. What immediate actions can you take RIGHT NOW?</label>'
-        + '<p class="h">Not tomorrow. Today. What can you do in the next hour to start?</p>'
-        + '<div class="c cd" style="padding:10px 14px;margin-bottom:8px;font-size:12px;color:#5e5a56;line-height:1.5">'
-        + '<strong style="color:#6e6862">Examples:</strong> "Set alarm for 5:50am" \u00b7 "Put phone in another room" \u00b7 "Lay out gym clothes tonight"'
-        + '</div>'
-        + '<div id="qh-act-list">' + renderQhActList(q) + '</div>'
-        + '<div style="display:flex;gap:8px;margin-top:6px"><input type="text" id="qh-act-input" placeholder="e.g., Set alarm for 5:50am right now" style="flex:1"/><button class="b bp bs" onclick="qhAddAct()">Add</button></div>'
-        + '</div>'
-
-        + '<div style="margin-top:28px">'
-        + '<button type="button" class="b bp bw" id="qh-submit-btn" onclick="createQuickHabit()" style="font-size:15px;padding:16px">Start my ' + q.days + '-day journey</button>'
+        + '<div style="margin-top:22px">'
+        + '<button type="button" class="b bp bw" id="create-id-btn" onclick="createOneLineIdentity()" style="font-size:15px;padding:16px;width:100%;font-weight:700;box-shadow:0 4px 16px rgba(245,158,11,0.3);border-radius:10px">'
+        + '⚡ Create Identity & Start Adding Evidence →'
+        + '</button>'
         + '</div>'
         + '</div>';
+
+      setTimeout(function () {
+        var inp = document.getElementById('one-identity-input');
+        if (inp) inp.focus();
+      }, 50);
     }
 
-    window.createQuickHabit = function () {
-      var q = S._qh || {};
-      var rawName = $('#qh-name')?.value?.trim();
-      var name = rawName || (q.name ? q.name.trim() : '') || 'My New Habit';
-      var oldId = $('#qh-old')?.value?.trim() || q.oldIdentity || 'The version of me without this habit';
-      var vision = $('#qh-vision')?.value?.trim() || q.vision || 'Morning: Clear and focused.\nAfternoon: Grounded and consistent.\nEvening: Quiet pride in my progress.';
-      var anti = $('#qh-anti')?.value?.trim() || q.antiVision || 'What my life looks like if I never build this habit.';
-
-      var habitText = (q.actions && q.actions.length > 0) ? q.actions[0] : name;
-      var actList = (q.actions && q.actions.length > 0) ? q.actions : [habitText];
-
+    window.createOneLineIdentity = function () {
+      var raw = $('#one-identity-input')?.value?.trim();
+      if (!raw) {
+        alert('Please write your identity statement first!');
+        var inp = document.getElementById('one-identity-input');
+        if (inp) inp.focus();
+        return;
+      }
+      var name = raw;
       var id = {
         id: 'id_' + Date.now(),
         type: 'quick',
         path: 'habit',
         behaviors: [],
         feelings: [],
-        oldIdentity: oldId,
-        oldEvidence: q.oldEvidence || [],
-        antiVisionText: anti,
+        oldIdentity: 'The version of me that hesitated and stayed in the old pattern',
+        oldEvidence: [],
+        antiVisionText: 'Living beneath my potential and repeating the same excuses for another decade.',
         newIdentity: name,
-        crackAction: habitText,
-        actions: actList,
+        crackAction: name,
+        actions: [name],
         createdDate: new Date().toISOString(),
         logs: [],
         reflections: [],
-        habits: actList.map(function (a) { return { text: a, createdDate: new Date().toISOString(), checks: [] }; }),
-        goalDays: q.days || 30,
-        goalVision: vision,
-        goalActions: actList,
+        habits: [{ text: name, createdDate: new Date().toISOString(), checks: [] }],
+        goalDays: 30,
+        goalVision: 'Morning: Waking up energized.\nAfternoon: Consistent and focused execution.\nEvening: Quiet pride in living my standard.',
+        goalActions: [name],
         goalSetDate: new Date().toISOString()
       };
+      if (!S.identities) S.identities = [];
       S.identities.push(id);
       S.currentId = id.id;
-      S._qh = null;
       save();
-      go('quick');
+      go('identity');
     };
 
-    // Quick habit helper functions
-    function renderQhEvList(q) {
-      if (!q.oldEvidence || !q.oldEvidence.length) return '';
-      return q.oldEvidence.map(function (ev, i) { return '<div class="ev-item"><span class="ev-text">' + e(ev) + '</span><button class="ev-edit" onclick="qhEditEv(' + i + ', this)">edit</button><button class="ev-del" onclick="qhDelEv(' + i + ')">delete</button></div>' }).join('');
-    }
-    window.qhEditEv = function (i, btnEl) {
-      if (!S._qh?.oldEvidence?.[i]) return;
-      const item = btnEl ? btnEl.closest('.ev-item') : null;
-      if (!item) return;
-      const oldVal = S._qh.oldEvidence[i];
-      item.innerHTML = `
-    <div style="display:flex;gap:6px;width:100%;align-items:center">
-      <input type="text" id="edit-qh-ev-inp-${i}" value="${esc(oldVal)}" style="flex:1;font-size:13px;padding:6px 10px"/>
-      <button class="b bp bs" style="padding:4px 10px;font-size:12px" onclick="qhSaveEvEdit(${i})">Save</button>
-      <button class="bg" style="font-size:12px" onclick="render()">Cancel</button>
-    </div>
-  `;
-      $(`#edit-qh-ev-inp-${i}`)?.focus();
-    };
-    window.qhSaveEvEdit = function (i) {
-      const inp = $(`#edit-qh-ev-inp-${i}`);
-      if (!inp || !S._qh?.oldEvidence) return;
-      const v = inp.value.trim();
-      if (!v) return;
-      S._qh.oldEvidence[i] = v;
-      save();
-      render();
-    };
-    function renderQhActList(q) {
-      if (!q.actions || !q.actions.length) return '';
-      return q.actions.map(function (ac, i) { return '<div class="ev-item"><span class="ev-text">' + e(ac) + '</span><button class="ev-del" onclick="qhDelAct(' + i + ')">delete</button></div>' }).join('');
-    }
-    window.qhAddEv = function () {
-      var v = $('#qh-ev-input')?.value?.trim(); if (!v) return;
-      if (!S._qh) S._qh = { name: '', oldIdentity: '', oldEvidence: [], days: 30, vision: '', antiVision: '', actions: [] };
-      S._qh.oldEvidence.push(v); qhSaveFields(); render();
-    };
-    window.qhDelEv = function (i) { if (!S._qh) return; S._qh.oldEvidence.splice(i, 1); save(); render() };
-    window.qhAddAct = function () {
-      var v = $('#qh-act-input')?.value?.trim(); if (!v) return;
-      if (!S._qh) S._qh = { name: '', oldIdentity: '', oldEvidence: [], days: 30, vision: '', antiVision: '', actions: [] };
-      S._qh.actions.push(v); qhSaveFields(); render();
-    };
-    window.qhDelAct = function (i) { if (!S._qh) return; S._qh.actions.splice(i, 1); save(); render() };
-    window.qhStartAntiVis = function () {
-      var box = $('#qh-vis-body');
-      if (!box) return;
-      var lines = [
-        "Take a slow, deep breath... Keep your eyes on the screen as each line unfolds.",
-        "Project your mind 10 years into the future. A full decade passed, and this cage remained unbroken...",
-        "Look closely at your life 10 years from today. What project, skill, or ambition did you leave unbuilt because 'tomorrow' felt safer?",
-        "Feel the quiet weight of 10 years lost to familiar comfort—the physical heaviness and unfulfilled potential.",
-        "Hold that honest self-discovery in your mind, and express it in your own words below."
-      ];
-      let i = 0;
-      box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-        + '<p style="color:#d4a04a;font-weight:600;margin:0">10-Year Guided Reflection…</p>'
-        + '<span id="vis-step-count" class="sm" style="color:#6e6862">Step 1 of 5</span>'
-        + '</div>'
-        + '<p id="vis-line" style="color:#c8c2b8;font-size:13px;line-height:1.6;font-style:italic;transition:opacity 0.8s ease"></p>';
-      function nextStep() {
-        var el = $('#vis-line');
-        var count = $('#vis-step-count');
-        if (!el) return;
-        if (i >= lines.length) {
-          box.innerHTML = '<p style="color:#6abf7b;font-weight:600">Reflection Complete ✓ Write your honest 10-year Anti-Vision below.</p>';
-          return;
-        }
-        el.style.opacity = '0';
-        if (count) count.textContent = 'Step ' + (i + 1) + ' of ' + lines.length;
-        addT(function () {
-          if (el) {
-            el.textContent = lines[i];
-            el.style.opacity = '1';
-          }
-        }, 200);
-        i++;
-        addT(nextStep, 9000); // 9.0 seconds per line for relaxed reading and contemplation
-      }
-      nextStep();
-    };
-    window.qhSetDays = function (d, fromInput) {
-      if (!S._qh) S._qh = { name: '', oldIdentity: '', oldEvidence: [], days: 30, vision: '', antiVision: '', actions: [] };
-      var num = parseInt(d) || 30;
-      S._qh.days = num;
-      qhSaveFields();
-      if (!fromInput) {
-        var inp = $('#qh-days'); if (inp) inp.value = num;
-      }
-      var btns = document.querySelectorAll('#qh-preset-btns button');
-      if (btns && btns.length === 4) {
-        [21, 30, 60, 90].forEach(function (val, idx) {
-          if (btns[idx]) btns[idx].className = 'b bs ' + (num === val ? 'bp' : 'bb');
-        });
-      }
-      var l5 = $('#qh-l5-text');
-      if (l5) l5.textContent = '5. A Day in Your Life: How will your day look after ' + num + ' days of continuing this habit?';
-      var vis = $('#qh-vision');
-      if (vis) vis.placeholder = 'Describe your day from morning to night after ' + num + ' days of this habit…';
-      var btnSub = $('#qh-submit-btn');
-      if (btnSub) btnSub.textContent = 'Start my ' + num + '-day journey';
-    };
-    function qhSaveFields() {
-      if (!S._qh) S._qh = { name: '', oldIdentity: '', oldEvidence: [], days: 30, vision: '', antiVision: '', actions: [] };
-      var q = S._qh;
-      q.name = $('#qh-name')?.value || q.name;
-      q.oldIdentity = $('#qh-old')?.value || q.oldIdentity;
-      q.vision = $('#qh-vision')?.value || q.vision;
-      q.antiVision = $('#qh-anti')?.value || q.antiVision;
-      save();
-    }
+    window.createQuickHabit = window.createOneLineIdentity;
 
 
 
