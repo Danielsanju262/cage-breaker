@@ -1296,6 +1296,398 @@
       line-height: 1.55;
       overflow-wrap: break-word;
       word-break: normal;
+    }
+
+    /* ═══════════════════════════════════════════════
+       ROUTINE LOOPS STYLES
+       ═══════════════════════════════════════════════ */
+    .routine-loops-container {
+      margin-bottom: 22px;
+      background: linear-gradient(145deg, rgba(16, 22, 38, 0.85), rgba(10, 14, 26, 0.95));
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .routine-loops-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .routine-loops-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .routine-loops-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .routine-loops-count {
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .routine-loop-card {
+      background: rgba(18, 24, 42, 0.75);
+      border: 1px solid #28334e;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .routine-loop-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .routine-loop-card:hover {
+      border-color: rgba(245, 158, 11, 0.45);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), 0 0 15px rgba(245, 158, 11, 0.1);
+    }
+
+    .routine-loop-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .routine-loop-title {
+      font-family: Georgia, serif;
+      font-size: 16px;
+      font-weight: normal;
+      color: #f9fafb;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .routine-loop-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Loop Visual Flow Diagram */
+    .loop-flow-container {
+      background: rgba(10, 14, 26, 0.65);
+      border: 1px solid #1f273d;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 12px 0;
+      overflow-x: auto;
+    }
+
+    .loop-flow-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .loop-flow-diagram {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 2px 0;
+    }
+
+    .loop-step-node {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(30, 41, 68, 0.8), rgba(20, 28, 48, 0.9));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .loop-step-node:hover {
+      border-color: #818cf8;
+      background: rgba(40, 53, 88, 0.9);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .loop-step-num {
+      background: rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .loop-arrow {
+      color: #f59e0b;
+      font-size: 14px;
+      font-weight: bold;
+      opacity: 0.85;
+      user-select: none;
+    }
+
+    .loop-repeat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px dashed rgba(245, 158, 11, 0.45);
+      color: #fbbf24;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .loop-repeat-badge span {
+      font-size: 14px;
+      animation: spinSlow 8s linear infinite;
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* What's Next Box */
+    .whats-next-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.09), rgba(30, 24, 15, 0.7));
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 12px 0;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.05);
+    }
+
+    .whats-next-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .whats-next-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: #fbbf24;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .whats-next-text {
+      font-size: 13px;
+      color: #fef3c7;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    /* Meta Badges */
+    .loop-meta-pills {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .meta-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid transparent;
+    }
+
+    .meta-time {
+      background: rgba(59, 130, 246, 0.12);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .meta-outcome-pos {
+      background: rgba(74, 222, 128, 0.12);
+      color: #86efac;
+      border-color: rgba(74, 222, 128, 0.3);
+    }
+
+    .meta-outcome-part {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fde68a;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .meta-outcome-neu {
+      background: rgba(148, 163, 184, 0.12);
+      color: #cbd5e1;
+      border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    .meta-outcome-neg {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .meta-eff-best {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.22), rgba(202, 138, 4, 0.1));
+      color: #fef08a;
+      border-color: rgba(234, 179, 8, 0.5);
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);
+    }
+
+    .meta-eff-veryhigh {
+      background: rgba(168, 85, 247, 0.15);
+      color: #d8b4fe;
+      border-color: rgba(168, 85, 247, 0.4);
+    }
+
+    .meta-eff-high {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .meta-eff-med {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+
+    .meta-eff-low {
+      background: rgba(249, 115, 22, 0.15);
+      color: #fdba74;
+      border-color: rgba(249, 115, 22, 0.35);
+    }
+
+    .meta-eff-verylow {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .meta-iter {
+      background: rgba(255, 255, 255, 0.05);
+      color: #d1d5db;
+      border-color: rgba(255, 255, 255, 0.1);
+      margin-left: auto;
+    }
+
+    /* Modal Step Builder */
+    .step-builder-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .step-builder-badge {
+      background: rgba(99, 102, 241, 0.25);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .step-builder-input {
+      flex: 1;
+      background: rgba(10, 14, 26, 0.8);
+      border: 1px solid #2e364f;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #f9fafb;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .step-builder-input:focus {
+      outline: none;
+      border-color: #f59e0b;
+    }
+
+    .step-del-btn {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      transition: all 0.15s;
+    }
+
+    .step-del-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fff;
+    }
+
     /* Daily Greatest Crack Modal */
     #greatest-crack-modal.modal-overlay {
       position: fixed;
@@ -1520,13 +1912,32 @@
     // ═══════════════════════════════════════════════
     const DEF = { screen: "hub", identities: [], creating: null, currentId: null, deletedIds: [] };
 
+    function sanitizeRoutineLoop(rl) {
+      if (!rl || typeof rl !== 'object') return null;
+      var rawSteps = Array.isArray(rl.steps) ? rl.steps : (typeof rl.steps === 'string' ? rl.steps.split('→').map(s => s.trim()) : []);
+      var cleanSteps = rawSteps.map(function (s) { return String(s || '').trim(); }).filter(Boolean);
+      return {
+        id: rl.id || ('rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+        title: (rl.title || '').trim() || 'Untitled Routine Loop',
+        steps: cleanSteps.length > 0 ? cleanSteps : ['Start action', 'Observe progress', 'Repeat'],
+        whatNext: (rl.whatNext || '').trim(),
+        timeToResult: rl.timeToResult || 'Immediately',
+        outcome: rl.outcome || 'Positive',
+        effectiveness: rl.effectiveness || 'High',
+        iterationCount: typeof rl.iterationCount === 'number' ? rl.iterationCount : 0,
+        lastExecuted: rl.lastExecuted || null,
+        createdDate: rl.createdDate || new Date().toISOString()
+      };
+    }
+
     function sanitizeIdentity(id) {
       if (!id || typeof id !== 'object') return null;
       return {
         ...id,
         logs: Array.isArray(id.logs) ? id.logs : [],
         reflections: Array.isArray(id.reflections) ? id.reflections : [],
-        habits: Array.isArray(id.habits) ? id.habits : []
+        habits: Array.isArray(id.habits) ? id.habits : [],
+        routineLoops: Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(Boolean) : []
       };
     }
 
@@ -1722,6 +2133,21 @@
         mergedDailyCrack = (d1 >= d2) ? i1.dailyCrack : i2.dailyCrack;
       }
 
+      const rlMap = new Map();
+      [...(i1.routineLoops || []), ...(i2.routineLoops || [])].forEach(rl => {
+        if (!rl) return;
+        const key = rl.id || rl.title;
+        if (!rlMap.has(key)) {
+          rlMap.set(key, sanitizeRoutineLoop(rl));
+        } else {
+          const existing = rlMap.get(key);
+          const t1 = new Date(existing.lastExecuted || existing.createdDate || 0).getTime();
+          const t2 = new Date(rl.lastExecuted || rl.createdDate || 0).getTime();
+          rlMap.set(key, t2 >= t1 ? sanitizeRoutineLoop(rl) : existing);
+        }
+      });
+      const mergedRoutineLoops = Array.from(rlMap.values());
+
       return {
         ...secondary,
         ...primary,
@@ -1730,7 +2156,8 @@
         habits: mergedHabits,
         reflections: mergedReflections,
         oldEvidence: mergedOldEvidence,
-        actions: mergedActions
+        actions: mergedActions,
+        routineLoops: mergedRoutineLoops
       };
     }
 
@@ -2707,9 +3134,8 @@
 
         + renderTugOfWar(id)
         + reflectHtml
-
+        + renderRoutineLoopsSection(id)
         + renderInlineEvidenceSection(id)
-
         + '<button class="b bb bw" onclick="go(\'manage\')" style="margin-top:18px">⚙️ Manage & Edit Identity Details</button>'
         + '</div>';
     }
@@ -3117,6 +3543,16 @@
         <input type="text" id="mg-act-input" placeholder="Add supporting habit (e.g. Wash face with cleanser)..." style="flex:1;font-size:13px;padding:8px 10px"/>
         <button class="b bp bs" onclick="mgAddAction()">Add habit</button>
       </div>
+    </div>
+
+    <!-- Routine Loops Management -->
+    <div class="mg-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="margin:0">Routine Loops (${(id.routineLoops || []).length})</h3>
+        <button class="b bp bs" style="font-size:12px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700" onclick="openRoutineLoopModal()">+ Add Loop</button>
+      </div>
+      <p class="h">Repeatable cyclical action loops specifically engineered to build and prove this identity.</p>
+      <div id="mg-loops-list">${renderMgRoutineLoopsList(id)}</div>
     </div>
 
     <!-- Stats -->
@@ -4546,6 +4982,481 @@
       if (!id.goalSetDate) id.goalSetDate = new Date().toISOString();
       save();
       go('identity');
+    };
+
+    // ═══════════════════════════════════════════════
+    // ROUTINE LOOPS ENGINE & UI
+    // ═══════════════════════════════════════════════
+    function renderOutcomeBadge(outcome) {
+      var val = (outcome || 'Positive').toLowerCase();
+      if (val.includes('part')) {
+        return '<span class="meta-pill meta-outcome-part">🟡 Partially Successful</span>';
+      } else if (val.includes('neg')) {
+        return '<span class="meta-pill meta-outcome-neg">🔴 Negative Outcome</span>';
+      } else if (val.includes('neu')) {
+        return '<span class="meta-pill meta-outcome-neu">⚪ Neutral Outcome</span>';
+      }
+      return '<span class="meta-pill meta-outcome-pos">🟢 Positive Outcome</span>';
+    }
+
+    function renderEffectivenessBadge(eff) {
+      var val = (eff || 'High').toLowerCase();
+      if (val === 'best') {
+        return '<span class="meta-pill meta-eff-best">👑 BEST (Top Tier)</span>';
+      } else if (val === 'very high' || val === 'veryhigh') {
+        return '<span class="meta-pill meta-eff-veryhigh">🔥 VERY HIGH Effectiveness</span>';
+      } else if (val === 'high') {
+        return '<span class="meta-pill meta-eff-high">⚡ HIGH Effectiveness</span>';
+      } else if (val === 'medium') {
+        return '<span class="meta-pill meta-eff-med">💫 MEDIUM Effectiveness</span>';
+      } else if (val === 'low') {
+        return '<span class="meta-pill meta-eff-low">⏳ LOW Effectiveness</span>';
+      }
+      return '<span class="meta-pill meta-eff-verylow">⚠️ VERY LOW Effectiveness</span>';
+    }
+
+    function renderTimeBadge(time) {
+      var t = time || 'Immediately';
+      return '<span class="meta-pill meta-time">⏱️ ' + e(t) + '</span>';
+    }
+
+    function renderLoopFlowDiagram(steps) {
+      if (!steps || !steps.length) {
+        return '<p class="h" style="font-style:italic">No steps defined for this loop yet.</p>';
+      }
+      var nodesHtml = steps.map(function (step, idx) {
+        return '<div class="loop-step-node">'
+          + '<span class="loop-step-num">' + (idx + 1) + '</span>'
+          + '<span>' + e(step) + '</span>'
+          + '</div>';
+      }).join('<span class="loop-arrow">➔</span>');
+
+      return '<div class="loop-flow-container">'
+        + '<div class="loop-flow-label"><span>🔄</span> CONTINUOUS FEEDBACK CYCLE</div>'
+        + '<div class="loop-flow-diagram">'
+        + nodesHtml
+        + '<span class="loop-arrow">➔</span>'
+        + '<div class="loop-repeat-badge"><span>↺</span> REPEAT CYCLE</div>'
+        + '</div>'
+        + '</div>';
+    }
+
+    function renderRoutineLoopCard(rl, idx) {
+      var iterText = (rl.iterationCount || 0) === 1 ? '1 cycle run' : (rl.iterationCount || 0) + ' cycles run';
+      var lastRunText = rl.lastExecuted ? ('Last run: ' + new Date(rl.lastExecuted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) : 'Not run yet';
+
+      var whatsNextHtml = '';
+      if (rl.whatNext && rl.whatNext.trim()) {
+        whatsNextHtml = '<div class="whats-next-box">'
+          + '<div class="whats-next-header">'
+          + '<span class="whats-next-badge">🎯 WHAT\'S NEXT (NEXT MOVE)</span>'
+          + '<button class="b bp bs" onclick="runRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">✓ Execute / Mark Run</button>'
+          + '</div>'
+          + '<div class="whats-next-text">"' + e(rl.whatNext) + '"</div>'
+          + '</div>';
+      }
+
+      return '<div class="routine-loop-card" id="loop-card-' + rl.id + '">'
+        + '<div class="routine-loop-top">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<h4 class="routine-loop-title">🔁 ' + e(rl.title || 'Routine Loop ' + (idx + 1)) + '</h4>'
+        + '<span class="routine-loops-count" style="font-size:10px;color:#fbbf24;border-color:rgba(245,158,11,0.3)">' + iterText + '</span>'
+        + '</div>'
+        + '<div class="routine-loop-actions">'
+        + '<button class="b bp bs" onclick="runRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;border-color:#3b82f6" title="Record another iteration of this loop">⚡ Run Loop (+1)</button>'
+        + '<button class="bg" onclick="openRoutineLoopModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;border:1px solid #374151;border-radius:6px">Edit</button>'
+        + '<button class="bg" onclick="deleteRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Delete</button>'
+        + '</div>'
+        + '</div>'
+
+        + renderLoopFlowDiagram(rl.steps)
+
+        + whatsNextHtml
+
+        + '<div class="loop-meta-pills">'
+        + renderTimeBadge(rl.timeToResult)
+        + renderOutcomeBadge(rl.outcome)
+        + renderEffectivenessBadge(rl.effectiveness)
+        + '<span class="meta-pill meta-iter" title="' + lastRunText + '">📅 ' + lastRunText + '</span>'
+        + '</div>'
+
+        + '</div>';
+    }
+
+    function renderRoutineLoopsSection(id) {
+      if (!id) return '';
+      var loops = id.routineLoops || [];
+
+      var cardsHtml = '';
+      if (loops.length === 0) {
+        cardsHtml = '<div style="text-align:center;padding:26px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(245,158,11,0.3);border-radius:12px">'
+          + '<p style="font-family:Georgia,serif;font-size:16px;color:#f3f4f6;font-style:italic;margin-bottom:6px">"Who you are is what you repeatedly do."</p>'
+          + '<p class="h" style="max-width:480px;margin:0 auto 16px;font-size:12px;color:#9ca3af">Turn this One-Line Identity into actionable, continuous routine loops (e.g. Code → Use Website → Find Bugs → Prompt AI → Fix Code → Repeat).</p>'
+          + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="padding:8px 18px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;box-shadow:0 3px 12px rgba(245,158,11,0.25)">✨ Create Your First Routine Loop</button>'
+          + '</div>';
+      } else {
+        cardsHtml = loops.map(function (rl, idx) {
+          return renderRoutineLoopCard(rl, idx);
+        }).join('');
+      }
+
+      return '<div class="routine-loops-container">'
+        + '<div class="routine-loops-header">'
+        + '<div class="routine-loops-title-group">'
+        + '<span class="routine-loops-badge">🔁 ROUTINE LOOPS</span>'
+        + '<span class="routine-loops-count">' + loops.length + ' active loop' + (loops.length === 1 ? '' : 's') + '</span>'
+        + '</div>'
+        + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="font-size:12px;padding:6px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.2)">➕ Add Routine Loop</button>'
+        + '</div>'
+        + '<p class="h" style="font-size:12px;margin-bottom:14px;color:#cbd5e1">Actionable feedback loops engineered to continuously move toward this identity.</p>'
+        + cardsHtml
+        + '</div>';
+    }
+
+    function renderMgRoutineLoopsList(id) {
+      var loops = id.routineLoops || [];
+      if (loops.length === 0) {
+        return '<p class="h" style="font-style:italic;margin-top:6px">No routine loops created yet. Add one to turn this identity into repeatable execution cycles.</p>';
+      }
+      return loops.map(function (rl, i) {
+        var stepsCount = (rl.steps || []).length;
+        var iterCount = rl.iterationCount || 0;
+        return '<div class="ev-item" style="padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,0.02);border:1px solid #28334e;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
+          + '<div style="flex:1;min-width:0;padding-right:10px">'
+          + '<div style="font-weight:600;color:#f9fafb;font-size:13px;display:flex;align-items:center;gap:6px">🔁 ' + e(rl.title) + '</div>'
+          + '<div class="sm" style="color:#9ca3af;font-size:11px;margin-top:2px">' + stepsCount + ' steps · ' + e(rl.timeToResult || 'Immediately') + ' · ' + iterCount + ' runs</div>'
+          + '</div>'
+          + '<div style="display:flex;gap:6px">'
+          + '<button class="b bb bs" style="font-size:11px;padding:3px 8px" onclick="openRoutineLoopModal(\'' + rl.id + '\')">Edit</button>'
+          + '<button class="ev-del" style="font-size:11px;padding:3px 8px" onclick="deleteRoutineLoop(\'' + rl.id + '\')">Delete</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    window.runRoutineLoop = function (loopId) {
+      var id = cur();
+      if (!id || !id.routineLoops) return;
+      var rl = id.routineLoops.find(function (item) { return item.id === loopId; });
+      if (!rl) return;
+
+      rl.iterationCount = (rl.iterationCount || 0) + 1;
+      rl.lastExecuted = new Date().toISOString();
+
+      // Automatically log evidence proof
+      var logNote = 'Completed Routine Loop: ' + rl.title + ' (Cycle #' + rl.iterationCount + ')' + (rl.whatNext ? ' — Next: ' + rl.whatNext : '');
+      if (!id.logs) id.logs = [];
+      id.logs.push({
+        date: new Date().toISOString(),
+        note: logNote,
+        weight: (rl.effectiveness === 'Best' || rl.effectiveness === 'Very High') ? 'strong' : 'medium'
+      });
+
+      save();
+      
+      var card = document.getElementById('loop-card-' + loopId);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.boxShadow = '0 0 30px rgba(74,222,128,0.7), 0 0 10px #4ede80';
+        card.style.borderColor = '#4ede80';
+        setTimeout(function () {
+          render();
+        }, 500);
+      } else {
+        render();
+      }
+    };
+
+    window.deleteRoutineLoop = function (loopId) {
+      var id = cur();
+      if (!id || !id.routineLoops) return;
+      if (confirm('Delete this routine loop?')) {
+        id.routineLoops = id.routineLoops.filter(function (item) { return item.id !== loopId; });
+        save();
+        render();
+        closeRoutineLoopModal();
+      }
+    };
+
+    // ═══════════════════════════════════════════════
+    // ROUTINE LOOP MODAL & STEP BUILDER
+    // ═══════════════════════════════════════════════
+    window.modalLoopDraft = null;
+
+    window.openRoutineLoopModal = function (loopId) {
+      var id = cur();
+      if (!id) return;
+      if (!id.routineLoops) id.routineLoops = [];
+
+      var existing = loopId ? id.routineLoops.find(function (item) { return item.id === loopId; }) : null;
+
+      if (existing) {
+        window.modalLoopDraft = {
+          id: existing.id,
+          title: existing.title || '',
+          steps: Array.isArray(existing.steps) ? [...existing.steps] : ['Start action', 'Observe progress', 'Repeat'],
+          whatNext: existing.whatNext || '',
+          timeToResult: existing.timeToResult || 'Immediately',
+          outcome: existing.outcome || 'Positive',
+          effectiveness: existing.effectiveness || 'High',
+          iterationCount: existing.iterationCount || 0
+        };
+      } else {
+        window.modalLoopDraft = {
+          id: 'rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          title: '',
+          steps: ['Code', 'Use website', 'Find bugs', 'Prompt AI with bugs', 'Fix code', 'Use website again'],
+          whatNext: '',
+          timeToResult: 'Within a few minutes',
+          outcome: 'Positive',
+          effectiveness: 'High',
+          iterationCount: 0
+        };
+      }
+
+      var modal = document.getElementById('routine-loop-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'routine-loop-modal';
+        document.body.appendChild(modal);
+      }
+      renderRoutineLoopModalContent(modal);
+    };
+
+    window.closeRoutineLoopModal = function () {
+      var modal = document.getElementById('routine-loop-modal');
+      if (modal) modal.remove();
+      window.modalLoopDraft = null;
+    };
+
+    window.addModalLoopStep = function () {
+      if (!window.modalLoopDraft) return;
+      if (!Array.isArray(window.modalLoopDraft.steps)) window.modalLoopDraft.steps = [];
+      window.modalLoopDraft.steps.push('');
+      renderModalStepsList();
+      renderModalLoopPreview();
+      var inputs = document.querySelectorAll('.step-builder-input');
+      if (inputs && inputs.length > 0) {
+        inputs[inputs.length - 1].focus();
+      }
+    };
+
+    window.removeModalLoopStep = function (stepIdx) {
+      if (!window.modalLoopDraft || !window.modalLoopDraft.steps) return;
+      if (window.modalLoopDraft.steps.length <= 1) {
+        window.modalLoopDraft.steps = [''];
+      } else {
+        window.modalLoopDraft.steps.splice(stepIdx, 1);
+      }
+      renderModalStepsList();
+      renderModalLoopPreview();
+    };
+
+    window.updateModalLoopStep = function (stepIdx, value) {
+      if (!window.modalLoopDraft || !window.modalLoopDraft.steps) return;
+      window.modalLoopDraft.steps[stepIdx] = value;
+      renderModalLoopPreview();
+    };
+
+    function renderModalStepsList() {
+      var container = document.getElementById('modal-steps-container');
+      if (!container || !window.modalLoopDraft) return;
+      var steps = window.modalLoopDraft.steps || [];
+
+      container.innerHTML = steps.map(function (step, i) {
+        return '<div class="step-builder-row">'
+          + '<span class="step-builder-badge">' + (i + 1) + '</span>'
+          + '<input type="text" class="step-builder-input" placeholder="e.g. Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" />'
+          + '<button type="button" class="step-del-btn" onclick="removeModalLoopStep(' + i + ')" title="Remove step">✕</button>'
+          + '</div>';
+      }).join('');
+    }
+
+    function renderModalLoopPreview() {
+      var preview = document.getElementById('modal-loop-preview');
+      if (!preview || !window.modalLoopDraft) return;
+      var rawSteps = window.modalLoopDraft.steps || [];
+      var cleanSteps = rawSteps.map(function (s) { return String(s || '').trim(); }).filter(Boolean);
+      preview.innerHTML = renderLoopFlowDiagram(cleanSteps.length > 0 ? cleanSteps : ['Step 1', 'Step 2', 'Repeat']);
+    }
+
+    function renderRoutineLoopModalContent(modal) {
+      var draft = window.modalLoopDraft;
+      if (!draft) return;
+
+      var isEdit = !!cur()?.routineLoops?.some(function (item) { return item.id === draft.id; });
+
+      var timeOptions = [
+        'Immediately',
+        'Within a few minutes',
+        'Within a few hours',
+        'Within a day',
+        'Within a week'
+      ];
+      var isCustomTime = !timeOptions.includes(draft.timeToResult);
+
+      modal.className = 'modal-overlay';
+      modal.onclick = function (e) {
+        if (e.target === modal) closeRoutineLoopModal();
+      };
+
+      modal.innerHTML = '<div class="modal-card" style="max-width:620px;border-color:rgba(245,158,11,0.4)">'
+        + '<div class="modal-header">'
+        + '<h3>🔁 ' + (isEdit ? 'Edit Routine Loop' : 'Create New Routine Loop') + '</h3>'
+        + '<button class="modal-close" onclick="closeRoutineLoopModal()">&times;</button>'
+        + '</div>'
+        + '<div class="modal-body">'
+
+        // Identity context
+        + '<div style="margin-bottom:14px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);padding:10px 14px;border-radius:10px">'
+        + '<div class="sm" style="color:#4ede80;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase">ONE-LINE IDENTITY TARGET</div>'
+        + '<div style="font-family:Georgia,serif;font-style:italic;color:#f9fafb;font-size:14px;margin-top:2px">"' + e(cur()?.newIdentity || '') + '"</div>'
+        + '</div>'
+
+        // Title
+        + '<div style="margin-bottom:16px">'
+        + '<label class="lb">1. Routine Loop Title / Name</label>'
+        + '<p class="h">A clear title describing this feedback loop cycle.</p>'
+        + '<input type="text" id="modal-loop-title" placeholder="e.g. Code, Find Bugs & Prompt AI to Fix" value="' + esc(draft.title) + '" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
+        + '</div>'
+
+        // Steps Builder
+        + '<div style="margin-bottom:16px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        + '<label class="lb" style="margin-bottom:0">2. Loop Elements / Steps Chain (Add as many as you want)</label>'
+        + '<button type="button" class="b bp bs" style="font-size:11px;padding:4px 10px;background:rgba(99,102,241,0.25);border-color:#6366f1;color:#a5b4fc" onclick="addModalLoopStep()">➕ Add Step</button>'
+        + '</div>'
+        + '<p class="h">Define the sequential actions in this continuous loop.</p>'
+        + '<div id="modal-steps-container" style="margin-top:8px"></div>'
+        + '<button type="button" class="b bb bs" style="width:100%;font-size:12px;padding:8px;margin-top:4px;border-style:dashed" onclick="addModalLoopStep()">➕ Add Another Step Element</button>'
+        + '</div>'
+
+        // Live Visual Loop Preview
+        + '<div style="margin-bottom:16px">'
+        + '<label class="lb" style="font-size:11px;color:#fbbf24">✨ Live Visual Preview:</label>'
+        + '<div id="modal-loop-preview"></div>'
+        + '</div>'
+
+        // What's Next
+        + '<div style="margin-bottom:16px">'
+        + '<label class="lb">3. What\'s Next (Next Immediate Action)</label>'
+        + '<p class="h">What is the exact next step you need to take when you follow this routine?</p>'
+        + '<textarea rows="2" id="modal-loop-whatnext" placeholder="e.g. Open browser console, test user signup edge cases with empty fields, and document errors..." style="width:100%;font-size:13px;padding:8px 12px;margin-top:4px">' + esc(draft.whatNext) + '</textarea>'
+        + '</div>'
+
+        // Time to Result & Outcome & Effectiveness Grid
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+        
+        // Time to Result
+        + '<div>'
+        + '<label class="lb">4. Time to Result</label>'
+        + '<p class="h">How long to see results?</p>'
+        + '<select id="modal-loop-time" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px" onchange="toggleCustomTimeInput(this.value)">'
+        + timeOptions.map(function (opt) {
+            return '<option value="' + opt + '" ' + (draft.timeToResult === opt ? 'selected' : '') + '>' + opt + '</option>';
+          }).join('')
+        + '<option value="custom" ' + (isCustomTime ? 'selected' : '') + '>Custom time...</option>'
+        + '</select>'
+        + '<input type="text" id="modal-loop-time-custom" placeholder="e.g. Within 2 hours..." value="' + (isCustomTime ? esc(draft.timeToResult) : '') + '" style="width:100%;font-size:13px;padding:6px 10px;margin-top:6px;display:' + (isCustomTime ? 'block' : 'none') + '" />'
+        + '</div>'
+
+        // Actual Result / Outcome
+        + '<div>'
+        + '<label class="lb">5. Actual Result / Outcome</label>'
+        + '<p class="h">Observed outcome status</p>'
+        + '<select id="modal-loop-outcome" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px">'
+        + '<option value="Positive" ' + (draft.outcome === 'Positive' ? 'selected' : '') + '>🟢 Positive</option>'
+        + '<option value="Partially successful" ' + (draft.outcome === 'Partially successful' ? 'selected' : '') + '>🟡 Partially Successful</option>'
+        + '<option value="Neutral" ' + (draft.outcome === 'Neutral' ? 'selected' : '') + '>⚪ Neutral</option>'
+        + '<option value="Negative" ' + (draft.outcome === 'Negative' ? 'selected' : '') + '>🔴 Negative</option>'
+        + '</select>'
+        + '</div>'
+
+        + '</div>'
+
+        // Effectiveness Rating
+        + '<div style="margin-bottom:20px">'
+        + '<label class="lb">6. Effectiveness Rating</label>'
+        + '<p class="h">How effective is this routine loop in achieving your One-Line Identity?</p>'
+        + '<select id="modal-loop-eff" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px">'
+        + '<option value="Best" ' + (draft.effectiveness === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
+        + '<option value="Very High" ' + (draft.effectiveness === 'Very High' ? 'selected' : '') + '>🔥 Very High</option>'
+        + '<option value="High" ' + (draft.effectiveness === 'High' ? 'selected' : '') + '>⚡ High</option>'
+        + '<option value="Medium" ' + (draft.effectiveness === 'Medium' ? 'selected' : '') + '>💫 Medium</option>'
+        + '<option value="Low" ' + (draft.effectiveness === 'Low' ? 'selected' : '') + '>⏳ Low</option>'
+        + '<option value="Very Low" ' + (draft.effectiveness === 'Very Low' ? 'selected' : '') + '>⚠️ Very Low</option>'
+        + '</select>'
+        + '</div>'
+
+        // Buttons
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;border-top:1px solid #1f2436;padding-top:16px">'
+        + (isEdit ? '<button type="button" class="bg" style="color:#fca5a5;font-size:13px" onclick="deleteRoutineLoop(\'' + draft.id + '\')">🗑️ Delete Loop</button>' : '<div></div>')
+        + '<div style="display:flex;gap:8px">'
+        + '<button type="button" class="b bb" onclick="closeRoutineLoopModal()">Cancel</button>'
+        + '<button type="button" class="b bp" onclick="saveRoutineLoopModal(\'' + draft.id + '\')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">💾 Save Routine Loop</button>'
+        + '</div>'
+        + '</div>'
+
+        + '</div>'
+        + '</div>';
+
+      renderModalStepsList();
+      renderModalLoopPreview();
+    }
+
+    window.toggleCustomTimeInput = function (val) {
+      var customInp = document.getElementById('modal-loop-time-custom');
+      if (customInp) {
+        customInp.style.display = (val === 'custom') ? 'block' : 'none';
+        if (val === 'custom') customInp.focus();
+      }
+    };
+
+    window.saveRoutineLoopModal = function (loopId) {
+      var id = cur();
+      if (!id) return;
+      if (!id.routineLoops) id.routineLoops = [];
+
+      var titleInp = document.getElementById('modal-loop-title')?.value?.trim();
+      var whatNextInp = document.getElementById('modal-loop-whatnext')?.value?.trim() || '';
+      var timeSelect = document.getElementById('modal-loop-time')?.value || 'Immediately';
+      var timeCustom = document.getElementById('modal-loop-time-custom')?.value?.trim();
+      var finalTime = (timeSelect === 'custom' && timeCustom) ? timeCustom : (timeSelect !== 'custom' ? timeSelect : 'Immediately');
+      var outcomeVal = document.getElementById('modal-loop-outcome')?.value || 'Positive';
+      var effVal = document.getElementById('modal-loop-eff')?.value || 'High';
+
+      var cleanSteps = (window.modalLoopDraft?.steps || []).map(function (s) {
+        return String(s || '').trim();
+      }).filter(Boolean);
+
+      if (cleanSteps.length === 0) {
+        cleanSteps = ['Execute routine', 'Evaluate results', 'Repeat'];
+      }
+
+      var existingIdx = id.routineLoops.findIndex(function (item) { return item.id === loopId; });
+
+      var newLoopObj = {
+        id: loopId || ('rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+        title: titleInp || 'Routine Loop ' + (id.routineLoops.length + 1),
+        steps: cleanSteps,
+        whatNext: whatNextInp,
+        timeToResult: finalTime,
+        outcome: outcomeVal,
+        effectiveness: effVal,
+        iterationCount: existingIdx >= 0 ? (id.routineLoops[existingIdx].iterationCount || 0) : 0,
+        lastExecuted: existingIdx >= 0 ? (id.routineLoops[existingIdx].lastExecuted || null) : null,
+        createdDate: existingIdx >= 0 ? (id.routineLoops[existingIdx].createdDate || new Date().toISOString()) : new Date().toISOString()
+      };
+
+      if (existingIdx >= 0) {
+        id.routineLoops[existingIdx] = newLoopObj;
+      } else {
+        id.routineLoops.push(newLoopObj);
+      }
+
+      save();
+      render();
+      closeRoutineLoopModal();
     };
 
   </script>
