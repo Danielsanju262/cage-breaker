@@ -1747,6 +1747,146 @@
       background: rgba(74, 222, 128, 0.05);
       border: 1px solid rgba(74, 222, 128, 0.25);
     }
+  
+    /* Identity Tasks Section */
+    .tasks-container {
+      margin-top: 18px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+    }
+    .tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tasks-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .task-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid #28334e;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+    }
+    .task-card:hover {
+      border-color: rgba(59, 130, 246, 0.45);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .task-card.task-done {
+      border-color: rgba(74, 222, 128, 0.3);
+      background: rgba(74, 222, 128, 0.03);
+    }
+    .task-check-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid #4b5563;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 0;
+    }
+    .task-check-btn.checked {
+      background: #10b981;
+      border-color: #10b981;
+    }
+    .task-title {
+      font-size: 14px;
+      color: #f3f4f6;
+      font-weight: 600;
+      line-height: 1.4;
+      flex: 1;
+      min-width: 0;
+    }
+    .task-done .task-title {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+    .task-progress-bar {
+      height: 5px;
+      background: #1e293b;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .task-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* Anchor Event Box & Inline Editor */
+    .anchor-event-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .anchor-edit-input {
+      width: 100%;
+      background: #111827;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fef3c7;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .anchor-edit-input:focus {
+      outline: none;
+      border-color: #fbbf24;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
+    }
+
+    /* Inline Routine Loop Card Editor */
+    .inline-loop-edit-panel {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 8px;
+    }
+    .inline-step-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
   </style>
 </head>
 
@@ -1937,16 +2077,31 @@
       };
     }
 
+    function sanitizeTask(t) {
+      if (!t || typeof t !== 'object') return null;
+      var targetLoopsNum = parseInt(t.targetLoops, 10);
+      if (isNaN(targetLoopsNum) || targetLoopsNum <= 0) targetLoopsNum = 3;
+      return {
+        id: t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+        text: (t.text || '').trim() || 'Untitled Task',
+        completed: !!t.completed,
+        completedAt: t.completedAt || null,
+        targetLoops: targetLoopsNum,
+        linkedLoopId: t.linkedLoopId || null,
+        createdDate: t.createdDate || new Date().toISOString(),
+        updatedAt: t.updatedAt || new Date().toISOString()
+      };
+    }
+
     function sanitizeIdentity(id) {
       if (!id || typeof id !== 'object') return null;
-      return {
-        ...id,
-        targetEvent: (id.targetEvent || '').trim(),
-        logs: Array.isArray(id.logs) ? id.logs : [],
-        reflections: Array.isArray(id.reflections) ? id.reflections : [],
-        habits: Array.isArray(id.habits) ? id.habits : [],
-        routineLoops: Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(Boolean) : []
-      };
+      id.targetEvent = (id.targetEvent || '').trim();
+      id.logs = Array.isArray(id.logs) ? id.logs : [];
+      id.reflections = Array.isArray(id.reflections) ? id.reflections : [];
+      id.habits = Array.isArray(id.habits) ? id.habits : [];
+      id.tasks = Array.isArray(id.tasks) ? id.tasks.map(sanitizeTask).filter(Boolean) : [];
+      id.routineLoops = Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(Boolean) : [];
+      return id;
     }
 
     function getScreenFromUrl() {
@@ -2047,12 +2202,7 @@
       if (!S || !Array.isArray(S.identities)) return null;
       const found = S.identities.find(i => i && i.id === S.currentId);
       if (!found) return null;
-      if (!found.logs) found.logs = [];
-      if (!found.habits) found.habits = [];
-      if (!found.reflections) found.reflections = [];
-      if (!found.oldEvidence) found.oldEvidence = [];
-      if (!found.actions) found.actions = [];
-      return found;
+      return sanitizeIdentity(found);
     }
 
     function render() {
@@ -2156,6 +2306,21 @@
       });
       const mergedRoutineLoops = Array.from(rlMap.values());
 
+      const tasksMap = new Map();
+      [...(i1.tasks || []), ...(i2.tasks || [])].forEach(t => {
+        if (!t) return;
+        const key = t.id || t.text;
+        if (!tasksMap.has(key)) {
+          tasksMap.set(key, sanitizeTask(t));
+        } else {
+          const existing = tasksMap.get(key);
+          const t1 = new Date(existing.updatedAt || existing.createdDate || 0).getTime();
+          const t2 = new Date(t.updatedAt || t.createdDate || 0).getTime();
+          tasksMap.set(key, t2 >= t1 ? sanitizeTask(t) : existing);
+        }
+      });
+      const mergedTasks = Array.from(tasksMap.values());
+
       return {
         ...secondary,
         ...primary,
@@ -2165,7 +2330,8 @@
         reflections: mergedReflections,
         oldEvidence: mergedOldEvidence,
         actions: mergedActions,
-        routineLoops: mergedRoutineLoops
+        routineLoops: mergedRoutineLoops,
+        tasks: mergedTasks
       };
     }
 
@@ -2984,6 +3150,264 @@
       }
     };
 
+    
+    // ===============================================================
+    // ANCHOR EVENT & TASK MANAGEMENT
+    // ===============================================================
+    window.editingAnchorEvent = false;
+
+    window.startEditAnchorEvent = function () {
+      window.editingAnchorEvent = true;
+      render();
+      setTimeout(function () {
+        var inp = document.getElementById('inline-anchor-event-input');
+        if (inp) inp.focus();
+      }, 50);
+    };
+
+    window.cancelEditAnchorEvent = function () {
+      window.editingAnchorEvent = false;
+      render();
+    };
+
+    window.saveInlineAnchorEvent = function () {
+      var inp = document.getElementById('inline-anchor-event-input');
+      var val = inp ? inp.value.trim() : '';
+      var id = getCurRef() || cur();
+      if (!id) return;
+      id.targetEvent = val;
+      id.updatedAt = new Date().toISOString();
+      window.editingAnchorEvent = false;
+      save(true);
+      render();
+    };
+
+    window.editingTaskId = null;
+
+    window.addTask = function () {
+      var textInp = document.getElementById('new-task-text');
+      var textVal = textInp ? textInp.value.trim() : '';
+      if (!textVal) {
+        if (textInp) textInp.focus();
+        return;
+      }
+      var loopsInp = document.getElementById('new-task-loops');
+      var loopsVal = loopsInp ? parseInt(loopsInp.value, 10) : 3;
+      if (isNaN(loopsVal) || loopsVal <= 0) loopsVal = 3;
+
+      var loopLinkSelect = document.getElementById('new-task-loop-link');
+      var linkedLoopId = loopLinkSelect ? loopLinkSelect.value : '';
+
+      var id = getCurRef() || cur();
+      if (!id) return;
+      if (!Array.isArray(id.tasks)) id.tasks = [];
+
+      var newTask = {
+        id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        text: textVal,
+        completed: false,
+        completedAt: null,
+        targetLoops: loopsVal,
+        linkedLoopId: linkedLoopId || null,
+        createdDate: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      id.tasks.push(newTask);
+      save(true);
+      render();
+    };
+
+    window.toggleTask = function (taskId) {
+      var id = getCurRef() || cur();
+      if (!id || !id.tasks) return;
+      var task = id.tasks.find(function (t) { return t.id === taskId; });
+      if (!task) return;
+
+      task.completed = !task.completed;
+      task.completedAt = task.completed ? new Date().toISOString() : null;
+      task.updatedAt = new Date().toISOString();
+
+      if (task.completed) {
+        if (!id.logs) id.logs = [];
+        id.logs.push({
+          date: new Date().toISOString(),
+          note: 'Completed Identity Task: ' + task.text + ' (Achieved target ' + task.targetLoops + ' routine loop cycles!)',
+          weight: 'strong'
+        });
+      }
+
+      save(true);
+      render();
+    };
+
+    window.startEditTask = function (taskId) {
+      window.editingTaskId = taskId;
+      render();
+      setTimeout(function () {
+        var inp = document.getElementById('edit-task-input-' + taskId);
+        if (inp) inp.focus();
+      }, 50);
+    };
+
+    window.cancelEditTask = function () {
+      window.editingTaskId = null;
+      render();
+    };
+
+    window.saveEditTask = function (taskId) {
+      var id = getCurRef() || cur();
+      if (!id || !id.tasks) return;
+      var task = id.tasks.find(function (t) { return t.id === taskId; });
+      if (!task) return;
+
+      var textInp = document.getElementById('edit-task-input-' + taskId);
+      var textVal = textInp ? textInp.value.trim() : '';
+      if (!textVal) return;
+
+      var loopsInp = document.getElementById('edit-task-loops-' + taskId);
+      var loopsVal = loopsInp ? parseInt(loopsInp.value, 10) : task.targetLoops;
+      if (isNaN(loopsVal) || loopsVal <= 0) loopsVal = 3;
+
+      var loopLinkSelect = document.getElementById('edit-task-link-' + taskId);
+      var linkedLoopId = loopLinkSelect ? loopLinkSelect.value : '';
+
+      task.text = textVal;
+      task.targetLoops = loopsVal;
+      task.linkedLoopId = linkedLoopId || null;
+      task.updatedAt = new Date().toISOString();
+
+      window.editingTaskId = null;
+      save(true);
+      render();
+    };
+
+    window.deleteTask = function (taskId) {
+      var id = getCurRef() || cur();
+      if (!id || !id.tasks) return;
+      if (confirm('Delete this task?')) {
+        id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
+        save(true);
+        render();
+      }
+    };
+
+    window.quickRunTaskLoop = function (taskId, loopId) {
+      var id = getCurRef() || cur();
+      if (!id) return;
+      var targetLoopId = loopId;
+      if (!targetLoopId && Array.isArray(id.routineLoops) && id.routineLoops.length > 0) {
+        targetLoopId = id.routineLoops[0].id;
+      }
+      if (targetLoopId) {
+        openLogRunModal(targetLoopId);
+      } else {
+        openRoutineLoopModal();
+      }
+    };
+
+    function renderTasksSection(id) {
+      if (!id) return '';
+      var tasks = Array.isArray(id.tasks) ? id.tasks : [];
+      var loops = Array.isArray(id.routineLoops) ? id.routineLoops : [];
+      var completedCount = tasks.filter(function (t) { return t.completed; }).length;
+
+      var tasksListHtml = '';
+      if (tasks.length === 0) {
+        tasksListHtml = '<div style="text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.3);border-radius:10px;margin-bottom:14px">'
+          + '<p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 4px 0">No tasks created yet for this identity.</p>'
+          + '<p class="h" style="font-size:12px;color:#64748b;margin:0">Add concrete tasks below and use routine loops as the continuous engine to achieve them.</p>'
+          + '</div>';
+      } else {
+        tasksListHtml = tasks.map(function (task) {
+          if (window.editingTaskId === task.id) {
+            return '<div class="task-card" style="border-color:#3b82f6;background:rgba(59,130,246,0.06)">'
+              + '<div style="font-size:12px;font-weight:700;color:#93c5fd;margin-bottom:8px">✏️ EDIT TASK</div>'
+              + '<div style="margin-bottom:8px">'
+              + '<input type="text" id="edit-task-input-' + task.id + '" value="' + esc(task.text) + '" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;box-sizing:border-box" />'
+              + '</div>'
+              + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'
+              + '<div style="display:flex;align-items:center;gap:6px">'
+              + '<label style="font-size:11px;color:#94a3b8">Target Loop Runs:</label>'
+              + '<input type="number" id="edit-task-loops-' + task.id + '" value="' + task.targetLoops + '" min="1" max="999" style="width:65px;background:#111827;border:1px solid #374151;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px" />'
+              + '</div>'
+              + '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:140px">'
+              + '<label style="font-size:11px;color:#94a3b8">Linked Loop:</label>'
+              + '<select id="edit-task-link-' + task.id + '" style="flex:1;background:#111827;border:1px solid #374151;color:#f3f4f6;padding:5px 8px;border-radius:6px;font-size:12px">'
+              + '<option value="">All Identity Loops</option>'
+              + loops.map(function (rl) { return '<option value="' + rl.id + '" ' + (task.linkedLoopId === rl.id ? 'selected' : '') + '>🔁 ' + esc(rl.title) + '</option>'; }).join('')
+              + '</select>'
+              + '</div>'
+              + '</div>'
+              + '<div style="display:flex;justify-content:flex-end;gap:6px">'
+              + '<button class="bg" onclick="cancelEditTask()" style="font-size:11px;padding:4px 10px">Cancel</button>'
+              + '<button class="b bp bs" onclick="saveEditTask(\'' + task.id + '\')" style="font-size:11px;padding:5px 12px;background:#2563eb;color:#fff">Save Task</button>'
+              + '</div>'
+              + '</div>';
+          }
+
+          var linkedLoop = task.linkedLoopId ? loops.find(function (l) { return l.id === task.linkedLoopId; }) : null;
+          var runsDone = linkedLoop ? (linkedLoop.iterationCount || 0) : loops.reduce(function (sum, l) { return sum + (l.iterationCount || 0); }, 0);
+          var targetRuns = Math.max(1, task.targetLoops || 3);
+          var progressPct = Math.min(100, Math.round((runsDone / targetRuns) * 100));
+
+          return '<div class="task-card ' + (task.completed ? 'task-done' : '') + '">'
+            + '<div style="display:flex;align-items:flex-start;gap:10px">'
+            + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
+            + (task.completed ? '✓' : '')
+            + '</button>'
+            + '<div style="flex:1;min-width:0">'
+            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+            + '<span class="task-title">' + e(task.text) + '</span>'
+            + '<div style="display:flex;gap:4px;flex-shrink:0">'
+            + '<button class="bg" onclick="quickRunTaskLoop(\'' + task.id + '\', \'' + (task.linkedLoopId || '') + '\')" style="font-size:11px;padding:2px 8px;background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);border-radius:6px" title="Log a run for this task">▶ Run Loop</button>'
+            + '<button class="bg" onclick="startEditTask(\'' + task.id + '\')" style="font-size:11px;padding:2px 6px" title="Edit task">edit</button>'
+            + '<button class="bg" onclick="deleteTask(\'' + task.id + '\')" style="font-size:11px;padding:2px 6px;color:#fca5a5" title="Delete task">✕</button>'
+            + '</div>'
+            + '</div>'
+            + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;font-size:11px;color:#94a3b8">'
+            + '<span>🎯 Effectiveness Target: <strong style="color:#fbbf24">' + targetRuns + '</strong> loop runs</span>'
+            + '<span>•</span>'
+            + '<span>🔁 Progress: <strong style="color:#60a5fa">' + runsDone + '</strong> / ' + targetRuns + ' runs (' + progressPct + '%)</span>'
+            + (linkedLoop ? '<span>• Linked to: <span style="color:#e2e8f0;font-weight:600">' + e(linkedLoop.title) + '</span></span>' : '')
+            + (task.completed ? '<span style="color:#4ede80;font-weight:700;margin-left:auto">✓ ACHIEVED</span>' : '')
+            + '</div>'
+            + '<div class="task-progress-bar">'
+            + '<div class="task-progress-fill" style="width:' + progressPct + '%"></div>'
+            + '</div>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      var loopOptionsHtml = '<option value="">All Identity Loops</option>'
+        + loops.map(function (rl) { return '<option value="' + rl.id + '">🔁 ' + esc(rl.title) + '</option>'; }).join('');
+
+      return '<div class="tasks-container">'
+        + '<div class="tasks-header">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<span class="tasks-badge">📋 IDENTITY TASKS</span>'
+        + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + completedCount + ' / ' + tasks.length + ' achieved</span>'
+        + '</div>'
+        + '</div>'
+        + '<p class="h" style="font-size:12px;color:#cbd5e1;margin-bottom:12px">Tasks to achieve this identity. The routine loop is your continuous engine to complete them (effectiveness = loop cycles needed).</p>'
+        + tasksListHtml
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">'
+        + '<input type="text" id="new-task-text" placeholder="Add task to achieve this identity (e.g. Build MVP prototype)..." style="flex:2;min-width:180px;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:8px 12px;border-radius:8px;font-size:13px" onkeydown="if(event.key===\'Enter\')addTask()" />'
+        + '<div style="display:flex;align-items:center;gap:4px" title="Effectiveness: Number of continuous routine loop executions needed to complete this task">'
+        + '<span style="font-size:11px;color:#94a3b8;white-space:nowrap">🎯 Loops:</span>'
+        + '<input type="number" id="new-task-loops" value="3" min="1" max="999" style="width:55px;background:#0f172a;border:1px solid #334155;color:#fbbf24;padding:8px;border-radius:8px;font-size:13px;font-weight:bold;text-align:center" />'
+        + '</div>'
+        + '<select id="new-task-loop-link" style="background:#0f172a;border:1px solid #334155;color:#cbd5e1;padding:8px 10px;border-radius:8px;font-size:12px;max-width:140px">'
+        + loopOptionsHtml
+        + '</select>'
+        + '<button class="b bp bs" onclick="addTask()" style="font-size:12px;padding:8px 14px;background:#2563eb;color:#fff;font-weight:700">+ Add Task</button>'
+        + '</div>'
+        + '</div>';
+    }
+
+
     function renderIdentityView(a, id) {
       if (!id) return go('hub');
       var pts = getEvidencePoints(id);
@@ -3776,9 +4200,9 @@
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <span class="sm" style="color:#8a8480">Impact:</span>
         <select id="inline-log-weight-${i}" style="background:#1a1a26;color:#c8c2b8;border:1px solid #2a2a3a;padding:4px 8px;border-radius:6px;font-size:12px">
-          <option value="fine" ${currentWeight === 'fine' ? 'selected' : ''}>🌱 Fine (+1)</option>
-          <option value="medium" ${currentWeight === 'medium' ? 'selected' : ''}>⚡ Medium (+2)</option>
           <option value="strong" ${currentWeight === 'strong' ? 'selected' : ''}>🔥 Strong (+4)</option>
+          <option value="medium" ${currentWeight === 'medium' ? 'selected' : ''}>⚡ Medium (+2)</option>
+          <option value="fine" ${currentWeight === 'fine' ? 'selected' : ''}>🌱 Fine (+1)</option>
         </select>
         <button class="b bp bs" style="padding:4px 12px;font-size:12px;margin-left:auto" onclick="saveLogEdit(${i})">Save</button>
         <button class="bg" style="font-size:12px" onclick="render()">Cancel</button>
@@ -4249,9 +4673,9 @@
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
         + '<span class="sm" style="color:#9ca3af">Impact:</span>'
         + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
-        + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>🌱 Fine (+1)</option>'
-        + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>⚡ Medium (+2)</option>'
         + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>🔥 Strong (+4)</option>'
+        + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>⚡ Medium (+2)</option>'
+        + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>🌱 Fine (+1)</option>'
         + '</select>'
         + '<div style="margin-left:auto;display:flex;gap:8px">'
         + '<button class="b bp bs" style="padding:6px 14px;font-size:12px" onclick="saveModalLogEdit(' + i + ')">Save</button>'
@@ -5043,17 +5467,195 @@
         + '</div>';
     }
 
-    function renderRoutineLoopCard(rl, idx) {
+    
+    // ===============================================================
+    // INLINE ROUTINE LOOP CARD EDITING
+    // ===============================================================
+    window.inlineEditingLoopId = null;
+    window.inlineLoopDrafts = window.inlineLoopDrafts || {};
+
+    window.startInlineEditLoop = function (loopId) {
+      var id = getCurRef() || cur();
+      if (!id || !id.routineLoops) return;
+      var rl = id.routineLoops.find(function (r) { return r.id === loopId; });
+      if (!rl) return;
+
+      window.inlineEditingLoopId = loopId;
+      window.inlineLoopDrafts[loopId] = {
+        title: rl.title || '',
+        steps: Array.isArray(rl.steps) && rl.steps.length ? [...rl.steps] : ['Start action', 'Observe progress', 'Repeat'],
+        whatNext: rl.whatNext || '',
+        timeToResult: rl.timeToResult || 'Immediately',
+        effectiveness: rl.effectiveness || 'High'
+      };
+      render();
+    };
+
+    window.cancelInlineEditLoop = function () {
+      window.inlineEditingLoopId = null;
+      render();
+    };
+
+    window.addInlineLoopStep = function (loopId) {
+      if (!window.inlineLoopDrafts[loopId]) return;
+      window.inlineLoopDrafts[loopId].steps.push('');
+      render();
+      setTimeout(function () {
+        var inputs = document.querySelectorAll('.inline-step-input-' + loopId);
+        if (inputs && inputs.length > 0) inputs[inputs.length - 1].focus();
+      }, 50);
+    };
+
+    window.removeInlineLoopStep = function (loopId, stepIdx) {
+      if (!window.inlineLoopDrafts[loopId] || !window.inlineLoopDrafts[loopId].steps) return;
+      if (window.inlineLoopDrafts[loopId].steps.length <= 1) {
+        window.inlineLoopDrafts[loopId].steps = [''];
+      } else {
+        window.inlineLoopDrafts[loopId].steps.splice(stepIdx, 1);
+      }
+      render();
+    };
+
+    window.updateInlineLoopStep = function (loopId, stepIdx, val) {
+      if (!window.inlineLoopDrafts[loopId] || !window.inlineLoopDrafts[loopId].steps) return;
+      window.inlineLoopDrafts[loopId].steps[stepIdx] = val;
+    };
+
+    window.saveInlineLoop = function (loopId) {
+      var id = getCurRef() || cur();
+      if (!id || !id.routineLoops) return;
+      var rl = id.routineLoops.find(function (r) { return r.id === loopId; });
+      if (!rl) return;
+
+      var titleInp = document.getElementById('inline-loop-title-' + loopId);
+      var whatNextInp = document.getElementById('inline-loop-whatnext-' + loopId);
+      var timeSelect = document.getElementById('inline-loop-time-' + loopId);
+      var effSelect = document.getElementById('inline-loop-eff-' + loopId);
+
+      var titleVal = titleInp ? titleInp.value.trim() : rl.title;
+      var whatNextVal = whatNextInp ? whatNextInp.value.trim() : (rl.whatNext || '');
+      var timeVal = timeSelect ? timeSelect.value : (rl.timeToResult || 'Immediately');
+      var effVal = effSelect ? effSelect.value : (rl.effectiveness || 'High');
+
+      var stepInputs = document.querySelectorAll('.inline-step-input-' + loopId);
+      var rawSteps = [];
+      if (stepInputs && stepInputs.length > 0) {
+        rawSteps = Array.from(stepInputs).map(function (inp) { return inp.value; });
+      } else if (window.inlineLoopDrafts[loopId] && window.inlineLoopDrafts[loopId].steps) {
+        rawSteps = window.inlineLoopDrafts[loopId].steps;
+      } else {
+        rawSteps = rl.steps;
+      }
+
+      var cleanSteps = rawSteps.map(function (s) { return String(s || '').trim(); }).filter(Boolean);
+      if (cleanSteps.length === 0) cleanSteps = ['Start action', 'Observe progress', 'Repeat'];
+
+      rl.title = titleVal || rl.title || 'Untitled Routine Loop';
+      rl.steps = cleanSteps;
+      rl.whatNext = whatNextVal;
+      rl.timeToResult = timeVal;
+      rl.effectiveness = effVal;
+      rl.updatedAt = new Date().toISOString();
+
+      window.inlineEditingLoopId = null;
+      delete window.inlineLoopDrafts[loopId];
+
+      save(true);
+      render();
+    };
+
+
+        function renderRoutineLoopCard(rl, idx) {
       var iterCount = rl.iterationCount || 0;
       var iterText = iterCount === 1 ? '1 cycle run' : iterCount + ' cycles run';
       var lastRunText = rl.lastExecuted ? ('Last run: ' + new Date(rl.lastExecuted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) : 'Not run yet';
+
+      // INLINE CARD EDITING MODE (No modal needed!)
+      if (window.inlineEditingLoopId === rl.id) {
+        var draft = window.inlineLoopDrafts[rl.id] || {
+          title: rl.title || '',
+          steps: Array.isArray(rl.steps) && rl.steps.length ? [...rl.steps] : ['Start action', 'Observe progress', 'Repeat'],
+          whatNext: rl.whatNext || '',
+          timeToResult: rl.timeToResult || 'Immediately',
+          effectiveness: rl.effectiveness || 'High'
+        };
+
+        var timeOptions = [
+          'Immediately',
+          'Within a few minutes',
+          'Within a few hours',
+          'Within a day',
+          'Within a week',
+          'Not specified'
+        ];
+
+        var stepsHtml = draft.steps.map(function (step, i) {
+          return '<div class="inline-step-row">'
+            + '<span class="step-builder-badge" style="width:24px;height:24px;font-size:11px">' + (i + 1) + '</span>'
+            + '<input type="text" class="step-builder-input inline-step-input-' + rl.id + '" style="font-size:12px;padding:6px 10px" placeholder="Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateInlineLoopStep(\'' + rl.id + '\', ' + i + ', this.value)" />'
+            + '<button type="button" class="step-del-btn" style="width:24px;height:24px;font-size:12px" onclick="removeInlineLoopStep(\'' + rl.id + '\', ' + i + ')" title="Remove step">✕</button>'
+            + '</div>';
+        }).join('');
+
+        return '<div class="routine-loop-card" id="loop-card-' + rl.id + '" style="border-color:#f59e0b;background:rgba(245,158,11,0.04)">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+          + '<span style="font-size:12px;font-weight:700;color:#fbbf24">✏️ INLINE EDITING: ' + e(rl.title || 'Routine Loop') + '</span>'
+          + '<button class="bg" onclick="openRoutineLoopModal(\'' + rl.id + '\')" style="font-size:11px;color:#9ca3af;padding:2px 8px;border:1px solid #374151;border-radius:6px">⚙️ Full Modal Designer</button>'
+          + '</div>'
+
+          + '<div style="margin-bottom:10px">'
+          + '<label style="font-size:11px;color:#9ca3af;display:block;margin-bottom:3px">Routine Loop Title:</label>'
+          + '<input type="text" id="inline-loop-title-' + rl.id + '" value="' + esc(draft.title) + '" style="width:100%;background:#111827;border:1px solid #374151;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;box-sizing:border-box" placeholder="e.g. Morning 30-Min Workout Loop" />'
+          + '</div>'
+
+          + '<div style="margin-bottom:10px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+          + '<label style="font-size:11px;color:#9ca3af">Loop Action Steps (' + draft.steps.length + '):</label>'
+          + '<button type="button" class="bg" onclick="addInlineLoopStep(\'' + rl.id + '\')" style="font-size:11px;color:#fbbf24;padding:2px 6px">+ Add Step</button>'
+          + '</div>'
+          + stepsHtml
+          + '</div>'
+
+          + '<div style="margin-bottom:10px">'
+          + '<label style="font-size:11px;color:#9ca3af;display:block;margin-bottom:3px">What\'s Next Immediate Action:</label>'
+          + '<input type="text" id="inline-loop-whatnext-' + rl.id + '" value="' + esc(draft.whatNext) + '" style="width:100%;background:#111827;border:1px solid #374151;color:#fef3c7;padding:8px 10px;border-radius:6px;font-size:13px;box-sizing:border-box" placeholder="Next move for upcoming run..." />'
+          + '</div>'
+
+          + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+          + '<div style="flex:1;min-width:130px">'
+          + '<label style="font-size:11px;color:#9ca3af;display:block;margin-bottom:3px">Time to Result:</label>'
+          + '<select id="inline-loop-time-' + rl.id + '" style="width:100%;background:#111827;border:1px solid #374151;color:#fff;padding:6px 8px;border-radius:6px;font-size:12px">'
+          + timeOptions.map(function (opt) { return '<option value="' + opt + '" ' + (draft.timeToResult === opt ? 'selected' : '') + '>' + opt + '</option>'; }).join('')
+          + '</select>'
+          + '</div>'
+          + '<div style="flex:1;min-width:130px">'
+          + '<label style="font-size:11px;color:#fbbf24;display:block;margin-bottom:3px;font-weight:600">Target Effectiveness (High to Low):</label>'
+          + '<select id="inline-loop-eff-' + rl.id + '" style="width:100%;background:#111827;border:1px solid rgba(245,158,11,0.4);color:#fbbf24;padding:6px 8px;border-radius:6px;font-size:12px">'
+          + '<option value="Best" ' + (draft.effectiveness === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
+          + '<option value="Very High" ' + (draft.effectiveness === 'Very High' ? 'selected' : '') + '>⚡⚡ Very High</option>'
+          + '<option value="High" ' + (draft.effectiveness === 'High' ? 'selected' : '') + '>⚡ High</option>'
+          + '<option value="Medium" ' + (draft.effectiveness === 'Medium' ? 'selected' : '') + '>Medium</option>'
+          + '<option value="Low" ' + (draft.effectiveness === 'Low' ? 'selected' : '') + '>Low</option>'
+          + '<option value="Very Low" ' + (draft.effectiveness === 'Very Low' ? 'selected' : '') + '>⚠️ Very Low</option>'
+          + '<option value="Not specified" ' + (draft.effectiveness === 'Not specified' ? 'selected' : '') + '>Not Specified</option>'
+          + '</select>'
+          + '</div>'
+          + '</div>'
+
+          + '<div style="display:flex;justify-content:flex-end;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08)">'
+          + '<button class="bg" onclick="cancelInlineEditLoop()" style="font-size:12px;padding:6px 14px">Cancel</button>'
+          + '<button class="b bp bs" onclick="saveInlineLoop(\'' + rl.id + '\')" style="font-size:12px;padding:6px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">💾 Save Changes</button>'
+          + '</div>'
+
+          + '</div>';
+      }
 
       var whatsNextHtml = '';
       if (rl.whatNext && rl.whatNext.trim()) {
         whatsNextHtml = '<div class="whats-next-box">'
           + '<div class="whats-next-header">'
           + '<span class="whats-next-badge">🎯 WHAT\'S NEXT (NEXT MOVE)</span>'
-          + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">✓ Complete Run & Record Outcome</button>'
+          + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">▶ Complete Run & Record Outcome</button>'
           + '</div>'
           + '<div class="whats-next-text">"' + e(rl.whatNext) + '"</div>'
           + '</div>';
@@ -5072,8 +5674,8 @@
         + '<span class="routine-loops-count" style="font-size:10px;color:#fbbf24;border-color:rgba(245,158,11,0.3)">' + iterText + '</span>'
         + '</div>'
         + '<div class="routine-loop-actions">'
-        + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;border-color:#3b82f6" title="Record a run and log actual outcome">⚡ Log Run (+1)</button>'
-        + '<button class="bg" onclick="openRoutineLoopModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;border:1px solid #374151;border-radius:6px">Edit</button>'
+        + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;border-color:#3b82f6" title="Record a run and log actual outcome">▶ Log Run (+1)</button>'
+        + '<button class="bg" onclick="startInlineEditLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;border:1px solid #374151;border-radius:6px;color:#fbbf24" title="Quick edit loop in place">✏️ Edit</button>'
         + '<button class="bg" onclick="deleteRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Delete</button>'
         + '</div>'
         + '</div>'
@@ -5086,7 +5688,7 @@
         + timeBadgeHtml
         + outcomeBadgeHtml
         + effBadgeHtml
-        + '<span class="meta-pill meta-iter" title="' + lastRunText + '">📅 ' + lastRunText + '</span>'
+        + '<span class="meta-pill meta-iter" title="' + lastRunText + '">🕒 ' + lastRunText + '</span>'
         + '</div>'
 
         + '</div>';
@@ -5342,14 +5944,14 @@
         + '<div>'
         + '<label class="lb">5. Target Effectiveness (Optional)</label>'
         + '<p class="h">Expected leverage</p>'
-        + '<select id="modal-loop-eff" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px">'
-        + '<option value="High" ' + ((draft.effectiveness === 'High' || !draft.effectiveness) ? 'selected' : '') + '>⚡ High</option>'
-        + '<option value="Very High" ' + (draft.effectiveness === 'Very High' ? 'selected' : '') + '>🔥 Very High</option>'
+        + '<select id="modal-loop-eff" style="width:100%;background:#181824;color:#fbbf24;border:1px solid rgba(245,158,11,0.4);padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px">'
         + '<option value="Best" ' + (draft.effectiveness === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
-        + '<option value="Medium" ' + (draft.effectiveness === 'Medium' ? 'selected' : '') + '>💫 Medium</option>'
-        + '<option value="Low" ' + (draft.effectiveness === 'Low' ? 'selected' : '') + '>⏳ Low</option>'
+        + '<option value="Very High" ' + (draft.effectiveness === 'Very High' ? 'selected' : '') + '>⚡⚡ Very High</option>'
+        + '<option value="High" ' + ((draft.effectiveness === 'High' || !draft.effectiveness) ? 'selected' : '') + '>⚡ High</option>'
+        + '<option value="Medium" ' + (draft.effectiveness === 'Medium' ? 'selected' : '') + '>Medium</option>'
+        + '<option value="Low" ' + (draft.effectiveness === 'Low' ? 'selected' : '') + '>Low</option>'
         + '<option value="Very Low" ' + (draft.effectiveness === 'Very Low' ? 'selected' : '') + '>⚠️ Very Low</option>'
-        + '<option value="Not specified" ' + (draft.effectiveness === 'Not specified' ? 'selected' : '') + '>⚪ Not Specified</option>'
+        + '<option value="Not specified" ' + (draft.effectiveness === 'Not specified' ? 'selected' : '') + '>Not Specified</option>'
         + '</select>'
         + '</div>'
 
@@ -5380,9 +5982,9 @@
     };
 
     window.saveRoutineLoopModal = function (loopId) {
-      var id = cur();
+      var id = getCurRef() || cur();
       if (!id) return;
-      if (!id.routineLoops) id.routineLoops = [];
+      if (!Array.isArray(id.routineLoops)) id.routineLoops = [];
 
       var titleInp = document.getElementById('modal-loop-title')?.value?.trim();
       var whatNextInp = document.getElementById('modal-loop-whatnext')?.value?.trim() || '';
@@ -5394,12 +5996,14 @@
       var cleanSteps = (window.modalLoopDraft?.steps || []).map(function (s) {
         return String(s || '').trim();
       }).filter(Boolean);
+      if (cleanSteps.length === 0) cleanSteps = ['Start action', 'Observe progress', 'Repeat'];
 
-      var existingIdx = id.routineLoops.findIndex(function (item) { return item.id === loopId; });
+      var targetId = loopId || (window.modalLoopDraft ? window.modalLoopDraft.id : null);
+      var existingIdx = id.routineLoops.findIndex(function (item) { return item.id === targetId; });
       var existing = existingIdx >= 0 ? id.routineLoops[existingIdx] : null;
 
       var newLoopObj = {
-        id: loopId || ('rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+        id: targetId || ('rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
         title: titleInp || ('Routine Loop ' + (existingIdx >= 0 ? (existingIdx + 1) : (id.routineLoops.length + 1))),
         steps: cleanSteps,
         whatNext: whatNextInp,
@@ -5408,7 +6012,8 @@
         effectiveness: effVal,
         iterationCount: existing ? (existing.iterationCount || 0) : 0,
         lastExecuted: existing ? (existing.lastExecuted || null) : null,
-        createdDate: existing ? (existing.createdDate || new Date().toISOString()) : new Date().toISOString()
+        createdDate: existing ? (existing.createdDate || new Date().toISOString()) : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       if (existingIdx >= 0) {
@@ -5417,7 +6022,7 @@
         id.routineLoops.push(newLoopObj);
       }
 
-      save();
+      save(true);
       render();
       closeRoutineLoopModal();
     };
@@ -5479,12 +6084,12 @@
         + '<div style="margin-bottom:16px">'
         + '<label class="lb">2. Rate Effectiveness based on this experience</label>'
         + '<p class="h">How high-leverage was this routine loop?</p>'
-        + '<select id="logrun-eff" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px">'
+        + '<select id="logrun-eff" style="width:100%;background:#181824;color:#fbbf24;border:1px solid rgba(245,158,11,0.4);padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px">'
         + '<option value="Best" ' + (currentEff === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
-        + '<option value="Very High" ' + (currentEff === 'Very High' ? 'selected' : '') + '>🔥 Very High</option>'
+        + '<option value="Very High" ' + (currentEff === 'Very High' ? 'selected' : '') + '>⚡⚡ Very High</option>'
         + '<option value="High" ' + (currentEff === 'High' ? 'selected' : '') + '>⚡ High</option>'
-        + '<option value="Medium" ' + (currentEff === 'Medium' ? 'selected' : '') + '>💫 Medium</option>'
-        + '<option value="Low" ' + (currentEff === 'Low' ? 'selected' : '') + '>⏳ Low</option>'
+        + '<option value="Medium" ' + (currentEff === 'Medium' ? 'selected' : '') + '>Medium</option>'
+        + '<option value="Low" ' + (currentEff === 'Low' ? 'selected' : '') + '>Low</option>'
         + '<option value="Very Low" ' + (currentEff === 'Very Low' ? 'selected' : '') + '>⚠️ Very Low</option>'
         + '</select>'
         + '</div>'
@@ -5519,7 +6124,7 @@
     };
 
     window.saveLogRunModal = function (loopId) {
-      var id = cur();
+      var id = getCurRef() || cur();
       if (!id || !id.routineLoops) return;
       var rl = id.routineLoops.find(function (item) { return item.id === loopId; });
       if (!rl) return;
