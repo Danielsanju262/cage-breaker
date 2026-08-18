@@ -3,11 +3,18 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cage Breaker">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛓️</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%230a0e1a'/><text x='256' y='320' font-size='240' text-anchor='middle'>⛓️</text></svg>">
   <title>Break Your Cage</title>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -18,11 +25,18 @@
     *::after {
       box-sizing: border-box;
       margin: 0;
-      padding: 0
+      padding: 0;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
 
     html {
-      scroll-behavior: smooth
+      scroll-behavior: smooth;
+      touch-action: pan-x pan-y;
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
@@ -30,7 +44,18 @@
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       color: #e2dad0;
       min-height: 100vh;
-      line-height: 1.6
+      line-height: 1.6;
+      touch-action: pan-x pan-y;
+      overscroll-behavior-y: none;
+    }
+
+    input, textarea, [contenteditable="true"] {
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
+      -webkit-touch-callout: default !important;
+      touch-action: auto !important;
     }
 
     ::selection {
@@ -1916,6 +1941,7 @@
       if (!id || typeof id !== 'object') return null;
       return {
         ...id,
+        targetEvent: (id.targetEvent || '').trim(),
         logs: Array.isArray(id.logs) ? id.logs : [],
         reflections: Array.isArray(id.reflections) ? id.reflections : [],
         habits: Array.isArray(id.habits) ? id.habits : [],
@@ -2636,6 +2662,7 @@
       <h2 style="margin:0">Your Identities</h2>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">🟢 Live Connected</span>
+        <button class="b bb bs" onclick="triggerPWAInstall()" style="font-size:11px;padding:5px 10px;background:rgba(245,158,11,0.15);border-color:#f59e0b;color:#fbbf24;font-weight:700" title="Download & Install App on your device">📲 Install App</button>
         <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync</button>
         <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
         <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
@@ -2651,7 +2678,10 @@
         const days = daysOld(id);
         return `<div class="icard ${logged ? 'done' : 'needs'}" onclick="openIdentity('${id.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <p style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:${logged ? '#9ca3af' : '#4ede80'};line-height:1.45;margin-bottom:10px;flex:1">${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>' : ''}${e(id.newIdentity || '')}</p>
+          <div style="flex:1;padding-right:8px">
+            <p style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:${logged ? '#9ca3af' : '#4ede80'};line-height:1.45;margin-bottom:6px">${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>' : ''}${e(id.newIdentity || '')}</p>
+            ${id.targetEvent && id.targetEvent.trim() ? `<div style="font-size:12px;color:#fbbf24;margin-bottom:8px;font-weight:600">⏳ Target: "${e(id.targetEvent.trim())}"</div>` : ''}
+          </div>
           <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
             <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #374151;color:#d1d5db;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
             <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
@@ -3052,13 +3082,22 @@
         + headerNavHtml
         + motivationCardHtml
 
-        // 🌟 ONE-LINE IDENTITY HERO STATEMENT
+        // 🌟 ONE-LINE IDENTITY HERO STATEMENT & ANCHOR EVENT
         + '<div class="c" style="padding:22px 24px;background:linear-gradient(135deg,rgba(16,24,44,0.92),rgba(10,14,26,0.98));border:1px solid rgba(74,222,128,0.35);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 25px rgba(74,222,128,0.08)">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
         + '<span style="font-size:11px;font-weight:800;letter-spacing:1.2px;color:#4ede80;background:rgba(74,222,128,0.14);padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.35);text-transform:uppercase">🎯 ONE-LINE IDENTITY</span>'
         + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' · ' + (id.logs ? id.logs.length : 0) + ' Proofs</span>'
         + '</div>'
         + '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>'
+        + (id.targetEvent && id.targetEvent.trim() ? (
+          '<div style="margin-top:14px;padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;display:flex;align-items:flex-start;gap:10px">'
+          + '<span style="font-size:18px;flex-shrink:0;line-height:1.2">⏳</span>'
+          + '<div style="flex:1">'
+          + '<div style="font-size:11px;color:#fbbf24;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">TARGET MILESTONE / ANCHOR EVENT:</div>'
+          + '<div style="font-size:14px;color:#fef3c7;font-weight:600;margin-top:3px;line-height:1.4">"' + e(id.targetEvent.trim()) + '"</div>'
+          + '</div>'
+          + '</div>'
+        ) : '')
         + '</div>'
 
         + renderTugOfWar(id)
@@ -3400,6 +3439,16 @@
       <div class="mg-editable" id="ed-ni">
         <textarea rows="2" id="mg-ni" oninput="mgEditing('ni')">${esc(id.newIdentity)}</textarea>
         <button class="b bp bs mg-save" onclick="mgSaveNI()">Save changes</button>
+      </div>
+    </div>
+
+    <!-- Target Milestone / Anchor Event -->
+    <div class="mg-section">
+      <h3>Target Milestone / Anchor Event (The Motivator)</h3>
+      <p class="h">The event or moment before which this identity must be succeeded.</p>
+      <div class="mg-editable" id="ed-te">
+        <textarea rows="2" id="mg-te" oninput="mgEditing('te')" placeholder="e.g., Before my sister arrives from Dubai tomorrow...">${esc(id.targetEvent || '')}</textarea>
+        <button class="b bp bs mg-save" onclick="mgSaveTE()">Save changes</button>
       </div>
     </div>
 
@@ -4247,6 +4296,18 @@
       }
     };
 
+    window.mgSaveTE = function () {
+      const v = $('#mg-te')?.value?.trim() || '';
+      const id = getCurRef(); if (!id) return;
+      id.targetEvent = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-te');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = '✓ Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
     window.mgSaveAV = function () {
       const v = $('#mg-av')?.value?.trim(); if (!v) return;
       const id = getCurRef(); if (!id) return;
@@ -4377,6 +4438,7 @@
       const id = getCurRef(); if (!id) return;
 
       const ni = $('#mg-ni')?.value?.trim();
+      const te = $('#mg-te')?.value?.trim();
       const gv = $('#mg-gv')?.value?.trim();
       const av14 = $('#mg-av14')?.value?.trim();
       const av = $('#mg-av')?.value?.trim();
@@ -4384,6 +4446,7 @@
       const oi = $('#mg-oi')?.value?.trim();
 
       if (ni !== undefined && ni !== '') id.newIdentity = ni;
+      if (te !== undefined) id.targetEvent = te;
       if (gv !== undefined && gv !== '') id.goalVision = gv;
       if (av14 !== undefined && av14 !== '') id.antiVision14Day = av14;
       if (av !== undefined && av !== '') id.antiVisionText = av;
@@ -4663,9 +4726,15 @@
         + '</div>'
         + '</div>'
 
-        + '<div style="margin-top:12px">'
-        + '<label class="lb" style="font-size:13px;font-weight:700;color:#f3f4f6;margin-bottom:8px;display:block">Your Identity Statement</label>'
-        + '<textarea id="one-identity-input" rows="3" placeholder=\'e.g., "I am someone who stays focused and builds what matters every day."\' style="font-size:15px;line-height:1.5;padding:14px 16px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(251,191,36,0.3);color:#ffffff;box-sizing:border-box" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key===\'Enter\')createOneLineIdentity()"></textarea>'
+        + '<div style="margin-top:14px">'
+        + '<label class="lb" style="font-size:13px;font-weight:700;color:#f3f4f6;margin-bottom:6px;display:block">1. Your One-Line Identity Statement</label>'
+        + '<textarea id="one-identity-input" rows="2" placeholder=\'e.g., "I want a bug free app - I build with high quality and focus."\' style="font-size:15px;line-height:1.5;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(251,191,36,0.35);color:#ffffff;box-sizing:border-box"></textarea>'
+        + '</div>'
+
+        + '<div style="margin-top:14px">'
+        + '<label class="lb" style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:6px;display:block">2. Target Event / Milestone (Optional Motivator)</label>'
+        + '<p class="h" style="font-size:12px;margin-bottom:6px;color:#9ca3af">What is the event before which this must be achieved? (e.g., <em>"I want to tell this before my sister arrives from Dubai tomorrow"</em> or <em>"Before product launch"</em>)</p>'
+        + '<textarea id="one-identity-event" rows="2" placeholder=\'e.g., "I want to tell this before my sister is coming from Dubai tomorrow"\' style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.25);color:#fef3c7;box-sizing:border-box"></textarea>'
         + '</div>'
 
         + '<div style="margin-top:22px">'
@@ -4683,6 +4752,7 @@
 
     window.createOneLineIdentity = function () {
       var raw = $('#one-identity-input')?.value?.trim();
+      var rawEvent = $('#one-identity-event')?.value?.trim() || '';
       if (!raw) {
         alert('Please write your identity statement first!');
         var inp = document.getElementById('one-identity-input');
@@ -4700,14 +4770,14 @@
         oldEvidence: [],
         antiVisionText: 'Living beneath my potential and repeating the same excuses for another decade.',
         newIdentity: name,
+        targetEvent: rawEvent,
         crackAction: name,
         actions: [name],
         createdDate: new Date().toISOString(),
         logs: [],
         reflections: [],
         habits: [{ text: name, createdDate: new Date().toISOString(), checks: [] }],
-        goalDays: 30,
-        goalVision: 'Morning: Waking up energized.\nAfternoon: Consistent and focused execution.\nEvening: Quiet pride in living my standard.',
+        routineLoops: [],
         goalActions: [name],
         goalSetDate: new Date().toISOString()
       };
@@ -5491,6 +5561,93 @@
         render();
       }
     };
+
+    // ═══════════════════════════════════════════════
+    // PWA INSTALLATION & TOUCH CONTROLS
+    // ═══════════════════════════════════════════════
+    var deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+
+    window.triggerPWAInstall = function () {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function (choiceResult) {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('[PWA] User installed Cage Breaker');
+          }
+          deferredInstallPrompt = null;
+        });
+      } else {
+        openPWAHelpModal();
+      }
+    };
+
+    window.openPWAHelpModal = function () {
+      var modal = document.getElementById('pwa-help-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pwa-help-modal';
+        document.body.appendChild(modal);
+      }
+      modal.className = 'modal-overlay';
+      modal.onclick = function (e) {
+        if (e.target === modal) closePWAHelpModal();
+      };
+      modal.innerHTML = '<div class="modal-card" style="max-width:480px;border-color:rgba(245,158,11,0.4)">'
+        + '<div class="modal-header">'
+        + '<h3>📲 Install Cage Breaker App</h3>'
+        + '<button class="modal-close" onclick="closePWAHelpModal()">&times;</button>'
+        + '</div>'
+        + '<div class="modal-body">'
+        + '<p class="h" style="margin-bottom:14px;color:#f3f4f6;font-size:13px">You can install this website directly onto your home screen and access it like a standalone app:</p>'
+        + '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;margin-bottom:12px">'
+        + '<strong style="color:#fbbf24;font-size:13px;display:block;margin-bottom:4px">🍎 On iPhone / iPad (Safari):</strong>'
+        + '<div style="font-size:12px;color:#d1d5db;line-height:1.5">1. Tap the <strong>Share</strong> button (square with arrow ↑) at the bottom.<br>2. Scroll down and tap <strong>"Add to Home Screen"</strong>.<br>3. Tap <strong>"Add"</strong> at the top right.</div>'
+        + '</div>'
+        + '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;margin-bottom:14px">'
+        + '<strong style="color:#4ede80;font-size:13px;display:block;margin-bottom:4px">🤖 On Android / Chrome:</strong>'
+        + '<div style="font-size:12px;color:#d1d5db;line-height:1.5">1. Tap the three dots menu <strong>(⋮)</strong> in the top right corner.<br>2. Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</div>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:flex-end">'
+        + '<button class="b bp" onclick="closePWAHelpModal()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;padding:8px 18px">Got It</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    };
+
+    window.closePWAHelpModal = function () {
+      var modal = document.getElementById('pwa-help-modal');
+      if (modal) modal.remove();
+    };
+
+    // Prevent pinch-to-zoom gestures completely
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Prevent long-press text selection / context menu on non-input elements
+    document.addEventListener('contextmenu', function (e) {
+      if (e.target && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function (err) {
+          console.warn('[PWA] Service worker registration error:', err);
+        });
+      });
+    }
 
   </script>
 </body>

@@ -1,0 +1,18 @@
+{
+  "name": "Break Your Cage - One-Line Identity",
+  "short_name": "CageBreaker",
+  "description": "Break old patterns and build powerful new identities with daily proof and actionable routine loops.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%230a0e1a'/><text x='256' y='320' font-size='240' text-anchor='middle'>⛓️</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
