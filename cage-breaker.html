@@ -2748,13 +2748,98 @@
       if (modal) modal.remove();
     };
 
+    // ═══════════════════════════════════════════════
+    // CUSTOM UI DIALOG SYSTEM (NO SYSTEM ALERTS / CONFIRMS)
+    // ═══════════════════════════════════════════════
+    window.showCustomConfirm = function (options) {
+      var opts = (typeof options === 'string') ? { message: options } : (options || {});
+      var title = opts.title || 'Confirmation Required';
+      var message = opts.message || 'Are you sure you want to proceed?';
+      var confirmText = opts.confirmText || 'Confirm';
+      var confirmBg = opts.confirmBg || 'linear-gradient(135deg, #ef4444, #dc2626)';
+      var onConfirm = opts.onConfirm || null;
+      var onCancel = opts.onCancel || null;
+
+      var oldOverlay = document.getElementById('custom-dialog-overlay');
+      if (oldOverlay) oldOverlay.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'custom-dialog-overlay';
+      overlay.className = 'modal-overlay';
+      overlay.style.cssText = 'display:flex;z-index:99999;background:rgba(5,8,18,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;';
+
+      overlay.innerHTML = '<div class="modal-box" style="max-width:400px;width:90%;text-align:center;border:1px solid rgba(245,158,11,0.4);background:rgba(15,23,42,0.98);box-shadow:0 0 35px rgba(245,158,11,0.25);border-radius:14px;padding:24px;box-sizing:border-box">'
+        + '<div style="font-size:36px;margin-bottom:8px">⚠️</div>'
+        + '<div style="font-size:16px;font-weight:800;color:#fbbf24;margin-bottom:8px;letter-spacing:0.5px">' + esc(title) + '</div>'
+        + '<p style="font-size:13px;color:#e2e8f0;margin-bottom:22px;line-height:1.5;margin-top:0">' + esc(message) + '</p>'
+        + '<div style="display:flex;justify-content:center;gap:12px;width:100%">'
+        + '<button class="bg" id="dialog-cancel-btn" style="flex:1;padding:9px 16px;font-size:13px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer">Cancel</button>'
+        + '<button class="b bp bs" id="dialog-confirm-btn" style="flex:1;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:' + confirmBg + ';color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(239,68,68,0.3)">' + esc(confirmText) + '</button>'
+        + '</div>'
+        + '</div>';
+
+      document.body.appendChild(overlay);
+
+      document.getElementById('dialog-cancel-btn').onclick = function () {
+        overlay.remove();
+        if (onCancel) onCancel();
+      };
+
+      document.getElementById('dialog-confirm-btn').onclick = function () {
+        overlay.remove();
+        if (onConfirm) onConfirm();
+      };
+
+      overlay.onclick = function (e) {
+        if (e.target === overlay) {
+          overlay.remove();
+          if (onCancel) onCancel();
+        }
+      };
+    };
+
+    window.showCustomAlert = function (message, title, icon) {
+      var oldOverlay = document.getElementById('custom-dialog-overlay');
+      if (oldOverlay) oldOverlay.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'custom-dialog-overlay';
+      overlay.className = 'modal-overlay';
+      overlay.style.cssText = 'display:flex;z-index:99999;background:rgba(5,8,18,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;';
+
+      overlay.innerHTML = '<div class="modal-box" style="max-width:400px;width:90%;text-align:center;border:1px solid rgba(59,130,246,0.4);background:rgba(15,23,42,0.98);box-shadow:0 0 35px rgba(59,130,246,0.25);border-radius:14px;padding:24px;box-sizing:border-box">'
+        + '<div style="font-size:36px;margin-bottom:8px">' + (icon || 'ℹ️') + '</div>'
+        + '<div style="font-size:16px;font-weight:800;color:#93c5fd;margin-bottom:8px;letter-spacing:0.5px">' + esc(title || 'Notice') + '</div>'
+        + '<p style="font-size:13px;color:#e2e8f0;margin-bottom:22px;line-height:1.5;margin-top:0">' + esc(message) + '</p>'
+        + '<div style="display:flex;justify-content:center;width:100%">'
+        + '<button class="b bp bs" id="dialog-ok-btn" style="width:100%;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(59,130,246,0.3)">Got it</button>'
+        + '</div>'
+        + '</div>';
+
+      document.body.appendChild(overlay);
+
+      document.getElementById('dialog-ok-btn').onclick = function () {
+        overlay.remove();
+      };
+
+      overlay.onclick = function (e) {
+        if (e.target === overlay) {
+          overlay.remove();
+        }
+      };
+    };
+
+    window.alert = function (msg) {
+      window.showCustomAlert(String(msg || ''));
+    };
+
     window.applyCustomSyncCode = function () {
       var input = document.getElementById('sync-code-input');
       if (!input || !input.value.trim()) return;
       var newCode = input.value.trim();
       setSyncCode(newCode);
       closeSyncModal();
-      alert('✓ Paired to Sync Code: ' + newCode + '! Data is now syncing in real-time.');
+      showCustomAlert('Paired to Sync Code: ' + newCode + '! Data is now syncing in real-time.', 'Sync Pair Success', '✓');
     };
 
     window.exportDataJSON = function () {
@@ -2784,12 +2869,12 @@
             S = { ...DEF, ...imported };
             save();
             render();
-            alert('✓ Successfully imported backup! ' + (S.identities ? S.identities.length : 0) + ' identities loaded.');
+            showCustomAlert('Successfully imported backup! ' + (S.identities ? S.identities.length : 0) + ' identities loaded.', 'Backup Restored', '✓');
           } else {
-            alert('Invalid backup file format.');
+            showCustomAlert('Invalid backup file format.', 'Import Failed', '⚠️');
           }
         } catch (err) {
-          alert('Error reading JSON file: ' + err.message);
+          showCustomAlert('Error reading JSON file: ' + err.message, 'File Error', '⚠️');
         }
       };
       reader.readAsText(file);
@@ -3537,13 +3622,19 @@
       if (!task.completed) {
         window.openTaskCompletionModal(taskId);
       } else {
-        if (confirm('Mark this task as pending again?')) {
-          task.completed = false;
-          task.completedAt = null;
-          task.updatedAt = new Date().toISOString();
-          save(true);
-          render();
-        }
+        showCustomConfirm({
+          title: 'Re-open Task?',
+          message: 'Mark this task as pending again?',
+          confirmText: 'Mark Pending',
+          confirmBg: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+          onConfirm: function () {
+            task.completed = false;
+            task.completedAt = null;
+            task.updatedAt = new Date().toISOString();
+            save(true);
+            render();
+          }
+        });
       }
     };
 
@@ -3660,11 +3751,17 @@
     window.deleteTask = function (taskId) {
       var id = getCurRef() || cur();
       if (!id || !id.tasks) return;
-      if (confirm('Delete this task and all its ideas?')) {
-        id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
-        save(true);
-        render();
-      }
+      showCustomConfirm({
+        title: 'Delete Task?',
+        message: 'Are you sure you want to delete this task and all its associated ideas?',
+        confirmText: 'Delete Task',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
+          save(true);
+          render();
+        }
+      });
     };
 
     // ── TASK IDEAS (HOW TO COMPLETE TASK) ──
@@ -4877,13 +4974,19 @@
     window.delModalReflection = function (i) {
       var id = cur();
       if (!id || !id.reflections || i < 0 || i >= id.reflections.length) return;
-      if (confirm('Delete this weekly reflection entry?')) {
-        id.reflections.splice(i, 1);
-        save();
-        var modal = document.getElementById('evidence-modal');
-        if (modal) renderEvidenceModalContent(modal, id);
-        render();
-      }
+      showCustomConfirm({
+        title: 'Delete Reflection?',
+        message: 'Are you sure you want to delete this weekly reflection entry?',
+        confirmText: 'Delete Entry',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          id.reflections.splice(i, 1);
+          save();
+          var modal = document.getElementById('evidence-modal');
+          if (modal) renderEvidenceModalContent(modal, id);
+          render();
+        }
+      });
     };
 
     window.editModalReflection = function (i, btnEl) {
@@ -5629,7 +5732,7 @@
       var raw = $('#one-identity-input')?.value?.trim();
       var rawEvent = $('#one-identity-event')?.value?.trim() || '';
       if (!raw) {
-        alert('Please write your identity statement first!');
+        showCustomAlert('Please write your identity statement first before saving.', 'Identity Statement Required', '⚠️');
         var inp = document.getElementById('one-identity-input');
         if (inp) inp.focus();
         return;
@@ -6336,12 +6439,18 @@
     window.deleteRoutineLoop = function (loopId) {
       var id = cur();
       if (!id || !id.routineLoops) return;
-      if (confirm('Delete this routine loop?')) {
-        id.routineLoops = id.routineLoops.filter(function (item) { return item.id !== loopId; });
-        save();
-        render();
-        closeRoutineLoopModal();
-      }
+      showCustomConfirm({
+        title: 'Delete Routine Loop?',
+        message: 'Are you sure you want to delete this routine loop?',
+        confirmText: 'Delete Loop',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          id.routineLoops = id.routineLoops.filter(function (item) { return item.id !== loopId; });
+          save();
+          render();
+          closeRoutineLoopModal();
+        }
+      });
     };
 
     // ═══════════════════════════════════════════════
