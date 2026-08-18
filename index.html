@@ -46,19 +46,7 @@
     }
 
     .fade {
-      animation: fadeIn .45s ease
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
+      opacity: 1;
     }
 
     @keyframes breathK {
@@ -1490,12 +1478,6 @@
 
     .loop-repeat-badge span {
       font-size: 14px;
-      animation: spinSlow 8s linear infinite;
-    }
-
-    @keyframes spinSlow {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
     }
 
     /* What's Next Box */
@@ -2238,9 +2220,8 @@
 
         _syncStatus = 'syncing'; updateSyncStatusUI();
 
-        unsubscribeFirestore = fbDb.collection('cage_sync').doc(MASTER_DOC_ID).onSnapshot({ includeMetadataChanges: true }, function (doc) {
+        unsubscribeFirestore = fbDb.collection('cage_sync').doc(MASTER_DOC_ID).onSnapshot(function (doc) {
           if (_isRemoteUpdate) return;
-          // CRITICAL FIX: Ignore local pending write snapshots to prevent blinking & input destruction!
           if (doc.metadata && doc.metadata.hasPendingWrites) return;
 
           if (doc.exists) {
@@ -2250,7 +2231,6 @@
                 var payloadStr = typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
                 var currentLocalData = localStorage.getItem(SK);
 
-                // If remote payload is identical to our local state or our last push, ignore
                 if (payloadStr === currentLocalData || payloadStr === _lastPushedPayload) {
                   _syncStatus = 'synced'; updateSyncStatusUI();
                   return;
@@ -2258,31 +2238,31 @@
 
                 var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
                 if (parsed) {
+                  var oldLocalStr = JSON.stringify(S);
+                  var merged = mergeStates(S, parsed);
+                  var newLocalStr = JSON.stringify(merged);
+                  if (oldLocalStr === newLocalStr) {
+                    _syncStatus = 'synced'; updateSyncStatusUI();
+                    return;
+                  }
                   _isRemoteUpdate = true;
-                  S = mergeStates(S, parsed);
+                  S = merged;
                   if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
                     S.screen = 'hub';
                   }
                   localStorage.setItem(SK, JSON.stringify(S));
                   _syncStatus = 'synced'; updateSyncStatusUI();
 
-                  // Avoid wiping DOM if user is actively typing in an input/textarea
                   var activeTag = document.activeElement ? document.activeElement.tagName : '';
                   if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
                     render();
                   }
 
-                  setTimeout(function () { _isRemoteUpdate = false; }, 300);
+                  setTimeout(function () { _isRemoteUpdate = false; }, 400);
                 }
               } catch (err) {
                 _isRemoteUpdate = false;
               }
-            }
-          } else {
-            if (S && Array.isArray(S.identities) && S.identities.length > 0) {
-              pushToCloud();
-            } else {
-              _syncStatus = 'synced'; updateSyncStatusUI();
             }
           }
         }, function (err) {
@@ -3072,64 +3052,13 @@
         + headerNavHtml
         + motivationCardHtml
 
-        + '<div class="two-paths-container">'
-
-        // 🔴 PATH 1: WITHOUT ADDING EVIDENCE (OLD IDENTITY CONTINUED)
-        + '<div class="path-card path-red">'
-        + '<div class="path-badge path-badge-red">'
-        + '<span class="path-icon">🔴</span> WITHOUT ADDING EVIDENCE'
+        // 🌟 ONE-LINE IDENTITY HERO STATEMENT
+        + '<div class="c" style="padding:22px 24px;background:linear-gradient(135deg,rgba(16,24,44,0.92),rgba(10,14,26,0.98));border:1px solid rgba(74,222,128,0.35);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 25px rgba(74,222,128,0.08)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
+        + '<span style="font-size:11px;font-weight:800;letter-spacing:1.2px;color:#4ede80;background:rgba(74,222,128,0.14);padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.35);text-transform:uppercase">🎯 ONE-LINE IDENTITY</span>'
+        + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' · ' + (id.logs ? id.logs.length : 0) + ' Proofs</span>'
         + '</div>'
-
-        + '<div class="path-section">'
-        + '<span class="path-sublabel">THE CAGE YOU BROKE (OLD IDENTITY)</span>'
-        + '<h3 class="path-quote-red">"' + e(id.oldIdentity || 'The pattern of hesitation and delay') + '"</h3>'
-        + '</div>'
-
-        + oldEvHtml
-
-        + '<div class="path-section timeline-box timeline-box-red">'
-        + '<div class="timeline-header">'
-        + '<span class="timeline-badge red">⏳ IN 14 DAYS (IF YOU CONTINUE)</span>'
-        + '</div>'
-        + '<p class="timeline-text red">'
-        + e(get14DayAntiVision(id))
-        + '</p>'
-        + '</div>'
-
-        + '<div class="path-section timeline-box timeline-box-red-dark">'
-        + '<div class="timeline-header">'
-        + '<span class="timeline-badge red-dark">💀 IN 10 YEARS (THE ANTI-VISION)</span>'
-        + '</div>'
-        + '<p class="timeline-text red-dark">'
-        + '"' + e(id.antiVisionText || 'Living beneath my potential and repeating the same excuses for another decade.') + '"'
-        + '</p>'
-        + '</div>'
-        + '</div>'
-
-        // 🟢 PATH 2: BY ADDING EVIDENCE (NEW IDENTITY BUILT)
-        + '<div class="path-card path-green">'
-        + '<div class="path-badge path-badge-green">'
-        + '<span class="path-icon">🟢</span> BY ADDING EVIDENCE'
-        + '</div>'
-
-        + '<div class="path-section">'
-        + '<span class="path-sublabel green">YOU ARE BECOMING (NEW IDENTITY)</span>'
-        + '<h3 class="path-quote-green">"' + e(id.newIdentity) + '"</h3>'
-        + '</div>'
-
-        + '<div class="path-section timeline-box timeline-box-green">'
-        + '<div class="timeline-header">'
-        + '<span class="timeline-badge green">✨ HOW YOUR DAY WILL LOOK</span>'
-        + '<span class="journey-tag">' + (id.goalDays || 30) + '-Day Journey</span>'
-        + '</div>'
-        + '<div class="day-vision-content">'
-        + '"' + e(dayVisionStr || 'Morning: Clear & energized.\nAfternoon: Grounded & confident.\nEvening: Proud of your progress.') + '"'
-        + '</div>'
-        + '</div>'
-
-        + actionsHtml
-        + '</div>'
-
+        + '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>'
         + '</div>'
 
         + renderTugOfWar(id)
@@ -4669,10 +4598,6 @@
         + '</div>'
 
         + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">'
-        + '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;margin-bottom:10px">'
-        + '<span style="font-size:14px">🎯</span>'
-        + '<div style="flex:1;overflow:hidden"><span style="font-size:11px;color:#fbbf24;font-weight:700;letter-spacing:0.5px;display:block">TODAY\'S CRACK FOCUS</span><span style="font-size:13px;color:#f3f4f6;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">' + esc((id.crackAction && id.crackAction.trim()) ? id.crackAction.trim() : 'Take one action toward your new identity') + '</span></div>'
-        + '</div>'
         + renderWeightSelector('idlog')
         + '<textarea rows="2" id="idlog" placeholder="What did the new you do today? (e.g., Drank 2L water, washed face with cleanser, woke up early...)" style="margin-bottom:10px;min-height:52px"></textarea>'
         + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:12px">⚡ Save Evidence & Level Up</button>'
@@ -4987,8 +4912,11 @@
     // ═══════════════════════════════════════════════
     // ROUTINE LOOPS ENGINE & UI
     // ═══════════════════════════════════════════════
-    function renderOutcomeBadge(outcome) {
-      var val = (outcome || 'Positive').toLowerCase();
+    function renderOutcomeBadge(outcome, iterCount) {
+      if (!iterCount || iterCount === 0 || !outcome || outcome === 'Pending' || outcome === 'pending') {
+        return '<span class="meta-pill meta-outcome-neu">⏳ Not run yet</span>';
+      }
+      var val = (outcome || '').toLowerCase();
       if (val.includes('part')) {
         return '<span class="meta-pill meta-outcome-part">🟡 Partially Successful</span>';
       } else if (val.includes('neg')) {
@@ -5000,7 +4928,8 @@
     }
 
     function renderEffectivenessBadge(eff) {
-      var val = (eff || 'High').toLowerCase();
+      if (!eff || eff === 'Not specified' || eff === 'None') return '';
+      var val = eff.toLowerCase();
       if (val === 'best') {
         return '<span class="meta-pill meta-eff-best">👑 BEST (Top Tier)</span>';
       } else if (val === 'very high' || val === 'veryhigh') {
@@ -5011,20 +4940,23 @@
         return '<span class="meta-pill meta-eff-med">💫 MEDIUM Effectiveness</span>';
       } else if (val === 'low') {
         return '<span class="meta-pill meta-eff-low">⏳ LOW Effectiveness</span>';
+      } else if (val === 'very low' || val === 'verylow') {
+        return '<span class="meta-pill meta-eff-verylow">⚠️ VERY LOW Effectiveness</span>';
       }
-      return '<span class="meta-pill meta-eff-verylow">⚠️ VERY LOW Effectiveness</span>';
+      return '';
     }
 
     function renderTimeBadge(time) {
-      var t = time || 'Immediately';
-      return '<span class="meta-pill meta-time">⏱️ ' + e(t) + '</span>';
+      if (!time || time === 'Not specified' || time === 'None') return '';
+      return '<span class="meta-pill meta-time">⏱️ ' + e(time) + '</span>';
     }
 
     function renderLoopFlowDiagram(steps) {
-      if (!steps || !steps.length) {
-        return '<p class="h" style="font-style:italic">No steps defined for this loop yet.</p>';
+      var cleanSteps = (steps || []).map(function (s) { return String(s || '').trim(); }).filter(Boolean);
+      if (cleanSteps.length === 0) {
+        return '';
       }
-      var nodesHtml = steps.map(function (step, idx) {
+      var nodesHtml = cleanSteps.map(function (step, idx) {
         return '<div class="loop-step-node">'
           + '<span class="loop-step-num">' + (idx + 1) + '</span>'
           + '<span>' + e(step) + '</span>'
@@ -5042,7 +4974,8 @@
     }
 
     function renderRoutineLoopCard(rl, idx) {
-      var iterText = (rl.iterationCount || 0) === 1 ? '1 cycle run' : (rl.iterationCount || 0) + ' cycles run';
+      var iterCount = rl.iterationCount || 0;
+      var iterText = iterCount === 1 ? '1 cycle run' : iterCount + ' cycles run';
       var lastRunText = rl.lastExecuted ? ('Last run: ' + new Date(rl.lastExecuted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) : 'Not run yet';
 
       var whatsNextHtml = '';
@@ -5050,11 +4983,17 @@
         whatsNextHtml = '<div class="whats-next-box">'
           + '<div class="whats-next-header">'
           + '<span class="whats-next-badge">🎯 WHAT\'S NEXT (NEXT MOVE)</span>'
-          + '<button class="b bp bs" onclick="runRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">✓ Execute / Mark Run</button>'
+          + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">✓ Complete Run & Record Outcome</button>'
           + '</div>'
           + '<div class="whats-next-text">"' + e(rl.whatNext) + '"</div>'
           + '</div>';
       }
+
+      var flowDiagramHtml = renderLoopFlowDiagram(rl.steps);
+
+      var timeBadgeHtml = renderTimeBadge(rl.timeToResult);
+      var outcomeBadgeHtml = renderOutcomeBadge(rl.outcome, iterCount);
+      var effBadgeHtml = renderEffectivenessBadge(rl.effectiveness);
 
       return '<div class="routine-loop-card" id="loop-card-' + rl.id + '">'
         + '<div class="routine-loop-top">'
@@ -5063,20 +5002,20 @@
         + '<span class="routine-loops-count" style="font-size:10px;color:#fbbf24;border-color:rgba(245,158,11,0.3)">' + iterText + '</span>'
         + '</div>'
         + '<div class="routine-loop-actions">'
-        + '<button class="b bp bs" onclick="runRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;border-color:#3b82f6" title="Record another iteration of this loop">⚡ Run Loop (+1)</button>'
+        + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;border-color:#3b82f6" title="Record a run and log actual outcome">⚡ Log Run (+1)</button>'
         + '<button class="bg" onclick="openRoutineLoopModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;border:1px solid #374151;border-radius:6px">Edit</button>'
         + '<button class="bg" onclick="deleteRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Delete</button>'
         + '</div>'
         + '</div>'
 
-        + renderLoopFlowDiagram(rl.steps)
+        + flowDiagramHtml
 
         + whatsNextHtml
 
         + '<div class="loop-meta-pills">'
-        + renderTimeBadge(rl.timeToResult)
-        + renderOutcomeBadge(rl.outcome)
-        + renderEffectivenessBadge(rl.effectiveness)
+        + timeBadgeHtml
+        + outcomeBadgeHtml
+        + effBadgeHtml
         + '<span class="meta-pill meta-iter" title="' + lastRunText + '">📅 ' + lastRunText + '</span>'
         + '</div>'
 
@@ -5089,10 +5028,9 @@
 
       var cardsHtml = '';
       if (loops.length === 0) {
-        cardsHtml = '<div style="text-align:center;padding:26px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(245,158,11,0.3);border-radius:12px">'
-          + '<p style="font-family:Georgia,serif;font-size:16px;color:#f3f4f6;font-style:italic;margin-bottom:6px">"Who you are is what you repeatedly do."</p>'
-          + '<p class="h" style="max-width:480px;margin:0 auto 16px;font-size:12px;color:#9ca3af">Turn this One-Line Identity into actionable, continuous routine loops (e.g. Code → Use Website → Find Bugs → Prompt AI → Fix Code → Repeat).</p>'
-          + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="padding:8px 18px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;box-shadow:0 3px 12px rgba(245,158,11,0.25)">✨ Create Your First Routine Loop</button>'
+        cardsHtml = '<div style="text-align:center;padding:22px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(245,158,11,0.3);border-radius:12px">'
+          + '<p class="h" style="max-width:480px;margin:0 auto 14px;font-size:13px;color:#d1d5db">No routine loops created yet for this identity.</p>'
+          + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="padding:8px 18px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;box-shadow:0 3px 12px rgba(245,158,11,0.25)">➕ Create Routine Loop</button>'
           + '</div>';
       } else {
         cardsHtml = loops.map(function (rl, idx) {
@@ -5116,7 +5054,7 @@
     function renderMgRoutineLoopsList(id) {
       var loops = id.routineLoops || [];
       if (loops.length === 0) {
-        return '<p class="h" style="font-style:italic;margin-top:6px">No routine loops created yet. Add one to turn this identity into repeatable execution cycles.</p>';
+        return '<p class="h" style="font-style:italic;margin-top:6px">No routine loops created yet.</p>';
       }
       return loops.map(function (rl, i) {
         var stepsCount = (rl.steps || []).length;
@@ -5124,48 +5062,16 @@
         return '<div class="ev-item" style="padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,0.02);border:1px solid #28334e;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
           + '<div style="flex:1;min-width:0;padding-right:10px">'
           + '<div style="font-weight:600;color:#f9fafb;font-size:13px;display:flex;align-items:center;gap:6px">🔁 ' + e(rl.title) + '</div>'
-          + '<div class="sm" style="color:#9ca3af;font-size:11px;margin-top:2px">' + stepsCount + ' steps · ' + e(rl.timeToResult || 'Immediately') + ' · ' + iterCount + ' runs</div>'
+          + '<div class="sm" style="color:#9ca3af;font-size:11px;margin-top:2px">' + stepsCount + ' steps · ' + (rl.timeToResult ? e(rl.timeToResult) : 'No time set') + ' · ' + iterCount + ' runs · ' + (iterCount > 0 ? e(rl.outcome || 'Positive') : 'Not run yet') + '</div>'
           + '</div>'
           + '<div style="display:flex;gap:6px">'
+          + '<button class="b bp bs" style="font-size:11px;padding:3px 8px;background:#2563eb;color:#fff" onclick="openLogRunModal(\'' + rl.id + '\')">Log Run</button>'
           + '<button class="b bb bs" style="font-size:11px;padding:3px 8px" onclick="openRoutineLoopModal(\'' + rl.id + '\')">Edit</button>'
           + '<button class="ev-del" style="font-size:11px;padding:3px 8px" onclick="deleteRoutineLoop(\'' + rl.id + '\')">Delete</button>'
           + '</div>'
           + '</div>';
       }).join('');
     }
-
-    window.runRoutineLoop = function (loopId) {
-      var id = cur();
-      if (!id || !id.routineLoops) return;
-      var rl = id.routineLoops.find(function (item) { return item.id === loopId; });
-      if (!rl) return;
-
-      rl.iterationCount = (rl.iterationCount || 0) + 1;
-      rl.lastExecuted = new Date().toISOString();
-
-      // Automatically log evidence proof
-      var logNote = 'Completed Routine Loop: ' + rl.title + ' (Cycle #' + rl.iterationCount + ')' + (rl.whatNext ? ' — Next: ' + rl.whatNext : '');
-      if (!id.logs) id.logs = [];
-      id.logs.push({
-        date: new Date().toISOString(),
-        note: logNote,
-        weight: (rl.effectiveness === 'Best' || rl.effectiveness === 'Very High') ? 'strong' : 'medium'
-      });
-
-      save();
-      
-      var card = document.getElementById('loop-card-' + loopId);
-      if (card) {
-        card.style.transition = 'all 0.3s ease';
-        card.style.boxShadow = '0 0 30px rgba(74,222,128,0.7), 0 0 10px #4ede80';
-        card.style.borderColor = '#4ede80';
-        setTimeout(function () {
-          render();
-        }, 500);
-      } else {
-        render();
-      }
-    };
 
     window.deleteRoutineLoop = function (loopId) {
       var id = cur();
@@ -5179,7 +5085,7 @@
     };
 
     // ═══════════════════════════════════════════════
-    // ROUTINE LOOP MODAL & STEP BUILDER
+    // ROUTINE LOOP DESIGN / CREATOR MODAL
     // ═══════════════════════════════════════════════
     window.modalLoopDraft = null;
 
@@ -5194,10 +5100,10 @@
         window.modalLoopDraft = {
           id: existing.id,
           title: existing.title || '',
-          steps: Array.isArray(existing.steps) ? [...existing.steps] : ['Start action', 'Observe progress', 'Repeat'],
+          steps: Array.isArray(existing.steps) ? [...existing.steps] : [''],
           whatNext: existing.whatNext || '',
           timeToResult: existing.timeToResult || 'Immediately',
-          outcome: existing.outcome || 'Positive',
+          outcome: existing.outcome || 'Pending',
           effectiveness: existing.effectiveness || 'High',
           iterationCount: existing.iterationCount || 0
         };
@@ -5205,10 +5111,10 @@
         window.modalLoopDraft = {
           id: 'rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
           title: '',
-          steps: ['Code', 'Use website', 'Find bugs', 'Prompt AI with bugs', 'Fix code', 'Use website again'],
+          steps: [''],
           whatNext: '',
-          timeToResult: 'Within a few minutes',
-          outcome: 'Positive',
+          timeToResult: 'Immediately',
+          outcome: 'Pending',
           effectiveness: 'High',
           iterationCount: 0
         };
@@ -5266,7 +5172,7 @@
       container.innerHTML = steps.map(function (step, i) {
         return '<div class="step-builder-row">'
           + '<span class="step-builder-badge">' + (i + 1) + '</span>'
-          + '<input type="text" class="step-builder-input" placeholder="e.g. Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" />'
+          + '<input type="text" class="step-builder-input" placeholder="Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" />'
           + '<button type="button" class="step-del-btn" onclick="removeModalLoopStep(' + i + ')" title="Remove step">✕</button>'
           + '</div>';
       }).join('');
@@ -5277,7 +5183,11 @@
       if (!preview || !window.modalLoopDraft) return;
       var rawSteps = window.modalLoopDraft.steps || [];
       var cleanSteps = rawSteps.map(function (s) { return String(s || '').trim(); }).filter(Boolean);
-      preview.innerHTML = renderLoopFlowDiagram(cleanSteps.length > 0 ? cleanSteps : ['Step 1', 'Step 2', 'Repeat']);
+      if (cleanSteps.length === 0) {
+        preview.innerHTML = '<p class="h" style="font-style:italic;color:#64748b;font-size:12px;margin:4px 0">Optional: Add steps above to visualize the loop diagram.</p>';
+      } else {
+        preview.innerHTML = renderLoopFlowDiagram(cleanSteps);
+      }
     }
 
     function renderRoutineLoopModalContent(modal) {
@@ -5291,9 +5201,10 @@
         'Within a few minutes',
         'Within a few hours',
         'Within a day',
-        'Within a week'
+        'Within a week',
+        'Not specified'
       ];
-      var isCustomTime = !timeOptions.includes(draft.timeToResult);
+      var isCustomTime = !timeOptions.includes(draft.timeToResult) && draft.timeToResult !== '';
 
       modal.className = 'modal-overlay';
       modal.onclick = function (e) {
@@ -5302,7 +5213,7 @@
 
       modal.innerHTML = '<div class="modal-card" style="max-width:620px;border-color:rgba(245,158,11,0.4)">'
         + '<div class="modal-header">'
-        + '<h3>🔁 ' + (isEdit ? 'Edit Routine Loop' : 'Create New Routine Loop') + '</h3>'
+        + '<h3>🔁 ' + (isEdit ? 'Edit Routine Loop' : 'Create Routine Loop') + '</h3>'
         + '<button class="modal-close" onclick="closeRoutineLoopModal()">&times;</button>'
         + '</div>'
         + '<div class="modal-body">'
@@ -5313,44 +5224,41 @@
         + '<div style="font-family:Georgia,serif;font-style:italic;color:#f9fafb;font-size:14px;margin-top:2px">"' + e(cur()?.newIdentity || '') + '"</div>'
         + '</div>'
 
-        // Title
+        // Title (Optional)
         + '<div style="margin-bottom:16px">'
-        + '<label class="lb">1. Routine Loop Title / Name</label>'
-        + '<p class="h">A clear title describing this feedback loop cycle.</p>'
-        + '<input type="text" id="modal-loop-title" placeholder="e.g. Code, Find Bugs & Prompt AI to Fix" value="' + esc(draft.title) + '" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
+        + '<label class="lb">1. Routine Loop Title (Optional)</label>'
+        + '<p class="h">Name your feedback loop (or leave blank to auto-name).</p>'
+        + '<input type="text" id="modal-loop-title" placeholder="e.g. Daily Bug Hunter & Prompt Cycle" value="' + esc(draft.title) + '" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
         + '</div>'
 
-        // Steps Builder
+        // Steps Builder (Optional)
         + '<div style="margin-bottom:16px">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-        + '<label class="lb" style="margin-bottom:0">2. Loop Elements / Steps Chain (Add as many as you want)</label>'
-        + '<button type="button" class="b bp bs" style="font-size:11px;padding:4px 10px;background:rgba(99,102,241,0.25);border-color:#6366f1;color:#a5b4fc" onclick="addModalLoopStep()">➕ Add Step</button>'
-        + '</div>'
-        + '<p class="h">Define the sequential actions in this continuous loop.</p>'
+        + '<label class="lb">2. Loop Elements / Steps Chain (Optional)</label>'
+        + '<p class="h">Define any sequence of actions in this loop (add as many or few as you want).</p>'
         + '<div id="modal-steps-container" style="margin-top:8px"></div>'
         + '<button type="button" class="b bb bs" style="width:100%;font-size:12px;padding:8px;margin-top:4px;border-style:dashed" onclick="addModalLoopStep()">➕ Add Another Step Element</button>'
         + '</div>'
 
         // Live Visual Loop Preview
         + '<div style="margin-bottom:16px">'
-        + '<label class="lb" style="font-size:11px;color:#fbbf24">✨ Live Visual Preview:</label>'
+        + '<label class="lb" style="font-size:11px;color:#fbbf24">✨ Visual Preview:</label>'
         + '<div id="modal-loop-preview"></div>'
         + '</div>'
 
-        // What's Next
+        // What's Next (Optional)
         + '<div style="margin-bottom:16px">'
-        + '<label class="lb">3. What\'s Next (Next Immediate Action)</label>'
-        + '<p class="h">What is the exact next step you need to take when you follow this routine?</p>'
-        + '<textarea rows="2" id="modal-loop-whatnext" placeholder="e.g. Open browser console, test user signup edge cases with empty fields, and document errors..." style="width:100%;font-size:13px;padding:8px 12px;margin-top:4px">' + esc(draft.whatNext) + '</textarea>'
+        + '<label class="lb">3. What\'s Next (Optional)</label>'
+        + '<p class="h">Immediate next action to take when following this routine.</p>'
+        + '<textarea rows="2" id="modal-loop-whatnext" placeholder="What to do next when following this routine..." style="width:100%;font-size:13px;padding:8px 12px;margin-top:4px">' + esc(draft.whatNext) + '</textarea>'
         + '</div>'
 
-        // Time to Result & Outcome & Effectiveness Grid
+        // Turnaround Time & Target Effectiveness Grid (Optional)
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
         
         // Time to Result
         + '<div>'
-        + '<label class="lb">4. Time to Result</label>'
-        + '<p class="h">How long to see results?</p>'
+        + '<label class="lb">4. Expected Time to Result (Optional)</label>'
+        + '<p class="h">Approximate turnaround</p>'
         + '<select id="modal-loop-time" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px" onchange="toggleCustomTimeInput(this.value)">'
         + timeOptions.map(function (opt) {
             return '<option value="' + opt + '" ' + (draft.timeToResult === opt ? 'selected' : '') + '>' + opt + '</option>';
@@ -5360,32 +5268,21 @@
         + '<input type="text" id="modal-loop-time-custom" placeholder="e.g. Within 2 hours..." value="' + (isCustomTime ? esc(draft.timeToResult) : '') + '" style="width:100%;font-size:13px;padding:6px 10px;margin-top:6px;display:' + (isCustomTime ? 'block' : 'none') + '" />'
         + '</div>'
 
-        // Actual Result / Outcome
+        // Target Effectiveness Rating
         + '<div>'
-        + '<label class="lb">5. Actual Result / Outcome</label>'
-        + '<p class="h">Observed outcome status</p>'
-        + '<select id="modal-loop-outcome" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px">'
-        + '<option value="Positive" ' + (draft.outcome === 'Positive' ? 'selected' : '') + '>🟢 Positive</option>'
-        + '<option value="Partially successful" ' + (draft.outcome === 'Partially successful' ? 'selected' : '') + '>🟡 Partially Successful</option>'
-        + '<option value="Neutral" ' + (draft.outcome === 'Neutral' ? 'selected' : '') + '>⚪ Neutral</option>'
-        + '<option value="Negative" ' + (draft.outcome === 'Negative' ? 'selected' : '') + '>🔴 Negative</option>'
-        + '</select>'
-        + '</div>'
-
-        + '</div>'
-
-        // Effectiveness Rating
-        + '<div style="margin-bottom:20px">'
-        + '<label class="lb">6. Effectiveness Rating</label>'
-        + '<p class="h">How effective is this routine loop in achieving your One-Line Identity?</p>'
+        + '<label class="lb">5. Target Effectiveness (Optional)</label>'
+        + '<p class="h">Expected leverage</p>'
         + '<select id="modal-loop-eff" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:8px 10px;border-radius:8px;font-size:13px;margin-top:4px">'
-        + '<option value="Best" ' + (draft.effectiveness === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
+        + '<option value="High" ' + ((draft.effectiveness === 'High' || !draft.effectiveness) ? 'selected' : '') + '>⚡ High</option>'
         + '<option value="Very High" ' + (draft.effectiveness === 'Very High' ? 'selected' : '') + '>🔥 Very High</option>'
-        + '<option value="High" ' + (draft.effectiveness === 'High' ? 'selected' : '') + '>⚡ High</option>'
+        + '<option value="Best" ' + (draft.effectiveness === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
         + '<option value="Medium" ' + (draft.effectiveness === 'Medium' ? 'selected' : '') + '>💫 Medium</option>'
         + '<option value="Low" ' + (draft.effectiveness === 'Low' ? 'selected' : '') + '>⏳ Low</option>'
         + '<option value="Very Low" ' + (draft.effectiveness === 'Very Low' ? 'selected' : '') + '>⚠️ Very Low</option>'
+        + '<option value="Not specified" ' + (draft.effectiveness === 'Not specified' ? 'selected' : '') + '>⚪ Not Specified</option>'
         + '</select>'
+        + '</div>'
+
         + '</div>'
 
         // Buttons
@@ -5422,30 +5319,26 @@
       var timeSelect = document.getElementById('modal-loop-time')?.value || 'Immediately';
       var timeCustom = document.getElementById('modal-loop-time-custom')?.value?.trim();
       var finalTime = (timeSelect === 'custom' && timeCustom) ? timeCustom : (timeSelect !== 'custom' ? timeSelect : 'Immediately');
-      var outcomeVal = document.getElementById('modal-loop-outcome')?.value || 'Positive';
       var effVal = document.getElementById('modal-loop-eff')?.value || 'High';
 
       var cleanSteps = (window.modalLoopDraft?.steps || []).map(function (s) {
         return String(s || '').trim();
       }).filter(Boolean);
 
-      if (cleanSteps.length === 0) {
-        cleanSteps = ['Execute routine', 'Evaluate results', 'Repeat'];
-      }
-
       var existingIdx = id.routineLoops.findIndex(function (item) { return item.id === loopId; });
+      var existing = existingIdx >= 0 ? id.routineLoops[existingIdx] : null;
 
       var newLoopObj = {
         id: loopId || ('rl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
-        title: titleInp || 'Routine Loop ' + (id.routineLoops.length + 1),
+        title: titleInp || ('Routine Loop ' + (existingIdx >= 0 ? (existingIdx + 1) : (id.routineLoops.length + 1))),
         steps: cleanSteps,
         whatNext: whatNextInp,
         timeToResult: finalTime,
-        outcome: outcomeVal,
+        outcome: existing ? (existing.outcome || 'Pending') : 'Pending',
         effectiveness: effVal,
-        iterationCount: existingIdx >= 0 ? (id.routineLoops[existingIdx].iterationCount || 0) : 0,
-        lastExecuted: existingIdx >= 0 ? (id.routineLoops[existingIdx].lastExecuted || null) : null,
-        createdDate: existingIdx >= 0 ? (id.routineLoops[existingIdx].createdDate || new Date().toISOString()) : new Date().toISOString()
+        iterationCount: existing ? (existing.iterationCount || 0) : 0,
+        lastExecuted: existing ? (existing.lastExecuted || null) : null,
+        createdDate: existing ? (existing.createdDate || new Date().toISOString()) : new Date().toISOString()
       };
 
       if (existingIdx >= 0) {
@@ -5457,6 +5350,146 @@
       save();
       render();
       closeRoutineLoopModal();
+    };
+
+    // ═══════════════════════════════════════════════
+    // LOG ROUTINE RUN & RECORD OUTCOME MODAL
+    // ═══════════════════════════════════════════════
+    window.openLogRunModal = function (loopId) {
+      var id = cur();
+      if (!id || !id.routineLoops) return;
+      var rl = id.routineLoops.find(function (item) { return item.id === loopId; });
+      if (!rl) return;
+
+      var modal = document.getElementById('log-run-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'log-run-modal';
+        document.body.appendChild(modal);
+      }
+
+      modal.className = 'modal-overlay';
+      modal.onclick = function (e) {
+        if (e.target === modal) closeLogRunModal();
+      };
+
+      var nextCycleNum = (rl.iterationCount || 0) + 1;
+      var currentEff = rl.effectiveness || 'High';
+      var currentOutcome = (rl.outcome && rl.outcome !== 'Pending') ? rl.outcome : 'Positive';
+
+      modal.innerHTML = '<div class="modal-card" style="max-width:540px;border-color:rgba(245,158,11,0.4)">'
+        + '<div class="modal-header">'
+        + '<h3>⚡ Log Completed Run (Cycle #' + nextCycleNum + ')</h3>'
+        + '<button class="modal-close" onclick="closeLogRunModal()">&times;</button>'
+        + '</div>'
+        + '<div class="modal-body">'
+
+        // Routine Loop context
+        + '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<span style="font-size:13px;font-weight:700;color:#fbbf24">🔁 ' + e(rl.title) + '</span>'
+        + '<span class="routine-loops-count" style="font-size:10px;color:#fbbf24">Cycle #' + nextCycleNum + '</span>'
+        + '</div>'
+        + (rl.whatNext ? '<div style="font-size:12px;color:#fef3c7;margin-top:6px;line-height:1.4"><strong style="color:#fbbf24">What\'s Next Target:</strong> "' + e(rl.whatNext) + '"</div>' : '')
+        + '</div>'
+
+        // 1. Observed Result / Outcome
+        + '<div style="margin-bottom:16px">'
+        + '<label class="lb">1. What was the actual result / outcome of this run?</label>'
+        + '<p class="h">Select the observed result after completing this loop.</p>'
+        + '<select id="logrun-outcome" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px">'
+        + '<option value="Positive" ' + (currentOutcome === 'Positive' ? 'selected' : '') + '>🟢 Positive (Completed successfully as intended)</option>'
+        + '<option value="Partially successful" ' + (currentOutcome === 'Partially successful' ? 'selected' : '') + '>🟡 Partially Successful (Made progress, minor hurdles)</option>'
+        + '<option value="Neutral" ' + (currentOutcome === 'Neutral' ? 'selected' : '') + '>⚪ Neutral (Routine executed, no major change)</option>'
+        + '<option value="Negative" ' + (currentOutcome === 'Negative' ? 'selected' : '') + '>🔴 Negative (Faced roadblocks / unexpected issues)</option>'
+        + '</select>'
+        + '</div>'
+
+        // 2. Effectiveness rating
+        + '<div style="margin-bottom:16px">'
+        + '<label class="lb">2. Rate Effectiveness based on this experience</label>'
+        + '<p class="h">How high-leverage was this routine loop?</p>'
+        + '<select id="logrun-eff" style="width:100%;background:#181824;color:#f3f4f6;border:1px solid #374151;padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px">'
+        + '<option value="Best" ' + (currentEff === 'Best' ? 'selected' : '') + '>👑 Best (Top Tier Impact)</option>'
+        + '<option value="Very High" ' + (currentEff === 'Very High' ? 'selected' : '') + '>🔥 Very High</option>'
+        + '<option value="High" ' + (currentEff === 'High' ? 'selected' : '') + '>⚡ High</option>'
+        + '<option value="Medium" ' + (currentEff === 'Medium' ? 'selected' : '') + '>💫 Medium</option>'
+        + '<option value="Low" ' + (currentEff === 'Low' ? 'selected' : '') + '>⏳ Low</option>'
+        + '<option value="Very Low" ' + (currentEff === 'Very Low' ? 'selected' : '') + '>⚠️ Very Low</option>'
+        + '</select>'
+        + '</div>'
+
+        // 3. Proof / Reflection note
+        + '<div style="margin-bottom:16px">'
+        + '<label class="lb">3. What did you observe or achieve? (Saved to Proof Logs)</label>'
+        + '<p class="h">Short evidence note that proves progress toward your identity.</p>'
+        + '<textarea id="logrun-note" rows="2" placeholder="e.g. Followed the routine, found and fixed issues, verified smooth operation..." style="width:100%;font-size:13px;padding:8px 12px;margin-top:4px"></textarea>'
+        + '</div>'
+
+        // 4. Update What's Next for next cycle
+        + '<div style="margin-bottom:18px">'
+        + '<label class="lb">4. What\'s Next for the next cycle? (Optional)</label>'
+        + '<p class="h">Update your immediate next action for upcoming runs.</p>'
+        + '<input type="text" id="logrun-whatnext" placeholder="Next immediate action for the upcoming run..." value="' + esc(rl.whatNext || '') + '" style="width:100%;font-size:13px;padding:8px 12px;margin-top:4px" />'
+        + '</div>'
+
+        // Buttons
+        + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #1f2436;padding-top:14px">'
+        + '<button type="button" class="b bb" onclick="closeLogRunModal()">Cancel</button>'
+        + '<button type="button" class="b bp" onclick="saveLogRunModal(\'' + rl.id + '\')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;padding:8px 18px">⚡ Save Run & Record Outcome</button>'
+        + '</div>'
+
+        + '</div>'
+        + '</div>';
+    };
+
+    window.closeLogRunModal = function () {
+      var modal = document.getElementById('log-run-modal');
+      if (modal) modal.remove();
+    };
+
+    window.saveLogRunModal = function (loopId) {
+      var id = cur();
+      if (!id || !id.routineLoops) return;
+      var rl = id.routineLoops.find(function (item) { return item.id === loopId; });
+      if (!rl) return;
+
+      var outcomeVal = document.getElementById('logrun-outcome')?.value || 'Positive';
+      var effVal = document.getElementById('logrun-eff')?.value || 'High';
+      var noteVal = document.getElementById('logrun-note')?.value?.trim();
+      var whatNextVal = document.getElementById('logrun-whatnext')?.value?.trim();
+
+      rl.iterationCount = (rl.iterationCount || 0) + 1;
+      rl.lastExecuted = new Date().toISOString();
+      rl.outcome = outcomeVal;
+      rl.effectiveness = effVal;
+      if (whatNextVal !== undefined) {
+        rl.whatNext = whatNextVal;
+      }
+
+      // Automatically log evidence proof
+      var logNote = noteVal || ('Completed Routine Loop: ' + rl.title + ' (Outcome: ' + outcomeVal + ', Cycle #' + rl.iterationCount + ')' + (rl.whatNext ? ' — Next: ' + rl.whatNext : ''));
+      if (!id.logs) id.logs = [];
+      id.logs.push({
+        date: new Date().toISOString(),
+        note: logNote,
+        weight: (effVal === 'Best' || effVal === 'Very High') ? 'strong' : 'medium'
+      });
+
+      save();
+      closeLogRunModal();
+
+      var card = document.getElementById('loop-card-' + loopId);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.boxShadow = '0 0 30px rgba(74,222,128,0.7), 0 0 10px #4ede80';
+        card.style.borderColor = '#4ede80';
+        setTimeout(function () {
+          render();
+        }, 500);
+      } else {
+        render();
+      }
     };
 
   </script>
