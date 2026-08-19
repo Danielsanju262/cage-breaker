@@ -2237,7 +2237,7 @@
         text: (t.text || '').trim() || 'Untitled Task',
         completed: !!t.completed,
         completedAt: t.completedAt || null,
-        expanded: false,
+        expanded: !!t.expanded,
         ideas: rawIdeas.map(sanitizeTaskIdea).filter(Boolean),
         createdDate: t.createdDate || new Date().toISOString(),
         updatedAt: t.updatedAt || new Date().toISOString()
