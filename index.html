@@ -1531,9 +1531,9 @@
     .loop-circle-container {
       position: relative;
       width: 100%;
-      max-width: 340px;
-      height: 260px;
-      margin: 8px auto;
+      max-width: 380px;
+      height: 270px;
+      margin: 10px auto;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1542,25 +1542,28 @@
     }
 
     .circle-step-node {
-      display: inline-flex;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      gap: 3px;
       background: linear-gradient(135deg, rgba(24, 34, 58, 0.95), rgba(15, 23, 42, 0.98));
       border: 1.5px solid rgba(99, 102, 241, 0.5);
       color: #f1f5f9;
-      padding: 4px 8px;
-      border-radius: 8px;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(99, 102, 241, 0.2);
+      padding: 5px 9px;
+      border-radius: 10px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 10px rgba(99, 102, 241, 0.2);
       transition: all 0.2s ease;
       font-size: 10.5px;
-      line-height: 1.25;
-      max-width: 115px;
+      line-height: 1.3;
+      max-width: 130px;
       word-break: normal !important;
-      overflow-wrap: normal !important;
+      overflow-wrap: break-word !important;
       word-wrap: normal !important;
       hyphens: none !important;
       white-space: normal;
       box-sizing: border-box;
+      text-align: center;
     }
 
     .circle-step-node:hover {
@@ -1577,12 +1580,12 @@
         margin: 6px auto;
       }
       .circle-step-node {
-        max-width: 110px !important;
-        padding: 4px 6px !important;
+        max-width: 115px !important;
+        padding: 4px 7px !important;
         font-size: 9.5px !important;
         line-height: 1.25 !important;
         word-break: normal !important;
-        overflow-wrap: normal !important;
+        overflow-wrap: break-word !important;
         word-wrap: normal !important;
         hyphens: none !important;
       }
@@ -2225,7 +2228,9 @@
         iterationCount: typeof rl.iterationCount === 'number' ? rl.iterationCount : 0,
         runLogs: Array.isArray(rl.runLogs) ? rl.runLogs : [],
         lastExecuted: rl.lastExecuted || null,
-        createdDate: rl.createdDate || new Date().toISOString()
+        flowViewMode: (rl && rl.flowViewMode === 'circle') ? 'circle' : 'linear',
+        createdDate: rl.createdDate || new Date().toISOString(),
+        updatedAt: (rl && rl.updatedAt) || new Date().toISOString()
       };
     }
 
@@ -2392,6 +2397,22 @@
     var _syncStatus = 'idle';
     var _isRemoteUpdate = false;
 
+    function mergeTaskIdeas(ideas1, ideas2) {
+      var arr1 = Array.isArray(ideas1) ? ideas1 : [];
+      var arr2 = Array.isArray(ideas2) ? ideas2 : [];
+      var map = new Map();
+      [...arr1, ...arr2].forEach(function (idea) {
+        if (!idea) return;
+        var sanitized = sanitizeTaskIdea(idea);
+        if (sanitized && sanitized.id) {
+          if (!map.has(sanitized.id)) {
+            map.set(sanitized.id, sanitized);
+          }
+        }
+      });
+      return Array.from(map.values());
+    }
+
     function mergeSingleIdentity(i1, i2) {
       if (!i1) return i2;
       if (!i2) return i1;
@@ -2399,8 +2420,8 @@
       var t1 = new Date(i1.updatedAt || i1.createdDate || 0).getTime();
       var t2 = new Date(i2.updatedAt || i2.createdDate || 0).getTime();
 
-      var primary = (t1 >= t2) ? i1 : i2;
-      var secondary = (t1 >= t2) ? i2 : i1;
+      var primary = (t2 >= t1) ? i2 : i1;
+      var secondary = (t2 >= t1) ? i1 : i2;
 
       const logsMap = new Map();
       [...(i1.logs || []), ...(i2.logs || [])].forEach(l => {
@@ -2442,35 +2463,81 @@
         mergedDailyCrack = (d1 >= d2) ? i1.dailyCrack : i2.dailyCrack;
       }
 
-      const rlMap = new Map();
-      [...(i1.routineLoops || []), ...(i2.routineLoops || [])].forEach(rl => {
+      const secondaryLoopMap = new Map();
+      (secondary.routineLoops || []).forEach(rl => {
+        if (rl && (rl.id || rl.title)) {
+          secondaryLoopMap.set(rl.id || rl.title, rl);
+        }
+      });
+
+      const mergedRoutineLoops = [];
+      const processedLoopKeys = new Set();
+
+      (primary.routineLoops || []).forEach(rl => {
         if (!rl) return;
         const key = rl.id || rl.title;
-        if (!rlMap.has(key)) {
-          rlMap.set(key, sanitizeRoutineLoop(rl));
+        processedLoopKeys.add(key);
+
+        const secRl = secondaryLoopMap.get(key);
+        if (secRl) {
+          const pTime = new Date(rl.updatedAt || rl.lastExecuted || rl.createdDate || 0).getTime();
+          const sTime = new Date(secRl.updatedAt || secRl.lastExecuted || secRl.createdDate || 0).getTime();
+          const newest = pTime >= sTime ? rl : secRl;
+          mergedRoutineLoops.push(sanitizeRoutineLoop(newest));
         } else {
-          const existing = rlMap.get(key);
-          const t1 = new Date(existing.lastExecuted || existing.createdDate || 0).getTime();
-          const t2 = new Date(rl.lastExecuted || rl.createdDate || 0).getTime();
-          rlMap.set(key, t2 >= t1 ? sanitizeRoutineLoop(rl) : existing);
+          mergedRoutineLoops.push(sanitizeRoutineLoop(rl));
         }
       });
-      const mergedRoutineLoops = Array.from(rlMap.values());
 
-      const tasksMap = new Map();
-      [...(i1.tasks || []), ...(i2.tasks || [])].forEach(t => {
+      (secondary.routineLoops || []).forEach(rl => {
+        if (!rl) return;
+        const key = rl.id || rl.title;
+        if (!processedLoopKeys.has(key)) {
+          processedLoopKeys.add(key);
+          mergedRoutineLoops.push(sanitizeRoutineLoop(rl));
+        }
+      });
+
+      const secondaryTaskMap = new Map();
+      (secondary.tasks || []).forEach(t => {
+        if (t && (t.id || t.text)) {
+          secondaryTaskMap.set(t.id || t.text, t);
+        }
+      });
+
+      const mergedTasks = [];
+      const processedTaskKeys = new Set();
+
+      (primary.tasks || []).forEach(t => {
         if (!t) return;
         const key = t.id || t.text;
-        if (!tasksMap.has(key)) {
-          tasksMap.set(key, sanitizeTask(t));
+        processedTaskKeys.add(key);
+
+        const secTask = secondaryTaskMap.get(key);
+        if (secTask) {
+          const pTime = new Date(t.updatedAt || t.createdDate || 0).getTime();
+          const sTime = new Date(secTask.updatedAt || secTask.createdDate || 0).getTime();
+          const newest = pTime >= sTime ? t : secTask;
+          mergedTasks.push(sanitizeTask({
+            ...secTask,
+            ...t,
+            completed: newest.completed,
+            completedAt: newest.completedAt,
+            ideas: mergeTaskIdeas(t.ideas, secTask.ideas)
+          }));
         } else {
-          const existing = tasksMap.get(key);
-          const t1 = new Date(existing.updatedAt || existing.createdDate || 0).getTime();
-          const t2 = new Date(t.updatedAt || t.createdDate || 0).getTime();
-          tasksMap.set(key, t2 >= t1 ? sanitizeTask(t) : existing);
+          mergedTasks.push(sanitizeTask(t));
         }
       });
-      const mergedTasks = Array.from(tasksMap.values());
+
+      (secondary.tasks || []).forEach(t => {
+        if (!t) return;
+        const key = t.id || t.text;
+        if (!processedTaskKeys.has(key)) {
+          processedTaskKeys.add(key);
+          mergedTasks.push(sanitizeTask(t));
+        }
+      });
 
       return {
         ...secondary,
@@ -3522,6 +3589,7 @@
 
       var moved = id.tasks.splice(fromIdx, 1)[0];
       id.tasks.splice(toIdx, 0, moved);
+      id.updatedAt = new Date().toISOString();
       save(true);
       render();
     };
@@ -3675,6 +3743,7 @@
       };
 
       id.tasks.push(newTask);
+      id.updatedAt = new Date().toISOString();
       save(true);
       render();
     };
@@ -4181,8 +4250,6 @@
         + switcherHtml
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
-        + '<button class="b bb bs" onclick="openSectionsCustomizerModal()" style="font-size:12px;padding:7px 12px;white-space:nowrap" title="Customize and toggle visible sections">📐 Sections</button>'
-        + '<button class="b bb bs" onclick="syncNow()" style="font-size:12px;padding:7px 12px;white-space:nowrap" title="Push & Pull latest data instantly">🔄 Sync</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:7px 12px;white-space:nowrap">⚙️ Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:7px 12px;color:#fbbf24;font-weight:600;white-space:nowrap">All Cards →</button>'
         + '</div>'
@@ -6071,10 +6138,23 @@
       return '<span class="meta-pill meta-time">⏱️ ' + e(time) + '</span>';
     }
 
-    window.loopFlowViewMode = window.loopFlowViewMode || {};
+    function getLoopFlowViewMode(loopId) {
+      if (!loopId) return 'linear';
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.routineLoops)) return 'linear';
+      var rl = id.routineLoops.find(function (r) { return r.id === loopId; });
+      return (rl && rl.flowViewMode === 'circle') ? 'circle' : 'linear';
+    }
+
     window.toggleLoopFlowView = function (loopId) {
-      window.loopFlowViewMode = window.loopFlowViewMode || {};
-      window.loopFlowViewMode[loopId] = (window.loopFlowViewMode[loopId] === 'linear') ? 'circle' : 'linear';
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.routineLoops)) return;
+      var rl = id.routineLoops.find(function (r) { return r.id === loopId; });
+      if (!rl) return;
+      rl.flowViewMode = (rl.flowViewMode === 'circle') ? 'linear' : 'circle';
+      rl.updatedAt = new Date().toISOString();
+      id.updatedAt = new Date().toISOString();
+      save(true);
       render();
     };
 
@@ -6085,13 +6165,13 @@
       render();
     };
 
-    function renderLoopFlowDiagram(steps, loopId, isTaskCompleted) {
+    function renderLoopFlowDiagram(steps, loopId, isTaskCompleted, customViewMode) {
       var cleanSteps = (steps || []).map(function (s) { return String(s || '').trim(); }).filter(Boolean);
       if (cleanSteps.length === 0) {
         return '';
       }
-      window.loopFlowViewMode = window.loopFlowViewMode || {};
-      var isLinear = !!(loopId && window.loopFlowViewMode && window.loopFlowViewMode[loopId] === 'linear');
+      var viewMode = customViewMode || getLoopFlowViewMode(loopId);
+      var isLinear = (viewMode !== 'circle');
 
       // Header label with toggle
       var toggleBtn = loopId ? (
@@ -6127,11 +6207,11 @@
 
       // ⭕ CIRCULAR FORMAT RENDERING
       var N = cleanSteps.length;
-      var cx = 160;
-      var cy = 125;
-      var R = N >= 5 ? 65 : (N === 4 ? 68 : 72);
-      var radiusPct = N >= 5 ? 31 : (N === 4 ? 30 : 28);
-      var nodeMaxW = N >= 5 ? 115 : (N === 4 ? 120 : 125);
+      var cx = 180;
+      var cy = 135;
+      var R = N >= 5 ? 75 : (N === 4 ? 78 : 82);
+      var radiusPct = N >= 5 ? 30 : (N === 4 ? 29 : 28);
+      var nodeMaxW = N >= 5 ? 130 : (N === 4 ? 135 : 140);
 
       // Generate SVG curved clockwise arrows between step nodes
       var svgArrows = '';
@@ -6159,20 +6239,20 @@
         var angle = -Math.PI / 2 + idx * (2 * Math.PI / N);
         var pctX = 50 + radiusPct * Math.cos(angle);
         var pctY = 50 + (radiusPct * 1.05) * Math.sin(angle);
-        return '<div class="loop-step-node circle-step-node" style="position:absolute;left:' + pctX.toFixed(1) + '%;top:' + pctY.toFixed(1) + '%;transform:translate(-50%,-50%);max-width:' + nodeMaxW + 'px;text-align:center;z-index:2;word-break:normal!important;overflow-wrap:normal!important;word-wrap:normal!important;hyphens:none!important">'
-          + '<span class="loop-step-num" style="width:17px;height:17px;font-size:9.5px;flex-shrink:0">' + (idx + 1) + '</span>'
-          + '<span style="font-size:10.5px;font-weight:600;line-height:1.25;word-break:normal!important;overflow-wrap:normal!important;word-wrap:normal!important;hyphens:none!important">' + e(step) + '</span>'
+        return '<div class="loop-step-node circle-step-node" style="position:absolute;left:' + pctX.toFixed(1) + '%;top:' + pctY.toFixed(1) + '%;transform:translate(-50%,-50%);max-width:' + nodeMaxW + 'px;text-align:center;z-index:2;word-break:normal!important;overflow-wrap:break-word!important;word-wrap:normal!important;hyphens:none!important">'
+          + '<span class="loop-step-num" style="width:18px;height:18px;font-size:9.5px;flex-shrink:0;margin-bottom:1px">' + (idx + 1) + '</span>'
+          + '<span style="font-size:10.5px;font-weight:600;line-height:1.25;word-break:normal!important;overflow-wrap:break-word!important;word-wrap:normal!important;hyphens:none!important;text-align:center">' + e(step) + '</span>'
           + '</div>';
       }).join('');
 
       var circleHtml = '<div class="loop-circle-container">'
-        + '<svg viewBox="0 0 320 250" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1">'
+        + '<svg viewBox="0 0 360 270" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1">'
         + '<defs>'
         + '<marker id="' + uid + '" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">'
         + '<polygon points="0 0, 6 3, 0 6" fill="#f59e0b"/>'
         + '</marker>'
         + '</defs>'
-        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(245,158,11,0.15)" stroke-width="1.2" stroke-dasharray="3 3"/>'
+        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(245,158,11,0.18)" stroke-width="1.2" stroke-dasharray="3 3"/>'
         + svgArrows
         + '</svg>'
         + stepCardsHtml
@@ -6836,8 +6916,8 @@
       svg.appendChild(runnerDot);
 
       var totalSteps = stepNodes.length;
-      var cx = 160, cy = 125;
-      var R = totalSteps >= 5 ? 65 : (totalSteps === 4 ? 68 : 72);
+      var cx = 180, cy = 135;
+      var R = totalSteps >= 5 ? 75 : (totalSteps === 4 ? 78 : 82);
       var duration = 950; // ms
       var startTime = null;
       var lastLitIndex = -1;
