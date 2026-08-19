@@ -4339,12 +4339,12 @@
         + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
         + (task.completed ? '✓' : '')
         + '</button>'
+        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid ' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (mainIdeas.length > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;flex-shrink:0" title="Main Task Ideas">'
+        + '💡 ' + (mainIdeas.length > 0 ? (mainIdeas.length + ' Idea' + (mainIdeas.length === 1 ? '' : 's')) : '+ Idea')
+        + '</button>'
         + '<div style="display:flex;flex-direction:column;gap:2px;cursor:pointer;flex:1" onclick="toggleTaskExpanded(\'' + task.id + '\')" title="' + (isExpanded ? 'Click to collapse subtasks' : 'Click to expand subtasks') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span class="task-title" style="font-size:15px;font-weight:600;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
-        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid ' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (mainIdeas.length > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Main Task Ideas">'
-        + '💡 ' + (mainIdeas.length > 0 ? (mainIdeas.length + ' Idea' + (mainIdeas.length === 1 ? '' : 's')) : '+ Idea')
-        + '</button>'
         + (task.completed ? '<span style="font-size:10px;font-weight:800;background:rgba(74,222,128,0.15);color:#4ede80;padding:2px 6px;border-radius:4px;border:1px solid rgba(74,222,128,0.3)">✓ ACHIEVED</span>' : '')
         + '</div>'
         + '</div>'
