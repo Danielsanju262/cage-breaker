@@ -2644,7 +2644,6 @@
         + '</div>'
         + '<div style="display:flex;gap:6px;align-items:center">'
         + '<button class="b bp bs" style="font-size:12px;padding:5px 12px" onclick="go(\'reflect\')">Do Reflection</button>'
-        + '<button class="bg" onclick="toggleSectionVisibility(\'evidence\')" style="font-size:11px;padding:3px 8px;color:#9ca3af;border:1px solid rgba(255,255,255,0.15);border-radius:4px" title="Hide Evidence Section">Hide</button>'
         + '</div>'
         + '</div>';
 
@@ -3922,7 +3921,6 @@
         + '</div>'
         + '</div>'
         + '</div>'
-        + mainTaskInputsHtml
         + subtasksContainerHtml
         + '</div>';
     }
@@ -3961,9 +3959,6 @@
           + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
           + '<span class="tasks-badge">TASKS & ACTION IDEAS</span>'
           + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + completedCount + ' / ' + tasks.length + ' tasks achieved</span>'
-          + '</div>'
-          + '<div style="display:flex;align-items:center;gap:6px">'
-          + '<button class="bg" onclick="toggleSectionVisibility(\'tasks\')" style="font-size:11px;padding:3px 8px;color:#94a3b8;border:1px solid rgba(255,255,255,0.15);border-radius:4px" title="Hide Tasks Section">Hide</button>'
           + '</div>'
           + '</div>'
           + tasksListHtml
@@ -4004,10 +3999,8 @@
           + '</div>'
           + '<div style="display:flex;align-items:center;gap:6px">'
           + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">Add Routine Loop</button>'
-          + '<button class="bg" onclick="toggleSectionVisibility(\'loops\')" style="font-size:11px;padding:3px 8px;color:#9ca3af;border:1px solid rgba(255,255,255,0.15);border-radius:4px" title="Hide Loops Section">Hide</button>'
           + '</div>'
           + '</div>'
-          + ''
           + loopsCardsHtml
           + '</div>';
       }
@@ -4126,7 +4119,6 @@
         + '</div>'
         + '<div style="display:flex;gap:6px;align-items:center">'
         + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;padding:2px 8px;color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:4px;background:rgba(245,158,11,0.1)" title="Edit target event">✏️ Edit Event</button>'
-        + '<button class="bg" onclick="toggleSectionVisibility(\'anchor\')" style="font-size:11px;padding:2px 7px;color:#9ca3af;border:1px solid rgba(255,255,255,0.12);border-radius:4px" title="Hide this target event">Hide</button>'
         + '</div>'
         + '</div>'
         + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:4px 0 2px 0;font-style:italic;letter-spacing:0.2px">"' + e(name) + '"</div>'
