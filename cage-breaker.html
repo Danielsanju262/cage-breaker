@@ -3264,7 +3264,7 @@
         if (!details) return;
 
         badge.setAttribute('style', details.scaleStyle);
-        badge.innerHTML = '⏱️ ' + details.countdownText + ' (' + details.badgeLabel + ')';
+        badge.textContent = details.countdownText;
       });
     }
 
@@ -3288,7 +3288,7 @@
 
       return '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span style="font-size:12.5px;color:#cbd5e1;font-weight:600">🎯 Target: "' + e(name) + '"</span>'
-        + '<span class="live-target-countdown" data-target-time="' + timeStr + '" data-is-detail="false" style="' + details.scaleStyle + '">⏱️ ' + details.countdownText + ' (' + details.badgeLabel + ')</span>'
+        + '<span class="live-target-countdown" data-target-time="' + timeStr + '" data-is-detail="false" style="' + details.scaleStyle + '">' + details.countdownText + '</span>'
         + '</div>';
     }
 
@@ -4832,7 +4832,7 @@
       if (timeStr) {
         var details = getCountdownDetails(timeStr, true);
         if (details) {
-          countdownBadge = '<div style="margin-top:8px"><span class="live-target-countdown" data-target-time="' + timeStr + '" data-is-detail="true" style="' + details.scaleStyle + '">⏱️ ' + details.countdownText + ' (' + details.badgeLabel + ')</span></div>';
+          countdownBadge = '<div style="margin-top:8px"><span class="live-target-countdown" data-target-time="' + timeStr + '" data-is-detail="true" style="' + details.scaleStyle + '">' + details.countdownText + '</span></div>';
         }
       }
 
