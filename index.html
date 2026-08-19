@@ -177,12 +177,15 @@
     }
 
     .fade {
-      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: opacity, transform;
+      opacity: 1;
+    }
+
+    .fade-screen {
+      animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -1507,9 +1510,15 @@
       } catch (e) { }
     }
 
+    window.isScreenChanging = false;
+    function getFadeClass() {
+      return window.isScreenChanging ? 'fade-screen' : 'fade';
+    }
+
     function go(scr) {
       clearTimers();
       S.screen = scr;
+      window.isScreenChanging = true;
       save();
       try {
         if (window.location.hash !== '#' + scr) {
@@ -1518,6 +1527,7 @@
       } catch (e) { }
       window.scrollTo(0, 0);
       render(false);
+      setTimeout(function () { window.isScreenChanging = false; }, 300);
     }
 
     window.addEventListener('popstate', function () {
@@ -2793,7 +2803,7 @@
               ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:800">🏆 ACHIEVED</span>' : ''}
               👤 ${e(id.newIdentity || '')}
             </p>
-            ${(id.targetEventName || id.taggedEvent) ? `<div style="margin:4px 0"><span style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;display:inline-flex;align-items:center;gap:4px">🏷️ Event: "${e(id.targetEventName || id.taggedEvent)}"</span></div>` : ''}
+            ${(id.targetEventName || id.taggedEvent) ? `<div style="margin:4px 0"><span style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;display:inline-flex;align-items:center;gap:4px">Before: "${e(id.targetEventName || id.taggedEvent)}"</span></div>` : ''}
             ${(id.targetActionLine || id.targetEvent) ? `<p style="font-size:12.5px;color:#fbbf24;margin-bottom:6px;font-weight:600"><em>"${e(id.targetActionLine || id.targetEvent)}"</em></p>` : ''}
             ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:6px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
             ${renderTargetEventCountdown(id)}
@@ -3095,10 +3105,68 @@
               + renderWeightBadge(l.weight)
               + '<span style="font-size:13px;color:#e5e7eb;word-break:break-word">' + esc(l.note) + '</span>'
               + '</div>'
+              + '<div style="display:flex;gap:4px;align-items:center">'
+              + '<button class="ev-edit" style="font-size:10px;padding:3px 7px;color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);border-radius:4px" onclick="editLog(' + item.idx + ')">✏️</button>'
               + '<button class="ev-edit" style="font-size:10px;padding:3px 7px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:4px" onclick="delLog(' + item.idx + ')">✕</button>'
+              + '</div>'
               + '</div>';
           }).join('');
         }
+
+        window.delLog = function (logIdx) {
+          var id = getCurRef() || cur();
+          if (!id || !Array.isArray(id.logs) || logIdx < 0 || logIdx >= id.logs.length) return;
+          var targetLog = id.logs[logIdx];
+          if (!targetLog) return;
+
+          showCustomConfirm({
+            title: 'Delete Evidence Entry?',
+            message: 'Are you sure you want to delete this evidence entry:\n"' + (targetLog.note || '') + '"?',
+            confirmText: 'Yes, Delete',
+            confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            onConfirm: function () {
+              if (!Array.isArray(id.deletedLogIds)) id.deletedLogIds = [];
+              if (targetLog.id) {
+                id.deletedLogIds.push(targetLog.id);
+              }
+              var dayStr = targetLog.date ? targetLog.date.split('T')[0] : '';
+              var contentKey = (targetLog.note || '').trim().toLowerCase() + '_' + dayStr;
+              id.deletedLogIds.push(contentKey);
+
+              id.logs.splice(logIdx, 1);
+              id.updatedAt = new Date().toISOString();
+              save(true);
+              render(true);
+            }
+          });
+        };
+
+        window.editLog = function (logIdx) {
+          var id = getCurRef() || cur();
+          if (!id || !Array.isArray(id.logs) || logIdx < 0 || logIdx >= id.logs.length) return;
+          var targetLog = id.logs[logIdx];
+          if (!targetLog) return;
+
+          var newNote = prompt('Edit evidence log entry:', targetLog.note || '');
+          if (newNote !== null) {
+            var trimmed = newNote.trim();
+            if (trimmed) {
+              targetLog.note = trimmed;
+              targetLog.updatedAt = new Date().toISOString();
+              id.updatedAt = new Date().toISOString();
+              save(true);
+              render(true);
+            }
+          }
+        };
+
+        window.openEvidenceModalTab = function (tab) {
+          window.setInlineJournalTab(tab);
+          var el = document.getElementById('inline-evidence-entries') || document.getElementById('inline-weekly-entries');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        };
 
         var showMoreBtn = (filteredItems.length > 10)
           ? ('<button class="bg" onclick="window.inlineShowAllLogs=!window.inlineShowAllLogs;render()" style="font-size:12px;color:#4ede80;font-weight:700;margin-bottom:8px;display:block;width:100%;text-align:center;padding:6px;background:rgba(74,222,128,0.08);border:1px dashed rgba(74,222,128,0.3);border-radius:6px">'
@@ -4649,7 +4717,7 @@
       }
 
       return '<div style="margin-top:16px;padding:16px 18px;background:linear-gradient(135deg,rgba(40,28,10,0.8),rgba(20,16,8,0.95));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 15px rgba(245,158,11,0.12)">'
-        + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:2px 0;font-style:italic;letter-spacing:0.2px">🎯 "' + e(name) + '"</div>'
+        + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:2px 0;font-style:italic;letter-spacing:0.2px">"' + e(name) + '"</div>'
         + countdownBadge
         + '</div>';
     }
@@ -4723,7 +4791,7 @@
         + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' · ' + (id.logs ? id.logs.length : 0) + ' Proofs' + (streak > 1 ? ' · 🔥 ' + streak + '-day streak' : '') + '</span>'
         + '</div>'
         + '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>'
-        + (tagEventStr ? '<div style="margin-top:12px"><span style="font-size:13px;font-weight:800;padding:5px 12px;background:rgba(56,189,248,0.18);color:#38bdf8;border:1.5px solid rgba(56,189,248,0.45);border-radius:8px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(56,189,248,0.15)">🏷️ Tagged Event: "' + e(tagEventStr) + '"</span></div>' : '')
+        + (tagEventStr ? '<div style="margin-top:12px"><span style="font-size:13px;font-weight:800;padding:5px 12px;background:rgba(56,189,248,0.18);color:#38bdf8;border:1.5px solid rgba(56,189,248,0.45);border-radius:8px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(56,189,248,0.15)">Before: "' + e(tagEventStr) + '"</span></div>' : '')
         + '</div>'
         
         // ⏳ BOLD, MEMORABLE MISSION ANCHOR EVENT CARD (Collapsible/Hideable)
@@ -4767,7 +4835,7 @@
           + '</div>';
       }
 
-      a.innerHTML = '<div class="fade">'
+      a.innerHTML = '<div class="' + getFadeClass() + '">'
         + incompleteWarningBannerHtml
         + headerNavHtml
         + topCardsHtml
