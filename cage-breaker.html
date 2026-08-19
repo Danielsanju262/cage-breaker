@@ -1068,12 +1068,25 @@
       if (!id || typeof id !== 'object') return null;
       id.targetActionLine = (id.targetActionLine || id.targetEvent || '').trim();
       id.targetEvent = id.targetActionLine;
+      id.targetEventName = (id.targetEventName || id.taggedEvent || '').trim();
+      id.taggedEvent = id.targetEventName;
       id.targetEventTime = id.targetEventTime || null;
       id.achieved = !!id.achieved;
       id.achievedAt = id.achievedAt || null;
       id.deletedLogIds = Array.isArray(id.deletedLogIds) ? id.deletedLogIds : [];
       id.logs = Array.isArray(id.logs) ? id.logs : [];
       
+      // Deduplicate proof logs by content key (cleans up any existing duplicate logs)
+      var seenLogs = new Map();
+      id.logs = id.logs.filter(function (l) {
+        if (!l || !l.note) return false;
+        var dayStr = l.date ? l.date.split('T')[0] : '';
+        var key = (l.note || '').trim().toLowerCase() + '_' + dayStr + '_' + (l.taskId || '') + '_' + (l.ideaId || '');
+        if (seenLogs.has(key)) return false;
+        seenLogs.set(key, true);
+        return true;
+      });
+
       // Ensure logs have unique IDs
       id.logs.forEach(function (l) {
         if (l && !l.id) {
@@ -1425,13 +1438,11 @@
 
       const logsMap = new Map();
       [...(i1.logs || []), ...(i2.logs || [])].forEach(l => {
-        if (!l) return;
-        if (!l.id) {
-          l.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-        if (deletedLogSet.has(l.id)) return;
+        if (!l || !l.note) return;
+        if (l.id && deletedLogSet.has(l.id)) return;
 
-        const key = l.id || ((l.date || '') + '_' + (l.note || ''));
+        const dayStr = l.date ? l.date.split('T')[0] : '';
+        const key = (l.note || '').trim().toLowerCase() + '_' + dayStr + '_' + (l.taskId || '') + '_' + (l.ideaId || '');
         if (!logsMap.has(key)) {
           logsMap.set(key, l);
         } else {
@@ -2319,6 +2330,7 @@
               ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:800">🏆 ACHIEVED</span>' : ''}
               👤 ${e(id.newIdentity || '')}
             </p>
+            ${(id.targetEventName || id.taggedEvent) ? `<p style="font-size:12px;color:#38bdf8;margin-bottom:4px;font-weight:700">🏷️ Event: <em>"${e(id.targetEventName || id.taggedEvent)}"</em></p>` : ''}
             ${(id.targetActionLine || id.targetEvent) ? `<p style="font-size:12.5px;color:#fbbf24;margin-bottom:6px;font-weight:600">🎯 <em>"${e(id.targetActionLine || id.targetEvent)}"</em></p>` : ''}
             ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:6px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
             ${renderTargetEventCountdown(id)}
@@ -4158,10 +4170,14 @@
         + heroCardHtml
         + '</div>';
 
-      var identityHeaderTitleHtml = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:4px 2px">'
+      var tagEventStr = (id.targetEventName || id.taggedEvent || '').trim();
+      var tagEventBadge = tagEventStr ? '<span style="font-size:12px;font-weight:700;padding:3px 10px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px">🏷️ Event: ' + esc(tagEventStr) + '</span>' : '';
+
+      var identityHeaderTitleHtml = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:4px 2px;flex-wrap:wrap">'
         + '<h1 style="font-size:20px;font-weight:800;color:#f8fafc;margin:0;letter-spacing:0.3px;display:flex;align-items:center;gap:8px">'
         + '<span style="color:#fbbf24">👤</span> ' + esc(id.newIdentity)
         + '</h1>'
+        + tagEventBadge
         + '</div>';
 
       var incompleteWarningBannerHtml = '';
@@ -4512,7 +4528,7 @@
     </div>
     <div class="sn" style="letter-spacing:1.5px;color:#fbbf24">EDIT IDENTITY</div>
     <h2 style="margin-bottom:8px;font-size:24px">Edit Your Identity</h2>
-    <p class="d" style="margin-bottom:20px;color:#9ca3af;font-size:14px">Refine your identity statement, target milestone, and mindset contrast.</p>
+    <p class="d" style="margin-bottom:20px;color:#9ca3af;font-size:14px">Refine your identity statement, target milestone, and event tag.</p>
 
     <!-- 1. Who You Are (Identity Statement) -->
     <div style="margin-bottom:18px">
@@ -4532,6 +4548,13 @@
       </div>
     </div>
 
+    <!-- 3. Target Event / Event Tag (Optional) -->
+    <div style="margin-bottom:22px">
+      <label class="lb" style="font-size:13.5px;font-weight:700;color:#38bdf8;margin-bottom:4px;display:block">3. Target Event Name (Event Tagged to Identity)</label>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:6px">The specific trip, event, or goal this identity is tagged to.</p>
+      <input type="text" id="mg-ten" value="${esc(id.targetEventName || id.taggedEvent || '')}" placeholder='e.g., "Wonderla Family Trip" or "Loan Clearance Event"' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(56,189,248,0.35);color:#f0f9ff;box-sizing:border-box" />
+    </div>
+
     <!-- Save Button -->
     <div style="margin-bottom:24px">
       <button class="b bp bw" id="mg-save-all-btn" onclick="mgSaveAll()" style="font-size:15px;padding:14px;font-weight:700;background:linear-gradient(135deg, #2563eb, #1d4ed8);border-radius:10px;box-shadow:0 4px 14px rgba(37,99,235,0.3)">
@@ -4545,6 +4568,32 @@
     </div>
   </div>`;
     }
+
+    window.mgSaveAll = function () {
+      const id = getCurRef() || cur();
+      if (!id) return;
+      const ni = $('#mg-ni')?.value?.trim();
+      const te = $('#mg-te')?.value?.trim();
+      const tet = $('#mg-tet')?.value?.trim();
+      const ten = $('#mg-ten')?.value?.trim();
+
+      if (ni) id.newIdentity = ni;
+      if (te !== undefined) {
+        id.targetActionLine = te;
+        id.targetEvent = te;
+      }
+      if (tet !== undefined) {
+        id.targetEventTime = tet ? new Date(tet).toISOString() : null;
+      }
+      if (ten !== undefined) {
+        id.targetEventName = ten;
+        id.taggedEvent = ten;
+      }
+
+      id.updatedAt = new Date().toISOString();
+      save(true);
+      go('identity');
+    };
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML }
 
