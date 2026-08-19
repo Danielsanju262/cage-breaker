@@ -4342,6 +4342,9 @@
         + '<div style="display:flex;flex-direction:column;gap:2px;cursor:pointer;flex:1" onclick="toggleTaskExpanded(\'' + task.id + '\')" title="' + (isExpanded ? 'Click to collapse subtasks' : 'Click to expand subtasks') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span class="task-title" style="font-size:15px;font-weight:600;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
+        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid ' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (mainIdeas.length > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Main Task Ideas">'
+        + '💡 ' + (mainIdeas.length > 0 ? (mainIdeas.length + ' Idea' + (mainIdeas.length === 1 ? '' : 's')) : '+ Idea')
+        + '</button>'
         + (task.completed ? '<span style="font-size:10px;font-weight:800;background:rgba(74,222,128,0.15);color:#4ede80;padding:2px 6px;border-radius:4px;border:1px solid rgba(74,222,128,0.3)">✓ ACHIEVED</span>' : '')
         + '</div>'
         + '</div>'
@@ -4349,9 +4352,6 @@
         + '<div style="display:flex;gap:6px;align-items:center">'
         + '<button class="bg" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')" style="font-size:11px;padding:4px 9px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.15)') + ';color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Toggle subtasks">'
         + '📌 Subtasks ' + (subtasks.length > 0 ? ('(' + subtasksDoneCount + '/' + subtasks.length + ')') : '') + ' ' + (isExpanded ? '▲' : '▼')
-        + '</button>'
-        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:4px 9px;border:1px solid ' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (mainIdeas.length > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (mainIdeas.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Main Task Ideas">'
-        + '💡 ' + (mainIdeas.length > 0 ? (mainIdeas.length + ' Idea' + (mainIdeas.length === 1 ? '' : 's')) : '+ Main Idea')
         + '</button>'
         + '<button class="bg" onclick="event.stopPropagation();startEditTask(\'' + task.id + '\')" style="font-size:11px;padding:4px 8px;border:1px solid #374151;border-radius:6px" title="Edit task title">✏️</button>'
         + '<button class="bg" onclick="event.stopPropagation();deleteTask(\'' + task.id + '\')" style="font-size:11px;padding:4px 8px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:6px" title="Delete task">✕</button>'
