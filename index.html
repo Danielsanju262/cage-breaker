@@ -2211,6 +2211,8 @@
         return {
           id: 'idea_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
           text: str,
+          completed: false,
+          completedAt: null,
           createdDate: new Date().toISOString()
         };
       }
@@ -2220,6 +2222,8 @@
         return {
           id: idea.id || ('idea_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
           text: text,
+          completed: !!idea.completed,
+          completedAt: idea.completedAt || null,
           createdDate: idea.createdDate || new Date().toISOString()
         };
       }
@@ -2437,6 +2441,12 @@
         if (sanitized && sanitized.id) {
           if (!map.has(sanitized.id)) {
             map.set(sanitized.id, sanitized);
+          } else {
+            var existing = map.get(sanitized.id);
+            var sanitizedTime = new Date(sanitized.completedAt || sanitized.createdDate || 0).getTime();
+            var existingTime = new Date(existing.completedAt || existing.createdDate || 0).getTime();
+            var newest = (sanitizedTime >= existingTime) ? sanitized : existing;
+            map.set(sanitized.id, newest);
           }
         }
       });
