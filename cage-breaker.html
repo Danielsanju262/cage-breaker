@@ -74,6 +74,7 @@
       color-scheme: dark;
       overflow-y: auto;
       overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
 
     body {
@@ -89,6 +90,8 @@
       font-size: 13.5px;
       overflow-y: auto;
       overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* Prevent text collisions, clipping & unexpected overflow */
@@ -101,9 +104,16 @@
       min-width: 0;
     }
 
-    /* Modern Cursor & User Select Behavior */
+    /* Modern Cursor & Fast Touch Response Behavior */
     button, .btn, a, select, input[type="button"], input[type="submit"], input[type="reset"], input[type="checkbox"], input[type="radio"], [role="button"], .task-check-btn, .modal-close, .icard, .pc, .ch, .tab-btn {
       cursor: pointer !important;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active, .b:active, .bg:active, .icard:active, .task-card:active, .routine-loop-card:active {
+      transform: scale(0.985);
+      transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], textarea, [contenteditable="true"] {
@@ -120,7 +130,7 @@
       color: #ffffff;
     }
 
-    /* Modern Subtle Scrollbars */
+    /* Modern Subtle Scrollbars & Mobile Smooth Scrolling */
     ::-webkit-scrollbar {
       width: 7px;
       height: 7px;
@@ -145,18 +155,19 @@
       min-height: 100vh;
       box-sizing: border-box;
       overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
 
     @media (min-width: 1024px) {
       #app {
         padding: 24px 28px 80px;
       }
-    .identity-top-row-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      width: 100%;
-    }
+      .identity-top-row-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+      }
     }
 
     @media (max-width: 640px) {
@@ -166,17 +177,18 @@
     }
 
     .fade {
-      opacity: 1;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: opacity, transform;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(3px); }
+      from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes breathK {
       0%, 100% { transform: scale(1); opacity: 0.85; }
-      50% { transform: scale(1.04); opacity: 1; filter: drop-shadow(0 0 8px var(--accent-amber)); }
+      50% { transform: scale(1.03); opacity: 1; filter: drop-shadow(0 0 8px var(--accent-amber)); }
     }
 
     /* Clean Typography Scale */
@@ -563,19 +575,79 @@
       width: 100%;
     }
 
+    /* Smooth Subtask Accordion Expansion & Collapse */
+    .subtasks-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-in-out;
+    }
+
+    .subtasks-wrapper.expanded {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+
+    .subtasks-inner {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Section Border Cards */
+    .section-card-frame {
+      background: rgba(15, 23, 42, 0.55) !important;
+      border-radius: 14px !important;
+      padding: 18px 20px !important;
+      margin-top: 24px !important;
+      margin-bottom: 24px !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+      box-sizing: border-box !important;
+    }
+
+    .tasks-container.section-card-frame {
+      border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    }
+
+    .routine-loops-container.section-card-frame {
+      border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    }
+
+    .routine-loops-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 16px;
+      margin-top: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 640px) {
+      .routine-loops-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .task-card, .routine-loop-card {
       background: rgba(17, 24, 39, 0.55);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       padding: 12px 14px;
-      transition: all var(--transition-fast);
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
       width: 100%;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .task-card:hover, .routine-loop-card:hover {
       background: rgba(31, 41, 55, 0.7);
       border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
     .task-title {
@@ -610,38 +682,50 @@
     /* Routine Loop Flow Diagram */
     .loop-flow-container {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       align-items: center;
-      gap: 7px;
-      margin: 10px 0;
-      padding: 10px 12px;
-      background: rgba(0, 0, 0, 0.2);
+      justify-content: center;
+      margin: 12px auto;
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.25);
       border-radius: var(--radius-md);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      max-width: 520px;
       width: 100%;
       box-sizing: border-box;
+    }
+
+    .loop-flow-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 6px;
     }
 
     .loop-step-node {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       background: var(--bg-elevated);
-      padding: 5px 10px;
+      padding: 7px 12px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
-      font-size: 12.5px;
-      max-width: 100%;
+      font-size: 13px;
+      max-width: 440px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .loop-step-num {
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: var(--accent-amber);
       color: #000;
       font-size: 10.5px;
-      font-weight: 700;
+      font-weight: 800;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -652,6 +736,26 @@
       color: var(--text-muted);
       font-weight: 700;
       flex-shrink: 0;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 2px 0;
+    }
+
+    .loop-repeat-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #64748b;
+      text-transform: uppercase;
+      text-align: center;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 2px;
     }
 
     /* Habits List */
@@ -1039,13 +1143,19 @@
     function sanitizeSubtask(st) {
       if (!st || typeof st !== 'object') return null;
       var rawIdeas = Array.isArray(st.ideas) ? st.ideas : [];
+      var isSubComp = !!st.completed;
+      var subStatus = st.status || (isSubComp ? 'completed' : 'yet_to_start');
+      if (isSubComp) subStatus = 'completed';
+
       return {
         id: st.id || ('subtask_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
         text: (st.text || '').trim() || 'Untitled Subtask',
         doingNow: typeof st.doingNow === 'string' ? st.doingNow.trim() : '',
         whatNext: typeof st.whatNext === 'string' ? st.whatNext.trim() : '',
-        completed: !!st.completed,
+        nextTargetTime: st.nextTargetTime || st.nextDueTime || null,
+        completed: isSubComp,
         completedAt: st.completedAt || null,
+        status: subStatus,
         ideas: rawIdeas.map(sanitizeTaskIdea).filter(Boolean),
         createdDate: st.createdDate || new Date().toISOString(),
         updatedAt: st.updatedAt || new Date().toISOString()
@@ -1083,6 +1193,7 @@
         text: (t.text || '').trim() || 'Untitled Task',
         doingNow: typeof t.doingNow === 'string' ? t.doingNow.trim() : '',
         whatNext: typeof t.whatNext === 'string' ? t.whatNext.trim() : '',
+        nextTargetTime: t.nextTargetTime || t.nextDueTime || null,
         completed: isComp,
         completedAt: t.completedAt || null,
         status: status,
@@ -1135,18 +1246,6 @@
       id.tasks = Array.isArray(id.tasks) ? id.tasks.map(sanitizeTask).filter(Boolean) : [];
       id.routineLoops = Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(Boolean) : [];
 
-      var foundExpanded = false;
-      id.tasks.forEach(function (t) {
-        if (t.completed || t.status === 'completed') {
-          t.expanded = false;
-        } else if (t.expanded) {
-          if (!foundExpanded) {
-            foundExpanded = true;
-          } else {
-            t.expanded = false;
-          }
-        }
-      });
       return id;
     }
 
@@ -1227,12 +1326,12 @@
         
         + '<div style="margin-bottom:12px">'
         + '<label style="font-size:12.5px;font-weight:700;color:#4ede80;display:block;margin-bottom:4px">1. Who You Are (Identity Statement)</label>'
-        + '<textarea id="fmt-who" rows="2" placeholder=\'e.g., "I am a very busy person working on very important things only."\' style="width:100%;background:#0f172a;border:1px solid rgba(74,222,128,0.4);color:#fff;padding:8px 10px;border-radius:8px;font-size:13px;box-sizing:border-box">' + esc(currentWho) + '</textarea>'
+        + '<textarea id="fmt-who" rows="2" placeholder=\'e.g., "I am a very busy person working on very important things only."\' style="width:100%;background:#0f172a;border:1px solid rgba(74,222,128,0.4);color:#fff;padding:8px 10px;border-radius:8px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); saveUpdateFormat(\'' + id.id + '\'); }">' + esc(currentWho) + '</textarea>'
         + '</div>'
         
         + '<div style="margin-bottom:16px">'
         + '<label style="font-size:12.5px;font-weight:700;color:#fbbf24;display:block;margin-bottom:4px">2. Exact Action Line Aiming to Say When Achieved</label>'
-        + '<textarea id="fmt-action" rows="2" placeholder=\'e.g., "Finally I woke up continuously for 5 days to work on the most important things."\' style="width:100%;background:#0f172a;border:1px solid rgba(245,158,11,0.4);color:#fef3c7;padding:8px 10px;border-radius:8px;font-size:13px;box-sizing:border-box">' + esc(currentAction) + '</textarea>'
+        + '<textarea id="fmt-action" rows="2" placeholder=\'e.g., "Finally I woke up continuously for 5 days to work on the most important things."\' style="width:100%;background:#0f172a;border:1px solid rgba(245,158,11,0.4);color:#fef3c7;padding:8px 10px;border-radius:8px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); saveUpdateFormat(\'' + id.id + '\'); }">' + esc(currentAction) + '</textarea>'
         + '</div>'
         
         + '<div style="display:flex;justify-content:flex-end;gap:8px">'
@@ -1281,6 +1380,60 @@
       }
     };
 
+    window.openQuickTagEventModal = function (idId) {
+      var id = (S && Array.isArray(S.identities)) ? S.identities.find(function (i) { return i && i.id === idId; }) : null;
+      if (!id) return;
+      var currentTag = id.targetEventName || id.taggedEvent || id.targetActionLine || id.targetEvent || '';
+
+      var modalHtml = '<div id="quick-tag-event-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">'
+        + '<div style="background:#111827;border:1.5px solid #38bdf8;border-radius:14px;max-width:500px;width:100%;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,0.6)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+        + '<div style="font-size:16px;font-weight:800;color:#38bdf8">🏷️ TAG EVENT TO THIS IDENTITY</div>'
+        + '<button class="bg" onclick="closeQuickTagEventModal()" style="font-size:16px;color:#94a3b8">✕</button>'
+        + '</div>'
+        + '<p style="font-size:13px;color:#cbd5e1;margin-bottom:14px;line-height:1.5">Enter a specific trip name, milestone event, or tag for this identity (e.g. <em>"France Trip"</em> or <em>"Loan Clearance Event"</em>).</p>'
+        
+        + '<div style="margin-bottom:18px">'
+        + '<label style="font-size:12.5px;font-weight:700;color:#38bdf8;display:block;margin-bottom:6px">Event Name / Tag</label>'
+        + '<input id="quick-tag-input" type="text" value="' + esc(currentTag) + '" placeholder=\'e.g., "France Trip" or "Loan Clearance Event"\' style="width:100%;background:#0f172a;border:1px solid rgba(56,189,248,0.5);color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;box-sizing:border-box" onkeydown="if(event.key===\'Enter\')saveQuickTagEvent(\'' + id.id + '\')" />'
+        + '</div>'
+        
+        + '<div style="display:flex;justify-content:flex-end;gap:8px">'
+        + '<button class="bg" onclick="closeQuickTagEventModal()" style="font-size:12px;padding:8px 14px">Cancel</button>'
+        + '<button class="b bp bs" onclick="saveQuickTagEvent(\'' + id.id + '\')" style="font-size:12px;padding:8px 16px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-weight:800">Save Tagged Event 🏷️</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+        
+      window.closeQuickTagEventModal();
+      var el = document.createElement('div');
+      el.id = 'quick-tag-event-modal-container';
+      el.innerHTML = modalHtml;
+      document.body.appendChild(el);
+      setTimeout(function () {
+        var inp = document.getElementById('quick-tag-input');
+        if (inp) { inp.focus(); inp.select(); }
+      }, 50);
+    };
+
+    window.closeQuickTagEventModal = function () {
+      var el = document.getElementById('quick-tag-event-modal-container');
+      if (el) el.remove();
+    };
+
+    window.saveQuickTagEvent = function (idId) {
+      var tagVal = $('#quick-tag-input')?.value?.trim();
+      var id = (S && Array.isArray(S.identities)) ? S.identities.find(function (i) { return i && i.id === idId; }) : null;
+      if (id) {
+        id.targetEventName = tagVal || '';
+        id.taggedEvent = tagVal || '';
+        id.updatedAt = new Date().toISOString();
+        save(true);
+        window.closeQuickTagEventModal();
+        render();
+      }
+    };
+
     function getScreenFromUrl() {
       try {
         const hash = (window.location.hash || '').replace('#', '').trim();
@@ -1300,6 +1453,11 @@
           res = { ...DEF, ...p };
           if (Array.isArray(res.identities)) {
             res.identities = res.identities.map(sanitizeIdentity).filter(Boolean);
+            res.identities.forEach(function (id) {
+              if (Array.isArray(id.tasks)) {
+                id.tasks.forEach(function (t) { t.expanded = false; });
+              }
+            });
           } else {
             res.identities = [];
           }
@@ -1351,7 +1509,7 @@
         }
       } catch (e) { }
       window.scrollTo(0, 0);
-      render();
+      render(false);
     }
 
     window.addEventListener('popstate', function () {
@@ -1394,22 +1552,30 @@
       } catch (e) { }
     }
 
-    function render() {
+    function render(preserveScroll) {
       const a = $('#app');
       if (!a) return;
+      var shouldPreserve = preserveScroll || preserveScroll === undefined;
+      var sx = shouldPreserve ? window.scrollX : 0;
+      var sy = shouldPreserve ? window.scrollY : 0;
+
       updateAppTitleAndHeader();
       const scr = S.screen;
-      if (scr === 'welcome') return rWelcome(a);
-      if (scr === 'hub') return rHub(a);
-      if (scr.startsWith('create-') || scr === 'quick-create') return rQuickCreate(a);
-      if (scr === 'identity') return rIdentity(a);
-      if (scr === 'practice') return rPractice(a);
-      if (scr === 'reflect') return rReflect(a);
-      if (scr === 'history') return rHistory(a);
-      if (scr === 'manage') return rManage(a);
-      if (scr === 'quick') return rQuick(a);
-      if (scr === 'goal') return rGoal(a);
-      rHub(a);
+      if (scr === 'welcome') rWelcome(a);
+      else if (scr === 'hub') rHub(a);
+      else if (scr.startsWith('create-') || scr === 'quick-create') rQuickCreate(a);
+      else if (scr === 'identity') rIdentity(a);
+      else if (scr === 'practice') rPractice(a);
+      else if (scr === 'reflect') rReflect(a);
+      else if (scr === 'history') rHistory(a);
+      else if (scr === 'manage') rManage(a);
+      else if (scr === 'quick') rQuick(a);
+      else if (scr === 'goal') rGoal(a);
+      else rHub(a);
+
+      if (shouldPreserve) {
+        window.scrollTo(sx, sy);
+      }
     }
     window.render = render;
 
@@ -1418,9 +1584,10 @@
       allMenus.forEach(function (m) { m.style.display = 'none'; });
     };
 
-    window.toggleTaskMenu = function (taskId, event) {
+    window.toggleTaskMenu = function (taskIdOrMenuId, event) {
       if (event) event.stopPropagation();
-      var menu = document.getElementById('task-menu-' + taskId);
+      var menuId = (typeof taskIdOrMenuId === 'string' && taskIdOrMenuId.indexOf('menu-') !== -1) ? taskIdOrMenuId : ('task-menu-' + taskIdOrMenuId);
+      var menu = document.getElementById(menuId);
       var isOpen = menu && menu.style.display !== 'none';
       window.closeAllTaskMenus();
       if (menu && !isOpen) {
@@ -1738,8 +1905,9 @@
                   _syncStatus = 'synced'; updateSyncStatusUI();
 
                   var activeTag = document.activeElement ? document.activeElement.tagName : '';
-                  if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
-                    render();
+                  var hasModal = !!document.querySelector('.modal-overlay');
+                  if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && !hasModal) {
+                    render(true);
                   }
 
                   setTimeout(function () { _isRemoteUpdate = false; }, 400);
@@ -1815,8 +1983,9 @@
               localStorage.setItem(SK, JSON.stringify(S));
               _syncStatus = 'synced'; updateSyncStatusUI();
               var activeTag = document.activeElement ? document.activeElement.tagName : '';
-              if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
-                render();
+              var hasModal = !!document.querySelector('.modal-overlay');
+              if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && !hasModal) {
+                render(true);
               }
               return true;
             }
@@ -2187,8 +2356,8 @@
         + '<path d="M36 8L34 26L40 30L33 46L39 50L32 64" stroke="#c9964a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
         + '</svg>'
         + '<h1>Break Your Cage</h1>'
-        + '<p class="d" style="max-width:440px;margin:14px auto 18px">You are not lazy. You are not broken. You are living inside a familiar identity that keeps you stuck \u2014 and today, you crack it open.</p>'
-        + '<p class="h" style="max-width:420px;margin:0 auto 20px">Break old patterns and build powerful new identities with daily proof. Everything is saved locally on your device \u2014 no server, no account, completely private and offline.</p>'
+        + '<p class="d" style="max-width:440px;margin:14px auto 18px">You are not lazy. You are not broken. You are living inside a familiar identity that keeps you stuck — and today, you crack it open.</p>'
+        + '<p class="h" style="max-width:420px;margin:0 auto 20px">Break old patterns and build powerful new identities with daily proof. Everything is saved locally on your device — no server, no account, completely private and offline.</p>'
         + viewHubHtml
         + '<button class="b bp" onclick="go(\'quick-create\')" style="width:100%;max-width:440px;padding:15px;font-size:15px;font-weight:700;margin-bottom:10px">+ Create New Habit / Identity</button>'
         + '<p class="sm cloud-sync-indicator" style="margin-top:12px;color:#4ede80;font-weight:600">Live Sync</p>'
@@ -2218,14 +2387,23 @@
 
       var totalSeconds = Math.floor(absDiffMs / 1000);
       var totalMinutes = Math.floor(totalSeconds / 60);
-      var hours = Math.floor(totalMinutes / 60);
+      var totalHours = Math.floor(totalMinutes / 60);
+
+      var days = Math.floor(totalHours / 24);
+      var remHours = totalHours % 24;
       var minutes = totalMinutes % 60;
       var seconds = totalSeconds % 60;
 
-      var formattedHours = hours.toLocaleString();
+      var parts = [];
+      if (days > 0) parts.push(days + 'd');
+      if (remHours > 0 || days > 0) parts.push(remHours + 'h');
+      parts.push(minutes + 'm');
+      parts.push(seconds + 's');
+
+      var timeString = parts.join(' ');
       var countdownText = isPast
-        ? (formattedHours + 'h ' + minutes + 'm ' + seconds + 's past target')
-        : (formattedHours + 'h ' + minutes + 'm ' + seconds + 's left');
+        ? (timeString + ' past target')
+        : (timeString + ' left');
 
       // COLOR CODING FOR TIME SURPLUS VS SCARCITY:
       // Past Target -> Red Deficit Alert
@@ -2242,19 +2420,19 @@
         scaleStyle = isDetailView
           ? 'font-size:14px;font-weight:800;padding:6px 12px;background:rgba(239,68,68,0.2);color:#fca5a5;border:1.5px solid rgba(239,68,68,0.5);border-radius:8px;'
           : 'font-size:13px;font-weight:800;padding:5px 10px;background:rgba(239,68,68,0.18);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);border-radius:8px;';
-      } else if (hours <= 24) {
+      } else if (totalHours <= 24) {
         // Critical Scarcity: Final stretch (< 24 hours) - Fiery Crimson/Orange + Glow
         badgeLabel = 'CRITICAL SCARCITY';
         scaleStyle = isDetailView
           ? 'font-size:18px;font-weight:800;padding:8px 16px;background:linear-gradient(135deg, rgba(249,115,22,0.35), rgba(239,68,68,0.4));color:#ffedd5;border:2px solid #f97316;border-radius:10px;box-shadow:0 0 18px rgba(249,115,22,0.5);letter-spacing:0.4px;'
           : 'font-size:15.5px;font-weight:800;padding:6px 13px;background:linear-gradient(135deg, rgba(249,115,22,0.3), rgba(239,68,68,0.35));color:#ffedd5;border:1.5px solid #f97316;border-radius:10px;box-shadow:0 0 14px rgba(249,115,22,0.4);letter-spacing:0.3px;';
-      } else if (hours <= 72) {
+      } else if (totalHours <= 72) {
         // Scarcity Warning: 1 - 3 days - Amber Gold
         badgeLabel = 'SCARCITY WARNING';
         scaleStyle = isDetailView
           ? 'font-size:16px;font-weight:800;padding:6px 14px;background:rgba(245,158,11,0.25);color:#fbbf24;border:1.5px solid rgba(245,158,11,0.5);border-radius:8px;'
           : 'font-size:14px;font-weight:700;padding:5px 11px;background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.45);border-radius:8px;';
-      } else if (hours <= 168) {
+      } else if (totalHours <= 168) {
         // Active Building Phase: 3 - 7 days - Emerald Green
         badgeLabel = 'BUILDING PHASE';
         scaleStyle = isDetailView
@@ -2270,7 +2448,7 @@
 
       return {
         isPast: isPast,
-        hours: hours,
+        hours: totalHours,
         minutes: minutes,
         seconds: seconds,
         countdownText: countdownText,
@@ -2300,6 +2478,217 @@
       clearInterval(window._liveCountdownInterval);
     }
     window._liveCountdownInterval = setInterval(updateLiveCountdowns, 1000);
+
+    // ═══════════════════════════════════════════════
+    // NEXT ACTION HOURS COUNTDOWN & TIME SETTER
+    // ═══════════════════════════════════════════════
+    function getNextHoursCountdown(targetTimeStr) {
+      if (!targetTimeStr) return null;
+      var targetDate = new Date(targetTimeStr);
+      if (isNaN(targetDate.getTime())) return null;
+
+      var now = new Date();
+      var diffMs = targetDate - now;
+      var diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+
+      if (diffHours <= 0) {
+        var overdueHours = Math.abs(diffHours);
+        var overdueText = overdueHours > 1 ? ('🚨 ' + overdueHours + 'h overdue') : '🚨 DUE NOW';
+        return {
+          text: overdueText,
+          hours: diffHours,
+          status: 'overdue',
+          color: '#fca5a5',
+          bg: 'rgba(239,68,68,0.22)',
+          border: 'rgba(239,68,68,0.75)',
+          glow: 'rgba(239,68,68,0.3)'
+        };
+      }
+      if (diffHours <= 6) {
+        return {
+          text: '⚡ ' + diffHours + 'h left',
+          hours: diffHours,
+          status: 'urgent',
+          color: '#fbbf24',
+          bg: 'rgba(245,158,11,0.22)',
+          border: 'rgba(245,158,11,0.65)',
+          glow: 'rgba(245,158,11,0.25)'
+        };
+      }
+      if (diffHours <= 24) {
+        return {
+          text: '⏱️ ' + diffHours + 'h left',
+          hours: diffHours,
+          status: 'warning',
+          color: '#fde047',
+          bg: 'rgba(234,179,8,0.18)',
+          border: 'rgba(234,179,8,0.5)',
+          glow: 'rgba(234,179,8,0.2)'
+        };
+      }
+      return {
+        text: '⏳ ' + diffHours + 'h left',
+        hours: diffHours,
+        status: 'normal',
+        color: '#38bdf8',
+        bg: 'rgba(56,189,248,0.15)',
+        border: 'rgba(56,189,248,0.4)',
+        glow: 'rgba(56,189,248,0.15)'
+      };
+    }
+
+    function getItemTimerStatus(item) {
+      if (!item || item.completed || !item.nextTargetTime) return null;
+      return getNextHoursCountdown(item.nextTargetTime);
+    }
+
+    function getTaskHighestTimerStatus(task) {
+      if (!task || task.completed) return null;
+      var statuses = [];
+
+      var taskCd = getItemTimerStatus(task);
+      if (taskCd) statuses.push(taskCd);
+
+      if (Array.isArray(task.subtasks)) {
+        task.subtasks.forEach(function (st) {
+          var stCd = getItemTimerStatus(st);
+          if (stCd) statuses.push(stCd);
+        });
+      }
+
+      if (statuses.length === 0) return null;
+
+      if (statuses.some(function (s) { return s.status === 'overdue'; })) {
+        return statuses.find(function (s) { return s.status === 'overdue'; });
+      }
+      if (statuses.some(function (s) { return s.status === 'urgent'; })) {
+        return statuses.find(function (s) { return s.status === 'urgent'; });
+      }
+      if (statuses.some(function (s) { return s.status === 'warning'; })) {
+        return statuses.find(function (s) { return s.status === 'warning'; });
+      }
+      return statuses[0];
+    }
+
+    function isItemOverdue(item) {
+      var cd = getItemTimerStatus(item);
+      return !!(cd && cd.status === 'overdue');
+    }
+
+    function doesTaskHaveOverdue(task) {
+      var cd = getTaskHighestTimerStatus(task);
+      return !!(cd && cd.status === 'overdue');
+    }
+
+    function renderNextTimePill(targetType, parentTaskId, subtaskId, currentTargetTime) {
+      var cd = getNextHoursCountdown(currentTargetTime);
+      var clickHandler = "event.stopPropagation();openNextTimePickerModal('" + targetType + "', '" + parentTaskId + "', '" + (subtaskId || '') + "')";
+
+      if (cd) {
+        return '<button onclick="' + clickHandler + '" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:' + cd.bg + ';border:1px solid ' + cd.border + ';color:' + cd.color + ';cursor:pointer;white-space:nowrap;margin-left:4px;flex-shrink:0" title="Click to edit or clear target time">' + cd.text + '</button>';
+      } else {
+        return '<button onclick="' + clickHandler + '" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;cursor:pointer;white-space:nowrap;margin-left:4px;flex-shrink:0" title="Set Target Wait Time">+ Set Time</button>';
+      }
+    }
+
+    window.openNextTimePickerModal = function (targetType, parentTaskId, subtaskId) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+
+      var task = id.tasks.find(function (t) { return t.id === parentTaskId; });
+      if (!task) return;
+
+      var targetItem = targetType === 'subtask' ? (task.subtasks || []).find(function (s) { return s.id === subtaskId; }) : task;
+      if (!targetItem) return;
+
+      var existingTime = targetItem.nextTargetTime || '';
+
+      var modalHtml = '<div class="modal-overlay" id="next-time-picker-modal" onclick="if(event.target===this)closeNextTimePickerModal()">'
+        + '<div class="modal" style="max-width:380px;padding:20px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+        + '<h3 style="margin:0;font-size:15px;color:#fbbf24">⏳ Set Target Time</h3>'
+        + '<button class="modal-close" onclick="closeNextTimePickerModal()">✕</button>'
+        + '</div>'
+        + '<p style="font-size:12px;color:#cbd5e1;margin-bottom:14px">Target time for: <strong>"' + e(targetItem.whatNext || targetItem.text) + '"</strong></p>'
+        
+        + '<div style="margin-bottom:18px">'
+        + '<label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Select Target Date & Time:</label>'
+        + '<input type="datetime-local" id="custom-next-time-input" value="' + (existingTime ? new Date(existingTime).toISOString().slice(0, 16) : '') + '" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px" />'
+        + '</div>'
+
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<button class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11.5px;color:#fca5a5;padding:6px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
+        + '<div style="display:flex;gap:8px">'
+        + '<button class="bg" onclick="closeNextTimePickerModal()" style="font-size:11.5px;padding:6px 12px">Cancel</button>'
+        + '<button class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\')" style="font-size:11.5px;padding:6px 14px;background:#2563eb;color:#fff;font-weight:700">Save Time</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+
+      var existingModal = document.getElementById('next-time-picker-modal');
+      if (existingModal) existingModal.remove();
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
+
+    window.closeNextTimePickerModal = function () {
+      var modal = document.getElementById('next-time-picker-modal');
+      if (modal) modal.remove();
+    };
+
+    window.setNextTargetTimePreset = function (targetType, parentTaskId, subtaskId, preset) {
+      var isoStr = null;
+      var now = new Date();
+
+      if (preset === 'tomorrow10am') {
+        var d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setHours(10, 0, 0, 0);
+        isoStr = d.toISOString();
+      } else if (preset === '24h') {
+        isoStr = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      } else if (preset === '48h') {
+        isoStr = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+      } else if (preset === 'friday10am') {
+        var d = new Date();
+        d.setHours(10, 0, 0, 0);
+        var day = d.getDay();
+        var diff = (5 - day + 7) % 7;
+        if (diff === 0 && now.getHours() >= 10) diff = 7;
+        d.setDate(d.getDate() + diff);
+        isoStr = d.toISOString();
+      } else if (preset === 'clear') {
+        isoStr = null;
+      }
+
+      applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr);
+    };
+
+    window.saveCustomNextTargetTime = function (targetType, parentTaskId, subtaskId) {
+      var input = document.getElementById('custom-next-time-input');
+      var val = input ? input.value : '';
+      var isoStr = val ? new Date(val).toISOString() : null;
+      applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr);
+    };
+
+    function applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+
+      var task = id.tasks.find(function (t) { return t.id === parentTaskId; });
+      if (!task) return;
+
+      var targetItem = targetType === 'subtask' ? (task.subtasks || []).find(function (s) { return s.id === subtaskId; }) : task;
+      if (!targetItem) return;
+
+      targetItem.nextTargetTime = isoStr;
+      targetItem.updatedAt = new Date().toISOString();
+      id.updatedAt = new Date().toISOString();
+      save(true);
+      closeNextTimePickerModal();
+      render();
+    }
 
     function renderTargetEventCountdown(id) {
       if (!id || !id.targetEvent || !id.targetEvent.trim()) return '';
@@ -2380,7 +2769,7 @@
               ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:800">🏆 ACHIEVED</span>' : ''}
               👤 ${e(id.newIdentity || '')}
             </p>
-            ${(id.targetEventName || id.taggedEvent) ? `<p style="font-size:12px;color:#38bdf8;margin-bottom:4px;font-weight:700">Event: <em>"${e(id.targetEventName || id.taggedEvent)}"</em></p>` : ''}
+            ${(id.targetEventName || id.taggedEvent) ? `<div style="margin:4px 0"><span style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;display:inline-flex;align-items:center;gap:4px">🏷️ Event: "${e(id.targetEventName || id.taggedEvent)}"</span></div>` : ''}
             ${(id.targetActionLine || id.targetEvent) ? `<p style="font-size:12.5px;color:#fbbf24;margin-bottom:6px;font-weight:600"><em>"${e(id.targetActionLine || id.targetEvent)}"</em></p>` : ''}
             ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:6px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
             ${renderTargetEventCountdown(id)}
@@ -2742,7 +3131,7 @@
           + '<button class="b bd bw" onclick="openEvidenceModalTab(\'weekly\')" style="margin-top:4px">Open Full Journal History (' + reflections.length + ' entries)</button>';
       }
 
-      return '<div class="c" style="margin-bottom:20px;padding:18px 20px;border-radius:14px;background:#0d111d;border:1px solid #1f273d">'
+      return '<div class="c section-card-frame" style="margin-top:24px;margin-bottom:24px;padding:18px 20px;border-radius:14px;background:rgba(15, 23, 42, 0.55);border:1px solid rgba(74, 222, 128, 0.25)">'
         + headerTabsHtml
         + contentHtml
         + '</div>';
@@ -3093,13 +3482,19 @@
       var prevStatus = task.status || (task.completed ? 'completed' : 'yet_to_start');
       if (prevStatus === newStatus) return;
 
+      task.status = newStatus;
+
+      // Clear target time if status changes back to yet_to_start
+      if (newStatus === 'yet_to_start') {
+        task.nextTargetTime = null;
+      }
+
       if (newStatus === 'completed') {
         if (!task.completed) {
           window.openTaskCompletionModal(taskId);
           return;
         }
       } else {
-        task.status = newStatus;
         if (task.completed) {
           task.completed = false;
           task.completedAt = null;
@@ -3132,7 +3527,9 @@
       }
       task.updatedAt = new Date().toISOString();
       save(true);
-      render();
+      requestAnimationFrame(function () {
+        render(true);
+      });
     };
 
     window.openTaskCompletionModal = function (taskId) {
@@ -3237,13 +3634,26 @@
       // Accordion behavior: if one task is expanded, all other tasks are collapsed
       id.tasks.forEach(function (t) {
         t.expanded = false;
+        var w = document.getElementById('subtasks-wrapper-' + t.id);
+        if (w) w.classList.remove('expanded');
+        var card = document.getElementById('task-card-' + t.id);
+        if (card && !doesTaskHaveOverdue(t)) {
+          card.style.borderColor = '';
+          card.style.boxShadow = '';
+        }
       });
 
       if (willExpand) {
         task.expanded = true;
+        var w = document.getElementById('subtasks-wrapper-' + taskId);
+        if (w) w.classList.add('expanded');
+        var card = document.getElementById('task-card-' + taskId);
+        if (card && !doesTaskHaveOverdue(task)) {
+          card.style.borderColor = 'rgba(59,130,246,0.5)';
+          card.style.boxShadow = '0 0 15px rgba(59,130,246,0.1)';
+        }
       }
       save(true);
-      render();
     };
 
     window.toggleTaskIdeas = window.toggleTaskExpanded;
@@ -3377,6 +3787,7 @@
 
       var nowIso = new Date().toISOString();
       sub.completed = !sub.completed;
+      sub.status = sub.completed ? 'completed' : 'yet_to_start';
       sub.completedAt = sub.completed ? nowIso : null;
       sub.updatedAt = nowIso;
 
@@ -3410,6 +3821,67 @@
 
       save(true);
       render();
+    };
+
+    window.changeSubtaskStatus = function (taskId, subtaskId, newStatus) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+      var task = id.tasks.find(function (t) { return t.id === taskId; });
+      if (!task || !Array.isArray(task.subtasks)) return;
+      var sub = task.subtasks.find(function (s) { return s.id === subtaskId; });
+      if (!sub) return;
+
+      var prevStatus = sub.status || (sub.completed ? 'completed' : 'yet_to_start');
+      if (prevStatus === newStatus) return;
+
+      sub.status = newStatus;
+      var nowIso = new Date().toISOString();
+
+      // Clear target time if status changes back to yet_to_start
+      if (newStatus === 'yet_to_start') {
+        sub.nextTargetTime = null;
+      }
+
+      if (newStatus === 'completed') {
+        if (!sub.completed) {
+          sub.completed = true;
+          sub.completedAt = nowIso;
+          pushLogEntry(id, {
+            date: nowIso,
+            subtaskId: subtaskId,
+            taskId: taskId,
+            note: 'Completed subtask: "' + sub.text + '" (Task: ' + task.text + ')',
+            weight: 'medium'
+          });
+          if (Array.isArray(sub.ideas)) {
+            sub.ideas.forEach(function (idea) {
+              idea.completed = true;
+              if (!idea.completedAt) idea.completedAt = nowIso;
+            });
+          }
+        }
+      } else {
+        if (sub.completed) {
+          sub.completed = false;
+          sub.completedAt = null;
+          if (Array.isArray(sub.ideas)) {
+            sub.ideas.forEach(function (idea) {
+              idea.completed = false;
+              idea.completedAt = null;
+            });
+          }
+          removeAndTombstoneLogs(id, function (l) {
+            return (l.subtaskId === subtaskId) || (l.note && l.note.indexOf('Subtask: ' + sub.text) !== -1);
+          });
+        }
+      }
+
+      sub.updatedAt = nowIso;
+      id.updatedAt = nowIso;
+      save(true);
+      requestAnimationFrame(function () {
+        render(true);
+      });
     };
 
     window.updateSubtaskDoingNow = function (taskId, subtaskId, val) {
@@ -3812,21 +4284,40 @@
                   + '</div>';
               }
 
-              var subtaskInputsHtml = !isSubDone ? (
-                '<div style="display:flex;flex-direction:column;gap:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04)">'
-                + '<input type="text" value="' + esc(st.doingNow || '') + '" placeholder="Doing now..." oninput="updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box" />'
-                + '<input type="text" value="' + esc(st.whatNext || '') + '" placeholder="What next..." oninput="updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box" />'
-                + '</div>'
-              ) : ((st.doingNow || st.whatNext) ? (
-                '<div style="display:flex;gap:12px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#94a3b8;flex-wrap:wrap">'
-                + (st.doingNow ? '<span><em>' + e(st.doingNow) + '</em></span>' : '')
-                + (st.whatNext ? '<span><em>' + e(st.whatNext) + '</em></span>' : '')
-                + '</div>'
-              ) : '');
+              var curSubStatus = st.status || (isSubDone ? 'completed' : 'yet_to_start');
+              var subStatusColor = curSubStatus === 'completed' ? '#4ede80' : (curSubStatus === 'in_process' ? '#60a5fa' : '#94a3b8');
+              var subStatusBg = curSubStatus === 'completed' ? 'rgba(74,222,128,0.15)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.15)' : 'rgba(148,163,184,0.1)');
+              var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
 
-              return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;gap:6px">'
-                + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-                + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
+              var subtaskInputsHtml = (curSubStatus === 'in_process' && !isSubDone) ? (
+                '<div style="display:flex;gap:6px;align-items:center;margin-top:4px;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);flex-wrap:wrap">'
+                + '<div style="display:flex;align-items:center;gap:4px;flex:1;min-width:140px;background:rgba(15,23,42,0.6);padding:2px 6px;border-radius:6px;border:1px solid rgba(147,197,253,0.2)">'
+                + '<span style="font-size:10.5px;font-weight:700;color:#60a5fa;white-space:nowrap">Status:</span>'
+                + '<input type="text" value="' + esc(st.doingNow || '') + '" placeholder="Status..." oninput="updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:2px 0" />'
+                + '</div>'
+                + '<span style="color:#64748b;font-size:10px;font-weight:700">➔</span>'
+                + '<div style="display:flex;align-items:center;gap:4px;flex:1;min-width:140px;background:rgba(15,23,42,0.6);padding:2px 6px;border-radius:6px;border:1px solid rgba(251,191,36,0.2)">'
+                + '<span style="font-size:10.5px;font-weight:700;color:#fbbf24;white-space:nowrap">Next:</span>'
+                + '<input type="text" value="' + esc(st.whatNext || '') + '" placeholder="Next step..." oninput="updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:2px 0" />'
+                + (!st.nextTargetTime ? renderNextTimePill('subtask', task.id, st.id, null) : '')
+                + '</div>'
+                + '</div>'
+              ) : (isSubDone ? ((st.doingNow || st.whatNext) ? (
+                '<div style="display:flex;gap:12px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#94a3b8;flex-wrap:wrap;align-items:center">'
+                + (st.doingNow ? '<span><strong style="color:#60a5fa">Status:</strong> <em>' + e(st.doingNow) + '</em></span>' : '')
+                + (st.doingNow && st.whatNext ? '<span style="color:#64748b">➔</span>' : '')
+                + (st.whatNext ? '<span><strong style="color:#fbbf24">Next:</strong> <em>' + e(st.whatNext) + '</em></span>' : '')
+                + '</div>'
+              ) : '') : '');
+
+              var stTimerCd = getItemTimerStatus(st);
+              var subBg = stTimerCd && stTimerCd.status === 'overdue' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)';
+              var subBorder = stTimerCd ? ('1px solid ' + stTimerCd.border) : '1px solid rgba(255,255,255,0.06)';
+              var subShadow = stTimerCd ? ('box-shadow:0 0 14px ' + stTimerCd.glow + ';') : '';
+
+              return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:' + subBg + ';border:' + subBorder + ';border-radius:8px;gap:6px;' + subShadow + '">'
+                + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
+                + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;flex-wrap:wrap">'
                 + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed (+2 Evidence Points)') + '">'
                 + (isSubDone ? '✓' : '')
                 + '</button>'
@@ -3834,11 +4325,22 @@
                 + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
                 + '</button>'
                 + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
+                + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
                 + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">DONE (+2 PTS)</span>' : '')
                 + '</div>'
-                + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0">'
-                + '<button class="bg" onclick="startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;border:1px solid #374151;border-radius:4px;color:#d1d5db" title="Edit subtask">✏️</button>'
-                + '<button class="bg" onclick="deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:4px" title="Delete subtask">✕</button>'
+                + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
+                + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeSubtaskStatus(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="font-size:10.5px;font-weight:700;padding:3px 6px;border-radius:6px;border:1px solid ' + subStatusBorder + ';background:' + subStatusBg + ';color:' + subStatusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
+                + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curSubStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
+                + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curSubStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
+                + '<option value="completed" style="background:#111827;color:#4ede80" ' + (curSubStatus === 'completed' ? 'selected' : '') + '>Completed</option>'
+                + '</select>'
+                + '<div style="position:relative;display:inline-block">'
+                + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:14px;line-height:1;padding:3px 7px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
+                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:100px;overflow:hidden">'
+                + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:6px 10px;background:none;border:none;color:#f1f5f9;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
+                + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:6px 10px;background:none;border:none;color:#fca5a5;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
+                + '</div>'
+                + '</div>'
                 + '</div>'
                 + '</div>'
                 + subtaskInputsHtml
@@ -3847,47 +4349,57 @@
           + '</div>';
       }
 
-      var subtasksContainerHtml = '';
-      if (isExpanded) {
-        var addSubtaskBarHtml = !task.completed ? (
-          '<div style="display:flex;gap:6px;align-items:center;margin-top:8px">'
-          + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
-          + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11px;padding:6px 12px;background:#3b82f6;color:#fff;font-weight:700;white-space:nowrap">+ Add Subtask</button>'
-          + '</div>'
-        ) : '';
+      var addSubtaskBarHtml = !task.completed ? (
+        '<div style="display:flex;gap:6px;align-items:center;margin-top:8px">'
+        + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
+        + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11px;padding:6px 12px;background:#3b82f6;color:#fff;font-weight:700;white-space:nowrap">+ Add Subtask</button>'
+        + '</div>'
+      ) : '';
 
-        subtasksContainerHtml = '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-          + '<span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#94a3b8;text-transform:uppercase">SUBTASKS (' + subtasksDoneCount + ' / ' + subtasks.length + ' done)</span>'
-          + '</div>'
-          + subtasksListHtml
-          + addSubtaskBarHtml
-          + '</div>';
-      }
+      var subtasksContainerHtml = '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '">'
+        + '<div class="subtasks-inner">'
+        + '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px">'
+        + subtasksListHtml
+        + addSubtaskBarHtml
+        + '</div>'
+        + '</div>'
+        + '</div>';
 
       var ideasCounterBadge = '';
 
-      var mainTaskInputsHtml = !task.completed ? (
+      var mainTaskInputsHtml = (curStatus === 'in_process' && !task.completed) ? (
         '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap">'
         + '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px;background:rgba(15,23,42,0.6);padding:3px 8px;border-radius:6px;border:1px solid rgba(147,197,253,0.25)">'
-        + '<span style="font-size:11px;font-weight:700;color:#60a5fa;white-space:nowrap" title="Doing Now">⚡</span>'
-        + '<input type="text" value="' + esc(task.doingNow || '') + '" placeholder="Doing now..." oninput="updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0" />'
+        + '<span style="font-size:11.5px;font-weight:700;color:#60a5fa;white-space:nowrap">Status:</span>'
+        + '<input type="text" value="' + esc(task.doingNow || '') + '" placeholder="Status..." oninput="updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0" />'
         + '</div>'
         + '<span style="color:#64748b;font-size:12px;font-weight:700">➔</span>'
         + '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px;background:rgba(15,23,42,0.6);padding:3px 8px;border-radius:6px;border:1px solid rgba(251,191,36,0.25)">'
-        + '<span style="font-size:11px;font-weight:700;color:#fbbf24;white-space:nowrap" title="What to do next">➡️</span>'
-        + '<input type="text" value="' + esc(task.whatNext || '') + '" placeholder="What to do next..." oninput="updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0" />'
+        + '<span style="font-size:11.5px;font-weight:700;color:#fbbf24;white-space:nowrap">Next:</span>'
+        + '<input type="text" value="' + esc(task.whatNext || '') + '" placeholder="Next step..." oninput="updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0" />'
+        + (!task.nextTargetTime ? renderNextTimePill('task', task.id, null, null) : '')
         + '</div>'
         + '</div>'
-      ) : ((task.doingNow || task.whatNext) ? (
+      ) : (task.completed ? ((task.doingNow || task.whatNext) ? (
         '<div style="display:flex;gap:12px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);font-size:12px;color:#94a3b8;flex-wrap:wrap;align-items:center">'
-        + (task.doingNow ? '<span style="display:inline-flex;align-items:center;gap:4px"><em>' + e(task.doingNow) + '</em></span>' : '')
+        + (task.doingNow ? '<span style="display:inline-flex;align-items:center;gap:4px"><strong style="color:#60a5fa">Status:</strong> <em>' + e(task.doingNow) + '</em></span>' : '')
         + (task.doingNow && task.whatNext ? '<span style="color:#64748b">➔</span>' : '')
-        + (task.whatNext ? '<span style="display:inline-flex;align-items:center;gap:4px"><em>' + e(task.whatNext) + '</em></span>' : '')
+        + (task.whatNext ? '<span style="display:inline-flex;align-items:center;gap:4px"><strong style="color:#fbbf24">Next:</strong> <em>' + e(task.whatNext) + '</em></span>' : '')
         + '</div>'
-      ) : '');
+      ) : '') : '');
 
-      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="margin-bottom:12px;transition:box-shadow 0.2s, border-color 0.2s' + (isExpanded ? ';border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1)' : '') + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+      var taskHighestCd = getTaskHighestTimerStatus(task);
+      var taskCardStyle = 'margin-bottom:12px;transition:box-shadow 0.25s, border-color 0.25s;';
+      if (taskHighestCd) {
+        taskCardStyle += 'border-color:' + taskHighestCd.border + ';box-shadow:0 0 20px ' + taskHighestCd.glow + ';';
+        if (taskHighestCd.status === 'overdue') {
+          taskCardStyle += 'background:rgba(239,68,68,0.08);';
+        }
+      } else if (isExpanded) {
+        taskCardStyle += 'border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1);';
+      }
+
+      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
         + '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">'
         + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:4px 8px;line-height:1;touch-action:none;display:inline-flex;align-items:center" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
@@ -3900,7 +4412,8 @@
         + '<div style="display:flex;flex-direction:column;gap:2px;cursor:pointer;flex:1" onclick="toggleTaskExpanded(\'' + task.id + '\')" title="' + (isExpanded ? 'Click to collapse subtasks' : 'Click to expand subtasks') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span class="task-title" style="font-size:15px;font-weight:600;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
-        + (subtasks.length > 0 ? ('<span style="font-size:11px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:2px 7px;border-radius:6px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + '">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks ') + (isExpanded ? '▲' : '▼') + '</span>') : '<span style="font-size:10px;color:#64748b">' + (isExpanded ? '▲' : '▼') + '</span>')
+        + (task.nextTargetTime && !task.completed ? renderNextTimePill('task', task.id, null, task.nextTargetTime) : '')
+        + (subtasks.length > 0 ? ('<span style="font-size:11px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:2px 7px;border-radius:6px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + '">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
         + (task.completed ? '<span style="font-size:10px;font-weight:800;background:rgba(74,222,128,0.15);color:#4ede80;padding:2px 6px;border-radius:4px;border:1px solid rgba(74,222,128,0.3)">✓ ACHIEVED</span>' : '')
         + '</div>'
         + ideasCounterBadge
@@ -3921,6 +4434,7 @@
         + '</div>'
         + '</div>'
         + '</div>'
+        + mainTaskInputsHtml
         + subtasksContainerHtml
         + '</div>';
     }
@@ -3954,18 +4468,20 @@
           ? sortedTasks.map(function (item) { return renderTaskCard(item.task, item.origIdx); }).join('')
           : '<div style="text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.3);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 4px 0">No tasks created yet for this identity.</p><p class="h" style="font-size:12px;color:#64748b;margin:0">Add your first task below to plan and execute milestones.</p></div>';
 
-        tasksSectionHtml = '<div class="tasks-container" style="margin-bottom:18px">'
-          + '<div class="tasks-header" style="margin-bottom:12px">'
-          + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-          + '<span class="tasks-badge">TASKS & ACTION IDEAS</span>'
-          + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + completedCount + ' / ' + tasks.length + ' tasks achieved</span>'
-          + '</div>'
-          + '</div>'
-          + tasksListHtml
-          + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">'
+        var addTaskBarHtml = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">'
           + '<input type="text" id="new-task-text" placeholder="Add a new task / milestone (e.g. Build MVP Prototype)..." style="flex:1;min-width:200px;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px" onkeydown="if(event.key===\'Enter\')addTask()" />'
           + '<button class="b bp bs" onclick="addTask()" style="font-size:12px;padding:9px 16px;background:#2563eb;color:#fff;font-weight:700">+ Add Task</button>'
+          + '</div>';
+
+        tasksSectionHtml = '<div class="tasks-container section-card-frame">'
+          + '<div class="tasks-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">'
+          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#60a5fa;margin:0;display:inline-flex;align-items:center;gap:6px">📌 TASKS & ACTION IDEAS</h3>'
+          + '<span style="font-size:12px;color:#94a3b8;font-weight:600">(' + completedCount + ' / ' + tasks.length + ' achieved)</span>'
           + '</div>'
+          + '</div>'
+          + addTaskBarHtml
+          + tasksListHtml
           + '</div>';
       }
 
@@ -3979,7 +4495,7 @@
       } else {
         var loopsCardsHtml = '';
         if (loops.length > 0) {
-          loopsCardsHtml = '<div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;width:100%">'
+          loopsCardsHtml = '<div class="routine-loops-grid">'
             + loops.map(function (rl, gIdx) {
                 return renderRoutineLoopCard(rl, gIdx);
               }).join('')
@@ -3991,14 +4507,11 @@
             + '</div>';
         }
 
-        loopsSectionHtml = '<div class="routine-loops-container" style="margin-bottom:18px">'
-          + '<div class="routine-loops-header" style="margin-bottom:8px">'
-          + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-          + '<span class="routine-loops-badge">ROUTINE LOOPS</span>'
-          + ''
-          + '</div>'
-          + '<div style="display:flex;align-items:center;gap:6px">'
-          + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="font-size:11px;padding:5px 12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">Add Routine Loop</button>'
+        loopsSectionHtml = '<div class="routine-loops-container section-card-frame">'
+          + '<div class="routine-loops-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">'
+          + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+          + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#fbbf24;margin:0;display:inline-flex;align-items:center;gap:6px">🔁 ROUTINE LOOPS</h3>'
+          + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="font-size:11.5px;padding:6px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.25)">+ Add Routine Loop</button>'
           + '</div>'
           + '</div>'
           + loopsCardsHtml
@@ -4091,6 +4604,7 @@
       if (!id || !id.targetEvent || !id.targetEvent.trim()) return '';
       var name = id.targetEvent.trim();
       var timeStr = id.targetEventTime;
+      var tagEventStr = (id.targetEventName || id.taggedEvent || '').trim();
 
       var countdownBadge = '';
       if (timeStr) {
@@ -4098,7 +4612,6 @@
         if (details) {
           countdownBadge = '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
             + '<span class="live-target-countdown" data-target-time="' + timeStr + '" data-is-detail="true" style="' + details.scaleStyle + '">' + (details.badgeLabel ? details.badgeLabel + ' · ' : '') + details.countdownText + '</span>'
-            + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;padding:3px 8px;color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:6px;background:rgba(245,158,11,0.1)">📅 Change Date</button>'
             + '</div>';
         }
       } else {
@@ -4112,17 +4625,9 @@
       }
 
       return '<div style="margin-top:16px;padding:16px 18px;background:linear-gradient(135deg,rgba(40,28,10,0.8),rgba(20,16,8,0.95));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 15px rgba(245,158,11,0.12)">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap">'
-        + '<div style="display:flex;align-items:center;gap:6px">'
-        + '<span style="font-size:17px;line-height:1">🎯</span>'
-        + '<span style="font-size:11px;color:#fbbf24;font-weight:800;letter-spacing:1.2px;text-transform:uppercase">EXACT TARGET ACTION LINE WHEN ACHIEVED</span>'
-        + '</div>'
-        + '<div style="display:flex;gap:6px;align-items:center">'
-        + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;padding:2px 8px;color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:4px;background:rgba(245,158,11,0.1)" title="Edit target event">✏️ Edit Event</button>'
-        + '</div>'
-        + '</div>'
-        + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:4px 0 2px 0;font-style:italic;letter-spacing:0.2px">"' + e(name) + '"</div>'
+        + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:2px 0;font-style:italic;letter-spacing:0.2px">🎯 "' + e(name) + '"</div>'
         + countdownBadge
+        + '</div>';
     }
 
     function renderIdentityView(a, id) {
@@ -4133,6 +4638,8 @@
       var days = daysOld(id);
       var logged = loggedToday(id);
       var needsR = needsReflection(id);
+
+      var tagEventStr = (id.targetEventName || id.taggedEvent || id.targetActionLine || id.targetEvent || '').trim();
 
       var motivationPrompts = [
         "What is the single boldest move you can make today that proves this identity is real?",
@@ -4189,10 +4696,10 @@
       var heroCardHtml = '<div class="c" style="padding:22px 24px;background:linear-gradient(135deg,rgba(16,24,44,0.94),rgba(10,14,26,0.98));border:1px solid rgba(74,222,128,0.35);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 25px rgba(74,222,128,0.08);display:flex;flex-direction:column;justify-content:space-between">'
         + '<div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
-        + '<span style="font-size:11px;font-weight:800;letter-spacing:1.2px;color:#4ede80;background:rgba(74,222,128,0.14);padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.35);text-transform:uppercase">YOUR IDENTITY STANDARD</span>'
         + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' · ' + (id.logs ? id.logs.length : 0) + ' Proofs' + (streak > 1 ? ' · 🔥 ' + streak + '-day streak' : '') + '</span>'
         + '</div>'
         + '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>'
+        + (tagEventStr ? '<div style="margin-top:12px"><span style="font-size:13px;font-weight:800;padding:5px 12px;background:rgba(56,189,248,0.18);color:#38bdf8;border:1.5px solid rgba(56,189,248,0.45);border-radius:8px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(56,189,248,0.15)">🏷️ Tagged Event: "' + e(tagEventStr) + '"</span></div>' : '')
         + '</div>'
         
         // ⏳ BOLD, MEMORABLE MISSION ANCHOR EVENT CARD (Collapsible/Hideable)
@@ -4222,9 +4729,6 @@
         + topLevelAndMotivationCardHtml
         + '</div>';
 
-      var tagEventStr = (id.targetEventName || id.taggedEvent || '').trim();
-      var tagEventBadge = tagEventStr ? '<span style="font-size:12px;font-weight:700;padding:3px 10px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px">Event: ' + esc(tagEventStr) + '</span>' : '';
-
       var incompleteWarningBannerHtml = '';
       if (isIdentityIncomplete(id)) {
         incompleteWarningBannerHtml = '<div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.18));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 4px 15px rgba(245,158,11,0.15)">'
@@ -4245,8 +4749,9 @@
         + topCardsHtml
         + renderTasksAndLoopsSection(id)
         + renderInlineEvidenceSection(id)
-        + reflectHtml
-        + '<button class="b bb bw" onclick="go(\'manage\')" style="margin-top:18px">Manage & Edit Identity Details</button>'
+        + '<div style="margin-top:24px;margin-bottom:30px;text-align:center">'
+        + '<button class="b bb bw" onclick="go(\'manage\')" style="padding:12px 24px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.2)">⚙️ Manage & Edit Identity Details</button>'
+        + '</div>'
         + '</div>';
     }
 
@@ -5612,6 +6117,7 @@
       const ni = $('#mg-ni')?.value?.trim();
       const te = $('#mg-te')?.value?.trim();
       const tet = $('#mg-tet')?.value;
+      const ten = $('#mg-ten')?.value?.trim();
       const av = $('#mg-av')?.value?.trim();
       const oi = $('#mg-oi')?.value?.trim();
 
@@ -5621,6 +6127,10 @@
         id.targetEvent = te;
       }
       if (tet !== undefined) id.targetEventTime = tet ? new Date(tet).toISOString() : null;
+      if (ten !== undefined) {
+        id.targetEventName = ten;
+        id.taggedEvent = ten;
+      }
       if (av !== undefined) id.antiVisionText = av;
       if (oi !== undefined) id.oldIdentity = oi;
 
@@ -5875,17 +6385,23 @@
         + '<div style="margin-top:14px">'
         + '<label class="lb" style="font-size:13.5px;font-weight:700;color:#4ede80;margin-bottom:4px;display:block">1. Who You Are (Identity Statement)</label>'
         + '<p style="font-size:12px;color:#9ca3af;margin-bottom:6px">Define who you are choosing to be in present tense.</p>'
-        + '<textarea id="one-identity-input" rows="2" placeholder=\'e.g., "I am a very busy person working on very important things only."\' style="font-size:15px;line-height:1.5;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(74,222,128,0.4);color:#ffffff;box-sizing:border-box"></textarea>'
+        + '<textarea id="one-identity-input" rows="2" placeholder=\'e.g., "I am a very busy person working on very important things only."\' style="font-size:15px;line-height:1.5;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(74,222,128,0.4);color:#ffffff;box-sizing:border-box" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); createOneLineIdentity(); }"></textarea>'
         + '</div>'
 
         + '<div style="margin-top:16px">'
         + '<label class="lb" style="font-size:13.5px;font-weight:700;color:#fbbf24;margin-bottom:4px;display:block">2. Exact Action Line You Aim to Say When Achieved</label>'
         + '<p style="font-size:12px;color:#9ca3af;margin-bottom:6px">What exact statement/outcome will you say when you achieve what you set out to do?</p>'
-        + '<textarea id="one-identity-event" rows="2" placeholder=\'e.g., "Finally I woke up continuously for 5 days to work on the most important things."\' style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.4);color:#fef3c7;box-sizing:border-box"></textarea>'
+        + '<textarea id="one-identity-event" rows="2" placeholder=\'e.g., "Finally I woke up continuously for 5 days to work on the most important things."\' style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.4);color:#fef3c7;box-sizing:border-box" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); createOneLineIdentity(); }"></textarea>'
         + '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(245,158,11,0.06);padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.2)">'
         + '<label style="font-size:12.5px;font-weight:700;color:#fbbf24">Target Date & Time (Optional):</label>'
         + '<input type="datetime-local" id="one-identity-event-time" style="background:#181824;border:1px solid rgba(245,158,11,0.4);color:#ffffff;padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit" />'
         + '</div>'
+        + '</div>'
+
+        + '<div style="margin-top:16px">'
+        + '<label class="lb" style="font-size:13.5px;font-weight:700;color:#38bdf8;margin-bottom:4px;display:block">3. Tagged Event / Event Name (Optional)</label>'
+        + '<p style="font-size:12px;color:#9ca3af;margin-bottom:6px">The specific trip, event, or goal this identity is tagged to.</p>'
+        + '<input type="text" id="one-identity-tagged-event" placeholder=\'e.g., "Wonderla Family Trip" or "Loan Clearance Event"\' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(56,189,248,0.4);color:#f0f9ff;box-sizing:border-box" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); createOneLineIdentity(); }" />'
         + '</div>'
 
         + '<div style="margin-top:22px">'
@@ -5905,6 +6421,7 @@
       var raw = $('#one-identity-input')?.value?.trim();
       var rawEvent = $('#one-identity-event')?.value?.trim();
       var rawEventTime = $('#one-identity-event-time')?.value || null;
+      var rawTaggedEvent = $('#one-identity-tagged-event')?.value?.trim() || '';
       if (!raw || !rawEvent) {
         showCustomAlert('Every identity line must include both:\n1. Who You Are (Identity Statement)\n2. Exact Action Line Aiming to Say When Achieved', 'Complete 2-Part Identity Required', '⚠️');
         var inp = !raw ? document.getElementById('one-identity-input') : document.getElementById('one-identity-event');
@@ -5925,6 +6442,8 @@
         newIdentity: name,
         targetActionLine: targetAction,
         targetEvent: targetAction,
+        targetEventName: rawTaggedEvent,
+        taggedEvent: rawTaggedEvent,
         targetEventTime: rawEventTime ? new Date(rawEventTime).toISOString() : null,
         achieved: false,
         achievedAt: null,
@@ -6178,25 +6697,6 @@
       return '<span class="meta-pill meta-time">⏱️ ' + e(time) + '</span>';
     }
 
-    function getLoopFlowViewMode(loopId) {
-      if (!loopId) return 'linear';
-      var id = getCurRef() || cur();
-      if (!id || !Array.isArray(id.routineLoops)) return 'linear';
-      var rl = id.routineLoops.find(function (r) { return r.id === loopId; });
-      return (rl && rl.flowViewMode === 'circle') ? 'circle' : 'linear';
-    }
-
-    window.toggleLoopFlowView = function (loopId) {
-      var id = getCurRef() || cur();
-      if (!id || !Array.isArray(id.routineLoops)) return;
-      var rl = id.routineLoops.find(function (r) { return r.id === loopId; });
-      if (!rl) return;
-      rl.flowViewMode = (rl.flowViewMode === 'circle') ? 'linear' : 'circle';
-      rl.updatedAt = new Date().toISOString();
-      id.updatedAt = new Date().toISOString();
-      save(true);
-      render();
-    };
 
     window.expandedLoopRunLogs = window.expandedLoopRunLogs || {};
     window.toggleLoopRunLogs = function (loopId) {
@@ -6205,102 +6705,34 @@
       render();
     };
 
-    function renderLoopFlowDiagram(steps, loopId, isTaskCompleted, customViewMode) {
+    function renderLoopFlowDiagram(steps, loopId, isTaskCompleted) {
       var cleanSteps = (steps || []).map(function (s) { return String(s || '').trim(); }).filter(Boolean);
       if (cleanSteps.length === 0) {
         return '';
       }
-      var viewMode = customViewMode || getLoopFlowViewMode(loopId);
-      var isLinear = (viewMode !== 'circle');
 
-      // Header label with toggle
-      var toggleBtn = loopId ? (
-        '<button class="bg" onclick="toggleLoopFlowView(\'' + loopId + '\')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);color:#fbbf24;display:flex;align-items:center;gap:4px" title="Switch between Circle and Flowchart views">'
-        + (isLinear ? 'Circle View' : 'Flowchart View')
-        + '</button>'
+      var labelHtml = isTaskCompleted ? (
+        '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:8px">'
+        + '<div class="loop-flow-label" style="margin-bottom:0">(COMPLETED)</div>'
+        + '</div>'
       ) : '';
-
-      var labelHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-        + '<div class="loop-flow-label" style="margin-bottom:0">CONTINUOUS FEEDBACK CYCLE' + (isTaskCompleted ? ' (COMPLETED)' : '') + '</div>'
-        + toggleBtn
-        + '</div>';
 
       var strikethroughStyle = isTaskCompleted ? 'text-decoration:line-through;opacity:0.65;filter:grayscale(0.35);' : '';
 
-      if (isLinear) {
-        var nodesHtml = cleanSteps.map(function (step, idx) {
-          return '<div class="loop-step-node" style="' + strikethroughStyle + '">'
-            + '<span class="loop-step-num">' + (idx + 1) + '</span>'
-            + '<span>' + e(step) + '</span>'
-            + '</div>';
-        }).join('<span class="loop-arrow">⬇</span>');
-
-        return '<div class="loop-flow-container" style="' + (isTaskCompleted ? 'border-color:rgba(74,222,128,0.25);background:rgba(10,30,20,0.3)' : '') + '">'
-          + labelHtml
-          + '<div class="loop-flow-diagram">'
-          + nodesHtml
-          + '<span class="loop-arrow">⬇</span>'
-          + '<div class="loop-repeat-badge" style="' + strikethroughStyle + '">REPEAT CYCLE</div>'
-          + '</div>'
+      var nodesHtml = cleanSteps.map(function (step, idx) {
+        return '<div class="loop-step-node" style="' + strikethroughStyle + '">'
+          + '<span class="loop-step-num">' + (idx + 1) + '</span>'
+          + '<span>' + e(step) + '</span>'
           + '</div>';
-      }
+      }).join('<span class="loop-arrow">⬇</span>');
 
-      // ⭕ CIRCULAR FORMAT RENDERING
-      var N = cleanSteps.length;
-      var cx = 180;
-      var cy = 135;
-      var R = N >= 5 ? 75 : (N === 4 ? 78 : 82);
-      var radiusPct = N >= 5 ? 30 : (N === 4 ? 29 : 28);
-      var nodeMaxW = N >= 5 ? 130 : (N === 4 ? 135 : 140);
-
-      // Generate SVG curved clockwise arrows between step nodes
-      var svgArrows = '';
-      var delta = N > 1 ? Math.min((Math.PI / N) * 0.42, 0.45) : 0;
-      var uid = 'arrow_' + String(loopId || Math.floor(Math.random() * 10000)).replace(/[^a-zA-Z0-9]/g, '_');
-
-      for (var i = 0; i < N; i++) {
-        var a1 = -Math.PI / 2 + i * (2 * Math.PI / N);
-        var a2 = -Math.PI / 2 + ((i + 1) % N) * (2 * Math.PI / N);
-        if (N === 1) {
-          svgArrows += '<path d="M ' + (cx + 25) + ' ' + (cy - R + 20) + ' A 24 24 0 1 1 ' + (cx - 25) + ' ' + (cy - R + 20) + '" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 2" marker-end="url(#' + uid + ')"/>';
-        } else {
-          var startA = a1 + delta;
-          var endA = (i === N - 1) ? (a1 + (2 * Math.PI / N) - delta) : (a2 - delta);
-          var x1 = cx + R * Math.cos(startA);
-          var y1 = cy + R * Math.sin(startA);
-          var x2 = cx + R * Math.cos(endA);
-          var y2 = cy + R * Math.sin(endA);
-          svgArrows += '<path d="M ' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' A ' + R + ' ' + R + ' 0 0 1 ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#' + uid + ')"/>';
-        }
-      }
-
-      // Step cards positioned around circle
-      var stepCardsHtml = cleanSteps.map(function (step, idx) {
-        var angle = -Math.PI / 2 + idx * (2 * Math.PI / N);
-        var pctX = 50 + radiusPct * Math.cos(angle);
-        var pctY = 50 + (radiusPct * 1.05) * Math.sin(angle);
-        return '<div class="loop-step-node circle-step-node" style="position:absolute;left:' + pctX.toFixed(1) + '%;top:' + pctY.toFixed(1) + '%;transform:translate(-50%,-50%);max-width:' + nodeMaxW + 'px;text-align:center;z-index:2;word-break:normal!important;overflow-wrap:break-word!important;word-wrap:normal!important;hyphens:none!important">'
-          + '<span class="loop-step-num" style="width:18px;height:18px;font-size:9.5px;flex-shrink:0;margin-bottom:1px">' + (idx + 1) + '</span>'
-          + '<span style="font-size:10.5px;font-weight:600;line-height:1.25;word-break:normal!important;overflow-wrap:break-word!important;word-wrap:normal!important;hyphens:none!important;text-align:center">' + e(step) + '</span>'
-          + '</div>';
-      }).join('');
-
-      var circleHtml = '<div class="loop-circle-container">'
-        + '<svg viewBox="0 0 360 270" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1">'
-        + '<defs>'
-        + '<marker id="' + uid + '" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">'
-        + '<polygon points="0 0, 6 3, 0 6" fill="#f59e0b"/>'
-        + '</marker>'
-        + '</defs>'
-        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(245,158,11,0.18)" stroke-width="1.2" stroke-dasharray="3 3"/>'
-        + svgArrows
-        + '</svg>'
-        + stepCardsHtml
-        + '</div>';
-
-      return '<div class="loop-flow-container">'
+      return '<div class="loop-flow-container" style="' + (isTaskCompleted ? 'border-color:rgba(74,222,128,0.25);background:rgba(10,30,20,0.3)' : '') + '">'
         + labelHtml
-        + circleHtml
+        + '<div class="loop-flow-diagram">'
+        + nodesHtml
+        + '<span class="loop-arrow">⬇</span>'
+        + '<div class="loop-repeat-badge" style="' + strikethroughStyle + '">REPEAT CYCLE</div>'
+        + '</div>'
         + '</div>';
     }
 
@@ -6428,7 +6860,7 @@
         var stepsInputsHtml = draft.steps.map(function (step, sIdx) {
           return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
             + '<span style="font-size:12px;font-weight:700;color:#a5b4fc;width:20px;text-align:center">' + (sIdx + 1) + '.</span>'
-            + '<input type="text" class="inline-step-input-' + rl.id + '" value="' + esc(step) + '" oninput="updateInlineLoopStep(\'' + rl.id + '\', ' + sIdx + ', this.value)" style="flex:1;background:#111827;border:1px solid #3b82f6;color:#fff;padding:6px 10px;border-radius:6px;font-size:13px" placeholder="Step ' + (sIdx + 1) + ' action..." />'
+            + '<input type="text" class="inline-step-input-' + rl.id + '" value="' + esc(step) + '" oninput="updateInlineLoopStep(\'' + rl.id + '\', ' + sIdx + ', this.value)" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveInlineLoop(\'' + rl.id + '\'); }" style="flex:1;background:#111827;border:1px solid #3b82f6;color:#fff;padding:6px 10px;border-radius:6px;font-size:13px" placeholder="Step ' + (sIdx + 1) + ' action..." />'
             + '<button class="bg" onclick="removeInlineLoopStep(\'' + rl.id + '\', ' + sIdx + ')" style="color:#fca5a5;padding:4px 8px;font-size:12px" title="Remove step">✕</button>'
             + '</div>';
         }).join('');
@@ -6437,7 +6869,7 @@
           + '<div style="font-size:12px;font-weight:800;color:#93c5fd;letter-spacing:1px;margin-bottom:10px">QUICK EDIT ROUTINE LOOP</div>'
           + '<div style="margin-bottom:10px">'
           + '<label style="font-size:11px;font-weight:700;color:#94a3b8">LOOP TITLE</label>'
-          + '<input type="text" id="inline-loop-title-' + rl.id + '" value="' + esc(draft.title) + '" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:7px 10px;border-radius:6px;font-size:13px;margin-top:4px" />'
+          + '<input type="text" id="inline-loop-title-' + rl.id + '" value="' + esc(draft.title) + '" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveInlineLoop(\'' + rl.id + '\'); }" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:7px 10px;border-radius:6px;font-size:13px;margin-top:4px" />'
           + '</div>'
           + '<div style="margin-bottom:10px">'
           + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
@@ -6448,7 +6880,7 @@
           + '</div>'
           + '<div style="margin-bottom:10px">'
           + '<label style="font-size:11px;font-weight:700;color:#94a3b8">WHAT\'S NEXT (NEXT IMMEDIATE TARGET)</label>'
-          + '<input type="text" id="inline-loop-whatnext-' + rl.id + '" value="' + esc(draft.whatNext) + '" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:7px 10px;border-radius:6px;font-size:13px;margin-top:4px" placeholder="Next step after completing this loop..." />'
+          + '<input type="text" id="inline-loop-whatnext-' + rl.id + '" value="' + esc(draft.whatNext) + '" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveInlineLoop(\'' + rl.id + '\'); }" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:7px 10px;border-radius:6px;font-size:13px;margin-top:4px" placeholder="Next step after completing this loop..." />'
           + '</div>'
           + '<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">'
           + '<div style="flex:1;min-width:140px">'
@@ -6557,16 +6989,21 @@
       }
 
       return '<div class="routine-loop-card" id="loop-card-' + rl.id + '">'
-        + '<div class="routine-loop-top">'
-        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-        + '<h4 class="routine-loop-title">🔁 ' + e(rl.title || 'Routine Loop ' + (idx + 1)) + '</h4>'
-        + '<span class="routine-loops-count" style="font-size:10px;color:#fbbf24;border-color:rgba(245,158,11,0.3)">' + iterText + '</span>'
+        + '<div class="routine-loop-top" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
+        + '<h4 class="routine-loop-title" style="font-size:15px;font-weight:700;color:#f8fafc;margin:0">🔁 ' + e(rl.title || 'Routine Loop ' + (idx + 1)) + '</h4>'
+        + '<span class="routine-loops-count" style="font-size:11px;font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.12);padding:2px 8px;border-radius:6px;border:1px solid rgba(245,158,11,0.3)">' + iterText + '</span>'
         + '</div>'
-        + '<div class="routine-loop-actions">'
-        + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;border-color:#3b82f6" title="Record a run and log actual outcome">▶ Log Run (+1)</button>'
+        + '<div class="routine-loop-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<button class="b bp bs" onclick="openLogRunModal(\'' + rl.id + '\')" style="font-size:11.5px;padding:5px 12px;background:#2563eb;color:#fff;border-color:#3b82f6;font-weight:700" title="Record a run and log actual outcome">▶ Log Run (+1)</button>'
         + runLogsButtonHtml
-        + '<button class="bg" onclick="startInlineEditLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;border:1px solid #374151;border-radius:6px;color:#fbbf24" title="Quick edit loop in place">Edit</button>'
-        + '<button class="bg" onclick="deleteRoutineLoop(\'' + rl.id + '\')" style="font-size:11px;padding:4px 8px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Delete</button>'
+        + '<div style="position:relative;display:inline-block">'
+        + '<button class="bg" onclick="toggleTaskMenu(\'loop-menu-' + rl.id + '\', event)" style="font-size:15px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
+        + '<div id="loop-menu-' + rl.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:110px;overflow:hidden">'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startInlineEditLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:#f1f5f9;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteRoutineLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:#fca5a5;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
+        + '</div>'
+        + '</div>'
         + '</div>'
         + '</div>'
         + flowDiagramHtml
@@ -6587,20 +7024,20 @@
           + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="padding:8px 18px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;box-shadow:0 3px 12px rgba(245,158,11,0.25)">Create Routine Loop</button>'
           + '</div>';
       } else {
-        cardsHtml = loops.map(function (rl, idx) {
-          return renderRoutineLoopCard(rl, idx);
-        }).join('');
+        cardsHtml = '<div class="routine-loops-grid">'
+          + loops.map(function (rl, idx) {
+              return renderRoutineLoopCard(rl, idx);
+            }).join('')
+          + '</div>';
       }
 
-      return '<div class="routine-loops-container">'
-        + '<div class="routine-loops-header">'
-        + '<div class="routine-loops-title-group">'
-        + '<span class="routine-loops-badge">ROUTINE LOOPS</span>'
-        + ''
+      return '<div class="routine-loops-container section-card-frame">'
+        + '<div class="routine-loops-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">'
+        + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+        + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#fbbf24;margin:0;display:inline-flex;align-items:center;gap:6px">🔁 ROUTINE LOOPS</h3>'
+        + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="font-size:11.5px;padding:6px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.25)">+ Add Routine Loop</button>'
         + '</div>'
-        + '<button class="b bp bs" onclick="openRoutineLoopModal()" style="font-size:12px;padding:6px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 2px 8px rgba(245,158,11,0.2)">Add Routine Loop</button>'
         + '</div>'
-        + ''
         + cardsHtml
         + '</div>';
     }
@@ -6735,7 +7172,7 @@
       container.innerHTML = steps.map(function (step, i) {
         return '<div class="step-builder-row">'
           + '<span class="step-builder-badge">' + (i + 1) + '</span>'
-          + '<input type="text" class="step-builder-input" placeholder="Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" />'
+          + '<input type="text" class="step-builder-input" placeholder="Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveRoutineLoopModal(); }" />'
           + '<button type="button" class="step-del-btn" onclick="removeModalLoopStep(' + i + ')" title="Remove step">✕</button>'
           + '</div>';
       }).join('');
@@ -6792,7 +7229,7 @@
         + '<div style="margin-bottom:16px">'
         + '<label class="lb">1. Routine Loop Title</label>'
         + '<p class="h">Name your feedback loop (or leave blank to auto-name).</p>'
-        + '<input type="text" id="modal-loop-title" placeholder="e.g. Daily Bug Hunter & Prompt Cycle" value="' + esc(draft.title) + '" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
+        + '<input type="text" id="modal-loop-title" placeholder="e.g. Daily Bug Hunter & Prompt Cycle" value="' + esc(draft.title) + '" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveRoutineLoopModal(); }" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
         + '</div>'
 
         // Steps Builder (Optional)
@@ -6929,80 +7366,14 @@
         if (onComplete) onComplete();
         return;
       }
-
-      var stepNodes = card.querySelectorAll('.loop-step-node');
-      var circleContainer = card.querySelector('.loop-circle-container');
-      var svg = card.querySelector('.loop-circle-container svg');
-
-      if (!circleContainer || !svg || stepNodes.length === 0) {
-        card.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
-        card.style.boxShadow = '0 0 30px rgba(245, 158, 11, 0.6)';
-        card.style.transform = 'scale(1.02)';
-        setTimeout(function () {
-          card.style.boxShadow = '';
-          card.style.transform = '';
-          if (onComplete) onComplete();
-        }, 400);
-        return;
-      }
-
-      // Create glowing runner particle in SVG
-      var runnerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      runnerDot.setAttribute('r', '6');
-      runnerDot.setAttribute('fill', '#fbbf24');
-      runnerDot.setAttribute('stroke', '#ffffff');
-      runnerDot.setAttribute('stroke-width', '2');
-      runnerDot.style.filter = 'drop-shadow(0 0 8px #f59e0b) drop-shadow(0 0 16px #fbbf24)';
-      svg.appendChild(runnerDot);
-
-      var totalSteps = stepNodes.length;
-      var cx = 180, cy = 135;
-      var R = totalSteps >= 5 ? 75 : (totalSteps === 4 ? 78 : 82);
-      var duration = 950; // ms
-      var startTime = null;
-      var lastLitIndex = -1;
-
-      function animateRunner(now) {
-        if (!startTime) startTime = now;
-        var elapsed = now - startTime;
-        var progress = Math.min(elapsed / duration, 1);
-        
-        var currentAngle = -Math.PI / 2 + progress * (2 * Math.PI);
-        var x = cx + R * Math.cos(currentAngle);
-        var y = cy + R * Math.sin(currentAngle);
-        runnerDot.setAttribute('cx', x.toFixed(1));
-        runnerDot.setAttribute('cy', y.toFixed(1));
-
-        // Sequentially highlight and pulse step nodes as the runner passes through
-        var stepIdx = Math.floor(progress * totalSteps) % totalSteps;
-        if (stepIdx !== lastLitIndex && stepNodes[stepIdx]) {
-          lastLitIndex = stepIdx;
-          var node = stepNodes[stepIdx];
-          node.style.transition = 'all 0.15s ease';
-          node.style.borderColor = '#fbbf24';
-          node.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(30, 41, 68, 0.98))';
-          node.style.boxShadow = '0 0 30px rgba(251, 191, 36, 0.85), 0 0 15px rgba(74, 222, 128, 0.5)';
-          node.style.transform = 'translate(-50%, -50%) scale(1.18)';
-
-          setTimeout(function (targetNode) {
-            targetNode.style.borderColor = '';
-            targetNode.style.background = '';
-            targetNode.style.boxShadow = '';
-            targetNode.style.transform = 'translate(-50%, -50%) scale(1)';
-          }, 380, node);
-        }
-
-        if (progress < 1) {
-          requestAnimationFrame(animateRunner);
-        } else {
-          if (runnerDot.parentNode) runnerDot.parentNode.removeChild(runnerDot);
-          setTimeout(function () {
-            if (onComplete) onComplete();
-          }, 150);
-        }
-      }
-
-      requestAnimationFrame(animateRunner);
+      card.style.transition = 'box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+      card.style.boxShadow = '0 0 30px rgba(245, 158, 11, 0.6)';
+      card.style.transform = 'scale(1.02)';
+      setTimeout(function () {
+        card.style.boxShadow = '';
+        card.style.transform = '';
+        if (onComplete) onComplete();
+      }, 400);
     };
 
     window.openLogRunModal = function (loopId, skipAnimation) {

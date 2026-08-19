@@ -1,7 +1,18 @@
-import re, sys
+import re, sys, os
 
-for fname in ['index.html', 'cage-breaker.html']:
-    html = open(fname, encoding='utf-8').read()
+# Automatically locate root directory regardless of invocation path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = script_dir if os.path.exists(os.path.join(script_dir, 'index.html')) else os.path.dirname(script_dir)
+
+target_files = [os.path.join(root_dir, f) for f in ['index.html', 'cage-breaker.html']]
+
+for filepath in target_files:
+    fname = os.path.basename(filepath)
+    if not os.path.exists(filepath):
+        print(f'{fname}: File not found at {filepath}')
+        continue
+    with open(filepath, encoding='utf-8') as f:
+        html = f.read()
     m = re.search(r'<script>(.*?)</script>', html, re.DOTALL)
     if not m:
         print(f'{fname}: No script tag found!')
