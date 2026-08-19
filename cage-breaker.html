@@ -64,19 +64,14 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
     }
 
     html {
       scroll-behavior: smooth;
-      touch-action: pan-x pan-y;
       -webkit-text-size-adjust: 100%;
       background-color: var(--bg-app);
       color-scheme: dark;
+      overflow-y: auto;
       overflow-x: hidden;
     }
 
@@ -91,8 +86,7 @@
       min-height: 100vh;
       line-height: 1.55;
       font-size: 13.5px;
-      touch-action: pan-x pan-y;
-      overscroll-behavior-y: none;
+      overflow-y: auto;
       overflow-x: hidden;
     }
 
@@ -106,13 +100,17 @@
       min-width: 0;
     }
 
-    input, textarea, select, [contenteditable="true"] {
+    /* Modern Cursor & User Select Behavior */
+    button, .btn, a, select, input[type="button"], input[type="submit"], input[type="reset"], input[type="checkbox"], input[type="radio"], [role="button"], .task-check-btn, .modal-close, .icard, .pc, .ch, .tab-btn {
+      cursor: pointer !important;
+    }
+
+    input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], textarea, [contenteditable="true"] {
+      cursor: text !important;
       -webkit-user-select: text !important;
       -moz-user-select: text !important;
       -ms-user-select: text !important;
       user-select: text !important;
-      -webkit-touch-callout: default !important;
-      touch-action: auto !important;
       font-family: inherit;
     }
 
@@ -4164,7 +4162,6 @@
         + '<h1 style="font-size:20px;font-weight:800;color:#f8fafc;margin:0;letter-spacing:0.3px;display:flex;align-items:center;gap:8px">'
         + '<span style="color:#fbbf24">👤</span> ' + esc(id.newIdentity)
         + '</h1>'
-        + '<span style="font-size:13px;color:#94a3b8;font-weight:500">| Break Your Cage</span>'
         + '</div>';
 
       var incompleteWarningBannerHtml = '';
