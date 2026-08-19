@@ -4205,7 +4205,7 @@
       } else {
         showCustomConfirm({
           title: 'Re-open Task?',
-          message: 'Mark this task as pending again? (This will remove its +4 evidence points from your Evidence Vault)',
+          message: 'Mark this task as pending again? (This will also re-open its subtasks and ideas, reversing points from your Evidence Vault)',
           confirmText: 'Mark Pending',
           confirmBg: 'linear-gradient(135deg, #3b82f6, #2563eb)',
           onConfirm: function () {
@@ -4214,8 +4214,32 @@
             task.completedAt = null;
             task.updatedAt = new Date().toISOString();
 
+            // Re-open/untick child subtasks & their ideas
+            if (Array.isArray(task.subtasks)) {
+              task.subtasks.forEach(function (sub) {
+                sub.completed = false;
+                sub.completedAt = null;
+                if (Array.isArray(sub.ideas)) {
+                  sub.ideas.forEach(function (idea) {
+                    idea.completed = false;
+                    idea.completedAt = null;
+                  });
+                }
+              });
+            }
+
+            // Re-open/untick main task ideas
+            if (Array.isArray(task.ideas)) {
+              task.ideas.forEach(function (idea) {
+                idea.completed = false;
+                idea.completedAt = null;
+              });
+            }
+
             removeAndTombstoneLogs(id, function (l) {
-              return (l.taskId === taskId && !l.subtaskId && !l.ideaId) || (l.note && l.note.indexOf('Completed task: "' + task.text + '"') !== -1);
+              if (l.taskId === taskId) return true;
+              if (l.note && (l.note.indexOf('Task: ' + task.text) !== -1 || l.note.indexOf('Completed task: "' + task.text + '"') !== -1)) return true;
+              return false;
             });
 
             save(true);
@@ -4244,8 +4268,30 @@
         if (task.completed) {
           task.completed = false;
           task.completedAt = null;
+
+          if (Array.isArray(task.subtasks)) {
+            task.subtasks.forEach(function (sub) {
+              sub.completed = false;
+              sub.completedAt = null;
+              if (Array.isArray(sub.ideas)) {
+                sub.ideas.forEach(function (idea) {
+                  idea.completed = false;
+                  idea.completedAt = null;
+                });
+              }
+            });
+          }
+          if (Array.isArray(task.ideas)) {
+            task.ideas.forEach(function (idea) {
+              idea.completed = false;
+              idea.completedAt = null;
+            });
+          }
+
           removeAndTombstoneLogs(id, function (l) {
-            return (l.taskId === taskId && !l.subtaskId && !l.ideaId) || (l.note && l.note.indexOf('Completed task: "' + task.text + '"') !== -1);
+            if (l.taskId === taskId) return true;
+            if (l.note && (l.note.indexOf('Task: ' + task.text) !== -1 || l.note.indexOf('Completed task: "' + task.text + '"') !== -1)) return true;
+            return false;
           });
         }
       }
@@ -4277,16 +4323,16 @@
         + '<button class="modal-close" onclick="closeTaskCompletionModal()">&times;</button>'
         + '</div>'
         + '<div class="modal-body">'
-        + '<p style="font-size:14px;color:#f3f4f6;margin-bottom:12px;line-height:1.5">Are you sure you have completed this task?</p>'
+        + '<p style="font-size:14px;color:#f3f4f6;margin-bottom:12px;line-height:1.5">Are you sure you have completed this task? (Ticking a task automatically completes all its subtasks and ideas)</p>'
         + '<div style="padding:14px 16px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:10px;margin-bottom:14px">'
         + '<div style="font-size:15px;font-weight:700;color:#ffffff;line-height:1.4">"' + e(task.text) + '"</div>'
         + '</div>'
         + '<div style="font-size:12px;color:#fbbf24;margin-bottom:16px;background:rgba(245,158,11,0.1);padding:9px 12px;border-radius:8px;border:1px solid rgba(245,158,11,0.3)">'
-        + '⚡ <strong>+4 Point Strong Evidence</strong> will be added to your Evidence Vault!'
+        + '⚡ <strong>+4 Evidence Points</strong> (+ subtask/idea points) will be logged into your Evidence Vault!'
         + '</div>'
         + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #1f2436;padding-top:14px">'
         + '<button type="button" class="b bb" onclick="closeTaskCompletionModal()">Cancel</button>'
-        + '<button type="button" class="b bp" onclick="executeTaskCompletion(\'' + task.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;font-weight:700;padding:9px 18px">✅ Yes, Complete Task (+4 Evidence)</button>'
+        + '<button type="button" class="b bp" onclick="executeTaskCompletion(\'' + task.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;font-weight:700;padding:9px 18px">✅ Yes, Complete Task & Children</button>'
         + '</div>'
         + '</div>'
         + '</div>';
@@ -4303,18 +4349,72 @@
       var task = id.tasks.find(function (t) { return t.id === taskId; });
       if (!task) return;
 
+      var nowIso = new Date().toISOString();
+
       task.completed = true;
       task.status = 'completed';
-      task.completedAt = new Date().toISOString();
+      task.completedAt = nowIso;
       task.expanded = false; // Achieved tasks default to collapsed
-      task.updatedAt = new Date().toISOString();
+      task.updatedAt = nowIso;
 
+      // 1. Log task completion (+4 pts)
       pushLogEntry(id, {
-        date: new Date().toISOString(),
+        date: nowIso,
         taskId: taskId,
         note: 'Completed task: "' + task.text + '"',
         weight: 'strong'
       });
+
+      // 2. Tick all main task ideas (+1 pt each if not already completed)
+      if (Array.isArray(task.ideas)) {
+        task.ideas.forEach(function (idea) {
+          if (!idea.completed) {
+            idea.completed = true;
+            idea.completedAt = nowIso;
+            pushLogEntry(id, {
+              date: nowIso,
+              ideaId: idea.id,
+              taskId: taskId,
+              note: 'Completed idea: "' + idea.text + '" (from Task: ' + task.text + ')',
+              weight: 'fine'
+            });
+          }
+        });
+      }
+
+      // 3. Tick all subtasks (+2 pts each) and subtask ideas (+1 pt each)
+      if (Array.isArray(task.subtasks)) {
+        task.subtasks.forEach(function (sub) {
+          if (!sub.completed) {
+            sub.completed = true;
+            sub.completedAt = nowIso;
+            sub.updatedAt = nowIso;
+            pushLogEntry(id, {
+              date: nowIso,
+              subtaskId: sub.id,
+              taskId: taskId,
+              note: 'Completed subtask: "' + sub.text + '" (Task: ' + task.text + ')',
+              weight: 'medium'
+            });
+          }
+          if (Array.isArray(sub.ideas)) {
+            sub.ideas.forEach(function (idea) {
+              if (!idea.completed) {
+                idea.completed = true;
+                idea.completedAt = nowIso;
+                pushLogEntry(id, {
+                  date: nowIso,
+                  ideaId: idea.id,
+                  subtaskId: sub.id,
+                  taskId: taskId,
+                  note: 'Completed idea: "' + idea.text + '" (from Subtask: ' + sub.text + ', Task: ' + task.text + ')',
+                  weight: 'fine'
+                });
+              }
+            });
+          }
+        });
+      }
 
       save(true);
       closeTaskCompletionModal();
@@ -4328,12 +4428,12 @@
       if (!task) return;
       var willExpand = !task.expanded;
 
-      // Accordion behavior: close all other tasks
+      // Accordion behavior: if one task is expanded, all other tasks are collapsed
       id.tasks.forEach(function (t) {
         t.expanded = false;
       });
 
-      if (willExpand && !task.completed && task.status !== 'completed') {
+      if (willExpand) {
         task.expanded = true;
       }
       save(true);
@@ -4469,21 +4569,46 @@
       var sub = task.subtasks.find(function (s) { return s.id === subtaskId; });
       if (!sub) return;
 
+      var nowIso = new Date().toISOString();
       sub.completed = !sub.completed;
-      sub.completedAt = sub.completed ? new Date().toISOString() : null;
-      sub.updatedAt = new Date().toISOString();
+      sub.completedAt = sub.completed ? nowIso : null;
+      sub.updatedAt = nowIso;
 
       if (sub.completed) {
         pushLogEntry(id, {
-          date: new Date().toISOString(),
+          date: nowIso,
           subtaskId: subtaskId,
           taskId: taskId,
           note: 'Completed subtask: "' + sub.text + '" (Task: ' + task.text + ')',
           weight: 'medium'
         });
+
+        // Tick all subtask ideas as well (+1 pt each)
+        if (Array.isArray(sub.ideas)) {
+          sub.ideas.forEach(function (idea) {
+            if (!idea.completed) {
+              idea.completed = true;
+              idea.completedAt = nowIso;
+              pushLogEntry(id, {
+                date: nowIso,
+                ideaId: idea.id,
+                subtaskId: subtaskId,
+                taskId: taskId,
+                note: 'Completed idea: "' + idea.text + '" (from Subtask: ' + sub.text + ', Task: ' + task.text + ')',
+                weight: 'fine'
+              });
+            }
+          });
+        }
       } else {
+        if (Array.isArray(sub.ideas)) {
+          sub.ideas.forEach(function (idea) {
+            idea.completed = false;
+            idea.completedAt = null;
+          });
+        }
         removeAndTombstoneLogs(id, function (l) {
-          return (l.subtaskId === subtaskId) || (l.note && l.note.indexOf('Completed subtask: "' + sub.text + '"') !== -1);
+          return (l.subtaskId === subtaskId) || (l.note && l.note.indexOf('Subtask: ' + sub.text) !== -1);
         });
       }
 
