@@ -2274,6 +2274,26 @@
       var rawSubtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
       var isComp = !!t.completed;
       var status = t.status || (isComp ? 'completed' : 'yet_to_start');
+
+      var sanitizedIdeas = rawIdeas.map(function (idea) {
+        var sIdea = sanitizeTaskIdea(idea);
+        if (sIdea && isComp) {
+          sIdea.completed = true;
+        }
+        return sIdea;
+      }).filter(Boolean);
+
+      var sanitizedSubtasks = rawSubtasks.map(function (sub) {
+        var sSub = sanitizeSubtask(sub);
+        if (sSub && isComp) {
+          sSub.completed = true;
+          if (Array.isArray(sSub.ideas)) {
+            sSub.ideas.forEach(function (i) { if (i) i.completed = true; });
+          }
+        }
+        return sSub;
+      }).filter(Boolean);
+
       return {
         id: t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
         text: (t.text || '').trim() || 'Untitled Task',
@@ -2283,8 +2303,8 @@
         completedAt: t.completedAt || null,
         status: status,
         expanded: !!t.expanded,
-        ideas: rawIdeas.map(sanitizeTaskIdea).filter(Boolean),
-        subtasks: rawSubtasks.map(sanitizeSubtask).filter(Boolean),
+        ideas: sanitizedIdeas,
+        subtasks: sanitizedSubtasks,
         createdDate: t.createdDate || new Date().toISOString(),
         updatedAt: t.updatedAt || new Date().toISOString()
       };
@@ -4982,8 +5002,8 @@
                 + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed (+2 Evidence Points)') + '">'
                 + (isSubDone ? '✓' : '')
                 + '</button>'
-                + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
-                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas + '/' + stTotalIdeas + ' Active') : '+ Idea')
+                + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
+                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? (stTotalIdeas + '/' + stTotalIdeas + ' Completed') : (stActiveIdeas + '/' + stTotalIdeas + ' Active')) : '+ Idea')
                 + '</button>'
                 + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
                 + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">✓ DONE (+2 PTS)</span>' : '')
@@ -5077,8 +5097,8 @@
         + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
         + (task.completed ? '✓' : '')
         + '</button>'
-        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid ' + (mainTotalIdeas > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;flex-shrink:0" title="Main Task Ideas">'
-        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas + '/' + mainTotalIdeas + ' Active') : '+ Idea')
+        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;flex-shrink:0" title="Main Task Ideas">'
+        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? (mainTotalIdeas + '/' + mainTotalIdeas + ' Completed') : (mainActiveIdeas + '/' + mainTotalIdeas + ' Active')) : '+ Idea')
         + '</button>'
         + '<div style="display:flex;flex-direction:column;gap:2px;cursor:pointer;flex:1" onclick="toggleTaskExpanded(\'' + task.id + '\')" title="' + (isExpanded ? 'Click to collapse subtasks' : 'Click to expand subtasks') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
