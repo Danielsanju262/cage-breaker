@@ -1531,13 +1531,14 @@
     .loop-circle-container {
       position: relative;
       width: 100%;
-      max-width: 320px;
-      height: 250px;
+      max-width: 340px;
+      height: 260px;
       margin: 8px auto;
       display: flex;
       align-items: center;
       justify-content: center;
       user-select: none;
+      box-sizing: border-box;
     }
 
     .circle-step-node {
@@ -1547,15 +1548,18 @@
       background: linear-gradient(135deg, rgba(24, 34, 58, 0.95), rgba(15, 23, 42, 0.98));
       border: 1.5px solid rgba(99, 102, 241, 0.5);
       color: #f1f5f9;
-      padding: 4px 7px;
+      padding: 4px 8px;
       border-radius: 8px;
       box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(99, 102, 241, 0.2);
       transition: all 0.2s ease;
       font-size: 10.5px;
       line-height: 1.25;
-      max-width: 96px;
-      word-break: break-word;
-      overflow-wrap: break-word;
+      max-width: 115px;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      word-wrap: normal !important;
+      hyphens: none !important;
+      white-space: normal;
       box-sizing: border-box;
     }
 
@@ -1568,13 +1572,19 @@
 
     @media (max-width: 480px) {
       .loop-circle-container {
-        height: 235px;
-        max-width: 290px;
+        height: 260px;
+        max-width: 100%;
+        margin: 6px auto;
       }
       .circle-step-node {
-        max-width: 84px !important;
-        padding: 3px 5px !important;
+        max-width: 110px !important;
+        padding: 4px 6px !important;
         font-size: 9.5px !important;
+        line-height: 1.25 !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
+        word-wrap: normal !important;
+        hyphens: none !important;
       }
     }
 
@@ -2227,7 +2237,7 @@
         text: (t.text || '').trim() || 'Untitled Task',
         completed: !!t.completed,
         completedAt: t.completedAt || null,
-        expanded: !!t.expanded,
+        expanded: false,
         ideas: rawIdeas.map(sanitizeTaskIdea).filter(Boolean),
         createdDate: t.createdDate || new Date().toISOString(),
         updatedAt: t.updatedAt || new Date().toISOString()
@@ -3449,6 +3459,62 @@
       });
     };
 
+    window.taskTouchFromIdx = null;
+    window.taskTouchCurrentTargetIdx = null;
+
+    window.onTaskTouchStart = function (e, idx) {
+      window.taskTouchFromIdx = idx;
+      window.taskTouchCurrentTargetIdx = null;
+      var card = document.getElementById('task-card-' + idx);
+      if (card) {
+        card.style.opacity = '0.5';
+        card.style.borderColor = '#3b82f6';
+      }
+    };
+
+    window.onTaskTouchMove = function (e) {
+      if (window.taskTouchFromIdx === null) return;
+      if (e.touches && e.touches.length > 0) {
+        var touch = e.touches[0];
+        var el = document.elementFromPoint(touch.clientX, touch.clientY);
+        var card = el ? el.closest('.task-card') : null;
+
+        document.querySelectorAll('.task-card').forEach(function (c) {
+          c.style.borderTop = '';
+          c.style.boxShadow = '';
+        });
+
+        if (card) {
+          var targetIdx = parseInt(card.getAttribute('data-task-idx'), 10);
+          if (!isNaN(targetIdx) && targetIdx !== window.taskTouchFromIdx) {
+            window.taskTouchCurrentTargetIdx = targetIdx;
+            card.style.borderTop = '2px solid #3b82f6';
+            card.style.boxShadow = '0 0 14px rgba(59,130,246,0.6)';
+            if (e.cancelable) e.preventDefault();
+          }
+        }
+      }
+    };
+
+    window.onTaskTouchEnd = function (e) {
+      var fromIdx = window.taskTouchFromIdx;
+      var toIdx = window.taskTouchCurrentTargetIdx;
+
+      document.querySelectorAll('.task-card').forEach(function (c) {
+        c.style.opacity = '';
+        c.style.borderColor = '';
+        c.style.borderTop = '';
+        c.style.boxShadow = '';
+      });
+
+      window.taskTouchFromIdx = null;
+      window.taskTouchCurrentTargetIdx = null;
+
+      if (fromIdx !== null && toIdx !== null && !isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
+        window.moveTask(fromIdx, toIdx);
+      }
+    };
+
     window.moveTask = function (fromIdx, toIdx) {
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
@@ -3709,7 +3775,11 @@
       if (!id || !Array.isArray(id.tasks)) return;
       var task = id.tasks.find(function (t) { return t.id === taskId; });
       if (!task) return;
-      task.expanded = !task.expanded;
+      var willExpand = !task.expanded;
+      id.tasks.forEach(function (t) {
+        t.expanded = false;
+      });
+      task.expanded = willExpand;
       save(true);
       render();
     };
@@ -3787,7 +3857,9 @@
       };
 
       task.ideas.push(newIdea);
-      task.expanded = true;
+      id.tasks.forEach(function (t) {
+        t.expanded = (t.id === taskId);
+      });
       task.updatedAt = new Date().toISOString();
 
       save(true);
@@ -3848,7 +3920,7 @@
 
     function renderTaskCard(task, tIdx) {
       var ideas = Array.isArray(task.ideas) ? task.ideas : [];
-      var isExpanded = !!(task.expanded || (window.expandedTaskIds && window.expandedTaskIds[task.id]));
+      var isExpanded = !!task.expanded;
       var isEditingTask = window.editingTaskId === task.id;
 
       if (isEditingTask) {
@@ -3909,10 +3981,10 @@
           + '</div>';
       }
 
-      return '<div id="task-card-' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="margin-bottom:12px;transition:box-shadow 0.2s, border-color 0.2s" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="margin-bottom:12px;transition:box-shadow 0.2s, border-color 0.2s" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
         + '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">'
-        + '<span style="cursor:grab;user-select:none;font-size:16px;color:#64748b;padding:0 4px;line-height:1" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')">⠿</span>'
+        + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:4px 8px;line-height:1;touch-action:none;display:inline-flex;align-items:center" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
         + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
         + (task.completed ? '✓' : '')
         + '</button>'
@@ -6059,7 +6131,7 @@
       var cy = 125;
       var R = N >= 5 ? 65 : (N === 4 ? 68 : 72);
       var radiusPct = N >= 5 ? 31 : (N === 4 ? 30 : 28);
-      var nodeMaxW = N >= 5 ? 90 : (N === 4 ? 96 : 105);
+      var nodeMaxW = N >= 5 ? 115 : (N === 4 ? 120 : 125);
 
       // Generate SVG curved clockwise arrows between step nodes
       var svgArrows = '';
@@ -6087,9 +6159,9 @@
         var angle = -Math.PI / 2 + idx * (2 * Math.PI / N);
         var pctX = 50 + radiusPct * Math.cos(angle);
         var pctY = 50 + (radiusPct * 1.05) * Math.sin(angle);
-        return '<div class="loop-step-node circle-step-node" style="position:absolute;left:' + pctX.toFixed(1) + '%;top:' + pctY.toFixed(1) + '%;transform:translate(-50%,-50%);max-width:' + nodeMaxW + 'px;text-align:center;z-index:2">'
+        return '<div class="loop-step-node circle-step-node" style="position:absolute;left:' + pctX.toFixed(1) + '%;top:' + pctY.toFixed(1) + '%;transform:translate(-50%,-50%);max-width:' + nodeMaxW + 'px;text-align:center;z-index:2;word-break:normal!important;overflow-wrap:normal!important;word-wrap:normal!important;hyphens:none!important">'
           + '<span class="loop-step-num" style="width:17px;height:17px;font-size:9.5px;flex-shrink:0">' + (idx + 1) + '</span>'
-          + '<span style="font-size:10.5px;font-weight:600;line-height:1.25">' + e(step) + '</span>'
+          + '<span style="font-size:10.5px;font-weight:600;line-height:1.25;word-break:normal!important;overflow-wrap:normal!important;word-wrap:normal!important;hyphens:none!important">' + e(step) + '</span>'
           + '</div>';
       }).join('');
 
