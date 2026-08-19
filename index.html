@@ -2286,6 +2286,9 @@
     function sanitizeIdentity(id) {
       if (!id || typeof id !== 'object') return null;
       id.targetEvent = (id.targetEvent || '').trim();
+      id.targetEventTime = id.targetEventTime || null;
+      id.achieved = !!id.achieved;
+      id.achievedAt = id.achievedAt || null;
       id.logs = Array.isArray(id.logs) ? id.logs : [];
       id.reflections = Array.isArray(id.reflections) ? id.reflections : [];
       id.habits = Array.isArray(id.habits) ? id.habits : [];
@@ -3167,15 +3170,136 @@
     // ═══════════════════════════════════════════════
     // HUB
     // ═══════════════════════════════════════════════
+    function formatDatetimeLocal(isoStr) {
+      if (!isoStr) return '';
+      var d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '';
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function renderTargetEventCountdown(id) {
+      if (!id || !id.targetEvent || !id.targetEvent.trim()) return '';
+      var name = id.targetEvent.trim();
+      var timeStr = id.targetEventTime;
+      if (!timeStr) {
+        return '<div style="font-size:12px;color:#fbbf24;margin-bottom:8px;font-weight:600">🎯 Target: "' + e(name) + '"</div>';
+      }
+
+      var targetDate = new Date(timeStr);
+      if (isNaN(targetDate.getTime())) {
+        return '<div style="font-size:12px;color:#fbbf24;margin-bottom:8px;font-weight:600">🎯 Target: "' + e(name) + '"</div>';
+      }
+
+      var now = new Date();
+      var diffMs = targetDate.getTime() - now.getTime();
+      var isPast = diffMs <= 0;
+      var absDiffMs = Math.abs(diffMs);
+
+      var totalMinutes = Math.floor(absDiffMs / (1000 * 60));
+      var hours = Math.floor(totalMinutes / 60);
+      var minutes = totalMinutes % 60;
+
+      var formattedHours = hours.toLocaleString();
+      var countdownText = isPast
+        ? (formattedHours + 'h ' + minutes + 'm past target')
+        : (formattedHours + 'h ' + minutes + 'm left');
+
+      // DYNAMIC VISUAL SCALING: Lower hours left = BIGGER & MORE PROMINENT!
+      var scaleStyle = 'font-size:12px;padding:3px 8px;border-radius:6px;';
+      if (isPast) {
+        scaleStyle = 'font-size:13px;font-weight:800;padding:5px 10px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);border-radius:8px;';
+      } else if (hours <= 24) {
+        // Final 24 hours - Maximum prominence & glow
+        scaleStyle = 'font-size:16px;font-weight:800;padding:6px 14px;background:linear-gradient(135deg, rgba(245,158,11,0.3), rgba(217,119,6,0.35));color:#fbbf24;border:1.5px solid #f59e0b;border-radius:10px;box-shadow:0 0 14px rgba(245,158,11,0.4);letter-spacing:0.3px;';
+      } else if (hours <= 72) {
+        // 3 days left
+        scaleStyle = 'font-size:14.5px;font-weight:700;padding:5px 11px;background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.45);border-radius:8px;';
+      } else if (hours <= 168) {
+        // 1 week left
+        scaleStyle = 'font-size:13px;font-weight:700;padding:4px 9px;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);border-radius:6px;';
+      } else {
+        // > 1 week
+        scaleStyle = 'font-size:12px;font-weight:600;padding:3px 8px;background:rgba(255,255,255,0.05);color:#fbbf24;border:1px solid rgba(245,158,11,0.2);border-radius:6px;';
+      }
+
+      return '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="font-size:12.5px;color:#cbd5e1;font-weight:600">🎯 Target: "' + e(name) + '"</span>'
+        + '<span style="' + scaleStyle + '">⏱️ ' + countdownText + '</span>'
+        + '</div>';
+    }
+
+    window.toggleAchievedIdentity = function (id) {
+      var targetId = typeof id === 'string' ? id : (S ? S.currentId : null);
+      if (!targetId || !Array.isArray(S.identities)) return;
+      var identity = S.identities.find(function (item) { return item && item.id === targetId; });
+      if (!identity) return;
+
+      var willAchieve = !identity.achieved;
+
+      showCustomConfirm({
+        title: willAchieve ? '🏆 Achieve & Archive Identity?' : '🔓 Re-open Live Identity?',
+        message: willAchieve
+          ? 'Congratulations on achieving your identity! It will be moved to the Identities Achieved section.'
+          : 'Re-activate this identity and move it back up to Live Identities?',
+        confirmText: willAchieve ? 'Yes, Mark Achieved 🏆' : 'Yes, Re-open Live 🔓',
+        confirmBg: willAchieve ? 'linear-gradient(135deg, #eab308, #ca8a04)' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+        onConfirm: function () {
+          identity.achieved = willAchieve;
+          identity.achievedAt = willAchieve ? new Date().toISOString() : null;
+          identity.updatedAt = new Date().toISOString();
+          save(true);
+          render();
+        }
+      });
+    };
+
+    // ═══════════════════════════════════════════════
+    // HUB
+    // ═══════════════════════════════════════════════
     function rHub(a) {
       const rawIds = (S && Array.isArray(S.identities)) ? S.identities : [];
       const ids = rawIds.map(sanitizeIdentity).filter(Boolean);
       S.identities = ids;
 
-      const sorted = [...ids].sort((a, b) => {
+      const liveIds = ids.filter(function (id) { return !id.achieved; });
+      const achievedIds = ids.filter(function (id) { return !!id.achieved; });
+
+      const sortedLive = [...liveIds].sort((a, b) => {
         const al = loggedToday(a) ? 1 : 0, bl = loggedToday(b) ? 1 : 0;
         return al - bl;
       });
+
+      function renderCard(id) {
+        const st = getStage(id);
+        const streak = getStreak(id);
+        const logged = loggedToday(id);
+        const days = daysOld(id);
+        return `<div class="icard ${logged ? 'done' : 'needs'}" onclick="openIdentity('${id.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div style="flex:1;padding-right:8px">
+            <p style="font-family:Georgia,serif;font-size:16.5px;font-weight:600;color:#f8fafc;line-height:1.45;margin-bottom:6px">
+              ${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>' : ''}
+              ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:800">🏆 ACHIEVED</span>' : ''}
+              ${e(id.newIdentity || '')}
+            </p>
+            ${renderTargetEventCountdown(id)}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end" onclick="event.stopPropagation()">
+            <button onclick="toggleAchievedIdentity('${id.id}')" style="background:${id.achieved ? 'rgba(59,130,246,0.15)' : 'rgba(234,179,8,0.15)'};border:1px solid ${id.achieved ? 'rgba(59,130,246,0.4)' : 'rgba(234,179,8,0.4)'};color:${id.achieved ? '#93c5fd' : '#fde047'};font-size:11.5px;padding:5px 9px;border-radius:6px;cursor:pointer;font-weight:700;white-space:nowrap" title="${id.achieved ? 'Re-open live identity' : 'Archive & mark identity achieved'}">
+              ${id.achieved ? '🔓 Re-open' : '🏆 Achieve'}
+            </button>
+            <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #374151;color:#d1d5db;font-size:12px;padding:5px 9px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
+            <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;padding:5px 9px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
+          </div>
+        </div>
+        <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:4px">
+          <span class="sm" style="color:#d1d5db">${st.name} · Day ${days} · ${id.logs.length} proofs${streak > 1 ? ' · ' + streak + '-day streak' : ''}</span>
+          ${logged ? '<span class="sm" style="color:#4ede80;font-weight:600">✓ practiced today</span>' : '<span class="sm" style="color:#fbbf24;font-weight:600">practice today →</span>'}
+        </div>
+      </div>`;
+      }
 
       a.innerHTML = `<div class="fade">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
@@ -3184,36 +3308,26 @@
         <span class="sm cloud-sync-indicator" style="color:#4ede80;font-weight:600;margin-right:4px">🟢 Live Connected</span>
         ${!isPWAStandalone() ? '<button class="b bb bs" onclick="triggerPWAInstall()" style="font-size:11px;padding:5px 10px;background:rgba(245,158,11,0.15);border-color:#f59e0b;color:#fbbf24;font-weight:700" title="Download & Install App on your device">📲 Install App</button>' : ''}
         <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">🔄 Sync</button>
-        <button class="b bb bs" onclick="exportDataJSON()" style="font-size:11px;padding:5px 10px" title="Backup JSON">📥 Backup</button>
-        <button class="b bb bs" onclick="triggerImportJSON()" style="font-size:11px;padding:5px 10px" title="Restore JSON">📤 Restore</button>
-        <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="importDataJSONFile(event)"/>
       </div>
     </div>
-    <p class="d">${ids.length === 0 ? 'You haven\'t created any cards yet. Start by creating one below.' : ids.length + ' card' + (ids.length > 1 ? 's' : '') + ' / identities'}</p>
-    ${ids.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">\u26a1 Quick add evidence</button></div>' : ''}
-    ${sorted.map(id => {
-        const st = getStage(id);
-        const streak = getStreak(id);
-        const logged = loggedToday(id);
-        const days = daysOld(id);
-        return `<div class="icard ${logged ? 'done' : 'needs'}" onclick="openIdentity('${id.id}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div style="flex:1;padding-right:8px">
-            <p style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:${logged ? '#9ca3af' : '#4ede80'};line-height:1.45;margin-bottom:6px">${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;vertical-align:middle;margin-right:6px;font-weight:700">HABIT</span>' : ''}${e(id.newIdentity || '')}</p>
-            ${id.targetEvent && id.targetEvent.trim() ? `<div style="font-size:12px;color:#fbbf24;margin-bottom:8px;font-weight:600">⏳ Target: "${e(id.targetEvent.trim())}"</div>` : ''}
-          </div>
-          <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
-            <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #374151;color:#d1d5db;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
-            <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
-          </div>
+    <p class="d">${ids.length === 0 ? 'You haven\'t created any cards yet. Start by creating one below.' : ids.length + ' total identity cards (' + sortedLive.length + ' live, ' + achievedIds.length + ' achieved)'}</p>
+    ${sortedLive.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">⚡ Quick add evidence</button></div>' : ''}
+    
+    ${sortedLive.length > 0 ? '<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#4ede80;text-transform:uppercase;margin:12px 0 10px 0">🔥 LIVE IDENTITIES (' + sortedLive.length + ')</div>' : ''}
+    ${sortedLive.length === 0 && achievedIds.length === 0 ? '<p class="d">No active identities.</p>' : sortedLive.map(renderCard).join('')}
+
+    ${achievedIds.length > 0 ? `
+      <div style="margin-top:28px;padding-top:20px;border-top:1px dashed rgba(234,179,8,0.3)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:18px">🏆</span>
+          <h3 style="margin:0;font-size:16px;color:#fde047;letter-spacing:0.5px">IDENTITIES ACHIEVED (${achievedIds.length})</h3>
         </div>
-        <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:4px">
-          <span class="sm" style="color:#d1d5db">${st.name} · Day ${days} · ${id.logs.length} proofs${streak > 1 ? ' · ' + streak + '-day streak' : ''}</span>
-          ${logged ? '<span class="sm" style="color:#4ede80;font-weight:600">✓ practiced today</span>' : '<span class="sm" style="color:#fbbf24;font-weight:600">practice today →</span>'}
-        </div>
-      </div>`}).join('')}
-    <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+        <p class="d" style="font-size:12px;margin-bottom:12px;color:#9ca3af">Completed identity standards that you have successfully mastered.</p>
+        ${achievedIds.map(renderCard).join('')}
+      </div>
+    ` : ''}
+
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
       <button class="b bp" onclick="go('quick-create')" style="flex:1;min-width:200px;text-align:center">+ Create New Card / Identity</button>
     </div>
   </div>`;
@@ -4633,6 +4747,60 @@
         + '</div>';
     }
 
+    function renderTargetEventCountdownDetail(id) {
+      if (!id || !id.targetEvent || !id.targetEvent.trim()) return '';
+      var name = id.targetEvent.trim();
+      var timeStr = id.targetEventTime;
+
+      var countdownBadge = '';
+      if (timeStr) {
+        var targetDate = new Date(timeStr);
+        if (!isNaN(targetDate.getTime())) {
+          var now = new Date();
+          var diffMs = targetDate.getTime() - now.getTime();
+          var isPast = diffMs <= 0;
+          var absDiffMs = Math.abs(diffMs);
+          var totalMinutes = Math.floor(absDiffMs / (1000 * 60));
+          var hours = Math.floor(totalMinutes / 60);
+          var minutes = totalMinutes % 60;
+          var formattedHours = hours.toLocaleString();
+          var countdownText = isPast
+            ? (formattedHours + 'h ' + minutes + 'm past target')
+            : (formattedHours + 'h ' + minutes + 'm left');
+
+          var scaleStyle = 'font-size:13px;padding:4px 10px;border-radius:6px;';
+          if (isPast) {
+            scaleStyle = 'font-size:14px;font-weight:800;padding:6px 12px;background:rgba(239,68,68,0.2);color:#fca5a5;border:1.5px solid rgba(239,68,68,0.5);border-radius:8px;';
+          } else if (hours <= 24) {
+            scaleStyle = 'font-size:18px;font-weight:800;padding:8px 16px;background:linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.4));color:#fbbf24;border:2px solid #f59e0b;border-radius:10px;box-shadow:0 0 18px rgba(245,158,11,0.45);letter-spacing:0.4px;';
+          } else if (hours <= 72) {
+            scaleStyle = 'font-size:16px;font-weight:800;padding:6px 14px;background:rgba(245,158,11,0.25);color:#fbbf24;border:1.5px solid rgba(245,158,11,0.5);border-radius:8px;';
+          } else if (hours <= 168) {
+            scaleStyle = 'font-size:14px;font-weight:700;padding:5px 12px;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:7px;';
+          } else {
+            scaleStyle = 'font-size:13px;font-weight:600;padding:4px 10px;background:rgba(255,255,255,0.06);color:#fbbf24;border:1px solid rgba(245,158,11,0.25);border-radius:6px;';
+          }
+
+          countdownBadge = '<div style="margin-top:8px"><span style="' + scaleStyle + '">⏱️ ' + countdownText + '</span></div>';
+        }
+      }
+
+      return '<div style="margin-top:16px;padding:16px 18px;background:linear-gradient(135deg,rgba(40,28,10,0.8),rgba(20,16,8,0.95));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 15px rgba(245,158,11,0.12)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+        + '<span style="font-size:17px;line-height:1">⏳</span>'
+        + '<span style="font-size:11px;color:#fbbf24;font-weight:800;letter-spacing:1.2px;text-transform:uppercase">MISSION TARGET / ANCHOR EVENT</span>'
+        + '</div>'
+        + '<div style="display:flex;gap:6px;align-items:center">'
+        + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;padding:2px 8px;color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:4px;background:rgba(245,158,11,0.1)" title="Edit target event">✏️ Edit Event</button>'
+        + '<button class="bg" onclick="toggleSectionVisibility(\'anchor\')" style="font-size:11px;padding:2px 7px;color:#9ca3af;border:1px solid rgba(255,255,255,0.12);border-radius:4px" title="Hide this target event">👁️ Hide</button>'
+        + '</div>'
+        + '</div>'
+        + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:4px 0 2px 0;font-style:italic;letter-spacing:0.2px">"' + e(name) + '"</div>'
+        + countdownBadge
+        + '</div>';
+    }
+
     function renderIdentityView(a, id) {
       if (!id) return go('hub');
       var pts = getEvidencePoints(id);
@@ -4672,6 +4840,7 @@
         + switcherHtml
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<button onclick="toggleAchievedIdentity(\'' + id.id + '\')" style="background:' + (id.achieved ? 'rgba(59,130,246,0.15)' : 'rgba(234,179,8,0.15)') + ';border:1px solid ' + (id.achieved ? 'rgba(59,130,246,0.4)' : 'rgba(234,179,8,0.4)') + ';color:' + (id.achieved ? '#93c5fd' : '#fde047') + ';font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap">' + (id.achieved ? '🔓 Re-open Identity' : '🏆 Mark Achieved') + '</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:7px 12px;white-space:nowrap">⚙️ Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:7px 12px;color:#fbbf24;font-weight:600;white-space:nowrap">All Cards →</button>'
         + '</div>'
@@ -4719,21 +4888,7 @@
           + '<span>⏳ Mission Target Event (Hidden)</span>'
           + '<button class="bg" onclick="toggleSectionVisibility(\'anchor\')" style="font-size:11px;color:#fbbf24;font-weight:700">Show Event ▾</button>'
           + '</div>'
-        ) : (id.targetEvent && id.targetEvent.trim() ? (
-          '<div style="margin-top:16px;padding:16px 18px;background:linear-gradient(135deg,rgba(40,28,10,0.8),rgba(20,16,8,0.95));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 15px rgba(245,158,11,0.12)">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap">'
-          + '<div style="display:flex;align-items:center;gap:6px">'
-          + '<span style="font-size:17px;line-height:1">⏳</span>'
-          + '<span style="font-size:11px;color:#fbbf24;font-weight:800;letter-spacing:1.2px;text-transform:uppercase">MISSION TARGET / ANCHOR EVENT</span>'
-          + '</div>'
-          + '<div style="display:flex;gap:6px;align-items:center">'
-          + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;padding:2px 8px;color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:4px;background:rgba(245,158,11,0.1)" title="Edit target event">✏️ Edit Event</button>'
-          + '<button class="bg" onclick="toggleSectionVisibility(\'anchor\')" style="font-size:11px;padding:2px 7px;color:#9ca3af;border:1px solid rgba(255,255,255,0.12);border-radius:4px" title="Hide this target event">👁️ Hide</button>'
-          + '</div>'
-          + '</div>'
-          + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:4px 0 2px 0;font-style:italic;letter-spacing:0.2px">"' + e(id.targetEvent.trim()) + '"</div>'
-          + '</div>'
-        ) : (
+        ) : (id.targetEvent && id.targetEvent.trim() ? renderTargetEventCountdownDetail(id) : (
           '<div style="margin-top:14px;padding-top:10px 14px;background:rgba(255,255,255,0.02);border:1px dashed rgba(245,158,11,0.25);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:8px">'
           + '<span style="font-size:12px;color:#9ca3af">⏳ No target milestone event set yet.</span>'
           + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;color:#fbbf24;font-weight:600">+ Set Anchor Event</button>'
@@ -5099,6 +5254,10 @@
       <label class="lb" style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:4px;display:block">2. Target Milestone / Anchor Event (Optional Motivator)</label>
       <p class="h" style="font-size:12px;margin-bottom:6px;color:#9ca3af">The event or moment before which this identity must be achieved.</p>
       <textarea rows="2" id="mg-te" placeholder="e.g., Before product launch or sister arrives from Dubai..." style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.25);color:#fef3c7;box-sizing:border-box">${esc(id.targetEvent || '')}</textarea>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(245,158,11,0.06);padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.2)">
+        <label style="font-size:12.5px;font-weight:700;color:#fbbf24">⏱️ Target Date & Time:</label>
+        <input type="datetime-local" id="mg-tet" value="${formatDatetimeLocal(id.targetEventTime)}" style="background:#181824;border:1px solid rgba(245,158,11,0.4);color:#ffffff;padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit" />
+      </div>
     </div>
 
     <!-- Save Button -->
@@ -6041,11 +6200,13 @@
 
       const ni = $('#mg-ni')?.value?.trim();
       const te = $('#mg-te')?.value?.trim();
+      const tet = $('#mg-tet')?.value;
       const av = $('#mg-av')?.value?.trim();
       const oi = $('#mg-oi')?.value?.trim();
 
       if (ni) id.newIdentity = ni;
       if (te !== undefined) id.targetEvent = te;
+      if (tet !== undefined) id.targetEventTime = tet ? new Date(tet).toISOString() : null;
       if (av !== undefined) id.antiVisionText = av;
       if (oi !== undefined) id.oldIdentity = oi;
 
@@ -6305,8 +6466,12 @@
 
         + '<div style="margin-top:14px">'
         + '<label class="lb" style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:6px;display:block">2. Target Event / Milestone (Optional Motivator)</label>'
-        + '<p class="h" style="font-size:12px;margin-bottom:6px;color:#9ca3af">What is the event before which this must be achieved? (e.g., <em>"I want to tell this before my sister arrives from Dubai tomorrow"</em> or <em>"Before product launch"</em>)</p>'
+        + '<p class="h" style="font-size:12px;margin-bottom:6px;color:#9ca3af">What is the event before which this must be achieved? (e.g., <em>"I want to tell this before my sister arrives from Dubai tomorrow"</em>)</p>'
         + '<textarea id="one-identity-event" rows="2" placeholder=\'e.g., "I want to tell this before my sister is coming from Dubai tomorrow"\' style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.25);color:#fef3c7;box-sizing:border-box"></textarea>'
+        + '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(245,158,11,0.06);padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.2)">'
+        + '<label style="font-size:12.5px;font-weight:700;color:#fbbf24">⏱️ Target Date & Time:</label>'
+        + '<input type="datetime-local" id="one-identity-event-time" style="background:#181824;border:1px solid rgba(245,158,11,0.4);color:#ffffff;padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit" />'
+        + '</div>'
         + '</div>'
 
         + '<div style="margin-top:22px">'
@@ -6325,6 +6490,7 @@
     window.createOneLineIdentity = function () {
       var raw = $('#one-identity-input')?.value?.trim();
       var rawEvent = $('#one-identity-event')?.value?.trim() || '';
+      var rawEventTime = $('#one-identity-event-time')?.value || null;
       if (!raw) {
         showCustomAlert('Please write your identity statement first before saving.', 'Identity Statement Required', '⚠️');
         var inp = document.getElementById('one-identity-input');
@@ -6343,6 +6509,9 @@
         antiVisionText: 'Living beneath my potential and repeating the same excuses for another decade.',
         newIdentity: name,
         targetEvent: rawEvent,
+        targetEventTime: rawEventTime ? new Date(rawEventTime).toISOString() : null,
+        achieved: false,
+        achievedAt: null,
         crackAction: name,
         actions: [name],
         createdDate: new Date().toISOString(),
