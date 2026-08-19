@@ -650,10 +650,18 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
+    h1, h2, h3, h4, h5, h6, .task-title, .section-title, .modal-title {
+      word-break: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.35;
+    }
+
     .task-title {
       font-size: 13.5px;
       font-weight: 600;
       color: var(--text-primary);
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .task-done .task-title {
@@ -1576,8 +1584,24 @@
       if (shouldPreserve) {
         window.scrollTo(sx, sy);
       }
+      adjustAllTextareaHeights();
     }
     window.render = render;
+
+    function adjustAllTextareaHeights() {
+      setTimeout(function () {
+        var tas = document.querySelectorAll('textarea.auto-expand-input');
+        tas.forEach(function (ta) {
+          ta.style.height = 'auto';
+          var minH = ta.getAttribute('data-min-h') || '22px';
+          if (ta.value && ta.value.trim()) {
+            ta.style.height = ta.scrollHeight + 'px';
+          } else {
+            ta.style.height = minH;
+          }
+        });
+      }, 0);
+    }
 
     window.closeAllTaskMenus = function () {
       var allMenus = document.querySelectorAll('.task-dropdown-menu');
@@ -4247,7 +4271,7 @@
         return '<div class="task-card" style="border-color:#3b82f6;background:rgba(59,130,246,0.06);margin-bottom:12px">'
           + '<div style="font-size:12px;font-weight:700;color:#93c5fd;margin-bottom:8px">EDIT TASK</div>'
           + '<div style="margin-bottom:10px">'
-          + '<input type="text" id="edit-task-input-' + task.id + '" value="' + esc(task.text) + '" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key===\'Enter\')saveEditTask(\'' + task.id + '\')" />'
+          + '<textarea rows="1" id="edit-task-input-' + task.id + '" onfocus="this.style.height=\'32px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'32px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;height:32px;min-height:32px">' + esc(task.text) + '</textarea>'
           + '</div>'
           + '<div style="display:flex;justify-content:flex-end;gap:6px">'
           + '<button class="bg" onclick="cancelEditTask()" style="font-size:11px;padding:4px 10px">Cancel</button>'
@@ -4277,10 +4301,10 @@
               var isSubDone = st.completed || task.completed;
               var isEditingSub = window.editingSubtaskKey === (task.id + '_' + st.id);
               if (isEditingSub) {
-                return '<div style="display:flex;gap:6px;align-items:center;background:#111827;padding:6px 10px;border-radius:8px;border:1px solid #3b82f6">'
-                  + '<input type="text" id="edit-subtask-input-' + st.id + '" value="' + esc(st.text) + '" style="flex:1;background:#0f172a;border:1px solid #334155;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')saveEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" />'
-                  + '<button class="bg" onclick="cancelEditSubtask()" style="font-size:11px;padding:4px 8px">Cancel</button>'
-                  + '<button class="b bp bs" onclick="saveEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff">Save</button>'
+                return '<div style="display:flex;gap:6px;align-items:flex-start;background:#111827;padding:6px 10px;border-radius:8px;border:1px solid #3b82f6">'
+                  + '<textarea rows="1" id="edit-subtask-input-' + st.id + '" onfocus="this.style.height=\'28px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'28px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" style="flex:1;background:#0f172a;border:1px solid #334155;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;height:28px;min-height:28px">' + esc(st.text) + '</textarea>'
+                  + '<button class="bg" onclick="cancelEditSubtask()" style="font-size:11px;padding:4px 8px;align-self:center">Cancel</button>'
+                  + '<button class="b bp bs" onclick="saveEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;align-self:center">Save</button>'
                   + '</div>';
               }
 
@@ -4290,20 +4314,20 @@
               var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
 
               var subtaskInputsHtml = (curSubStatus === 'in_process' && !isSubDone) ? (
-                '<div style="display:flex;gap:6px;align-items:center;margin-top:4px;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);flex-wrap:wrap">'
-                + '<div style="display:flex;align-items:center;gap:4px;flex:1;min-width:140px;background:rgba(15,23,42,0.6);padding:2px 6px;border-radius:6px;border:1px solid rgba(147,197,253,0.2)">'
-                + '<span style="font-size:10.5px;font-weight:700;color:#60a5fa;white-space:nowrap">Status:</span>'
-                + '<input type="text" value="' + esc(st.doingNow || '') + '" placeholder="Status..." oninput="updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:2px 0" />'
+                '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:4px;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);flex-wrap:wrap">'
+                + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:rgba(15,23,42,0.6);padding:3px 6px;border-radius:6px;border:1px solid rgba(147,197,253,0.25);box-sizing:border-box">'
+                + '<span style="font-size:10.5px;font-weight:700;color:#60a5fa;white-space:nowrap;flex-shrink:0;margin-top:1px">Status:</span>'
+                + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="Status..." onfocus="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.doingNow || '') + '</textarea>'
                 + '</div>'
-                + '<span style="color:#64748b;font-size:10px;font-weight:700">➔</span>'
-                + '<div style="display:flex;align-items:center;gap:4px;flex:1;min-width:140px;background:rgba(15,23,42,0.6);padding:2px 6px;border-radius:6px;border:1px solid rgba(251,191,36,0.2)">'
-                + '<span style="font-size:10.5px;font-weight:700;color:#fbbf24;white-space:nowrap">Next:</span>'
-                + '<input type="text" value="' + esc(st.whatNext || '') + '" placeholder="Next step..." oninput="updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:2px 0" />'
+                + '<span style="color:#64748b;font-size:10px;font-weight:700;align-self:center">➔</span>'
+                + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:rgba(15,23,42,0.6);padding:3px 6px;border-radius:6px;border:1px solid rgba(251,191,36,0.25);box-sizing:border-box">'
+                + '<span style="font-size:10.5px;font-weight:700;color:#fbbf24;white-space:nowrap;flex-shrink:0;margin-top:1px">Next:</span>'
+                + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="Next step..." onfocus="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.whatNext || '') + '</textarea>'
                 + (!st.nextTargetTime ? renderNextTimePill('subtask', task.id, st.id, null) : '')
                 + '</div>'
                 + '</div>'
               ) : (isSubDone ? ((st.doingNow || st.whatNext) ? (
-                '<div style="display:flex;gap:12px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#94a3b8;flex-wrap:wrap;align-items:center">'
+                '<div style="display:flex;gap:12px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#94a3b8;flex-wrap:wrap;align-items:center;word-break:break-word;white-space:pre-wrap">'
                 + (st.doingNow ? '<span><strong style="color:#60a5fa">Status:</strong> <em>' + e(st.doingNow) + '</em></span>' : '')
                 + (st.doingNow && st.whatNext ? '<span style="color:#64748b">➔</span>' : '')
                 + (st.whatNext ? '<span><strong style="color:#fbbf24">Next:</strong> <em>' + e(st.whatNext) + '</em></span>' : '')
@@ -4368,20 +4392,20 @@
       var ideasCounterBadge = '';
 
       var mainTaskInputsHtml = (curStatus === 'in_process' && !task.completed) ? (
-        '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap">'
-        + '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px;background:rgba(15,23,42,0.6);padding:3px 8px;border-radius:6px;border:1px solid rgba(147,197,253,0.25)">'
-        + '<span style="font-size:11.5px;font-weight:700;color:#60a5fa;white-space:nowrap">Status:</span>'
-        + '<input type="text" value="' + esc(task.doingNow || '') + '" placeholder="Status..." oninput="updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0" />'
+        '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap">'
+        + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:rgba(15,23,42,0.6);padding:4px 8px;border-radius:6px;border:1px solid rgba(147,197,253,0.25);box-sizing:border-box">'
+        + '<span style="font-size:11.5px;font-weight:700;color:#60a5fa;white-space:nowrap;flex-shrink:0;margin-top:2px">Status:</span>'
+        + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Status..." onfocus="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.doingNow || '') + '</textarea>'
         + '</div>'
-        + '<span style="color:#64748b;font-size:12px;font-weight:700">➔</span>'
-        + '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px;background:rgba(15,23,42,0.6);padding:3px 8px;border-radius:6px;border:1px solid rgba(251,191,36,0.25)">'
-        + '<span style="font-size:11.5px;font-weight:700;color:#fbbf24;white-space:nowrap">Next:</span>'
-        + '<input type="text" value="' + esc(task.whatNext || '') + '" placeholder="Next step..." oninput="updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0" />'
+        + '<span style="color:#64748b;font-size:12px;font-weight:700;align-self:center">➔</span>'
+        + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:rgba(15,23,42,0.6);padding:4px 8px;border-radius:6px;border:1px solid rgba(251,191,36,0.25);box-sizing:border-box">'
+        + '<span style="font-size:11.5px;font-weight:700;color:#fbbf24;white-space:nowrap;flex-shrink:0;margin-top:2px">Next:</span>'
+        + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Next step..." onfocus="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.whatNext || '') + '</textarea>'
         + (!task.nextTargetTime ? renderNextTimePill('task', task.id, null, null) : '')
         + '</div>'
         + '</div>'
       ) : (task.completed ? ((task.doingNow || task.whatNext) ? (
-        '<div style="display:flex;gap:12px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);font-size:12px;color:#94a3b8;flex-wrap:wrap;align-items:center">'
+        '<div style="display:flex;gap:12px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);font-size:12px;color:#94a3b8;flex-wrap:wrap;align-items:center;word-break:break-word;white-space:pre-wrap">'
         + (task.doingNow ? '<span style="display:inline-flex;align-items:center;gap:4px"><strong style="color:#60a5fa">Status:</strong> <em>' + e(task.doingNow) + '</em></span>' : '')
         + (task.doingNow && task.whatNext ? '<span style="color:#64748b">➔</span>' : '')
         + (task.whatNext ? '<span style="display:inline-flex;align-items:center;gap:4px"><strong style="color:#fbbf24">Next:</strong> <em>' + e(task.whatNext) + '</em></span>' : '')
@@ -4400,8 +4424,8 @@
       }
 
       return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
-        + '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">'
+        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+        + '<div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:200px">'
         + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:4px 8px;line-height:1;touch-action:none;display:inline-flex;align-items:center" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
         + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
         + (task.completed ? '✓' : '')
