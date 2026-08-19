@@ -2291,6 +2291,17 @@
       id.habits = Array.isArray(id.habits) ? id.habits : [];
       id.tasks = Array.isArray(id.tasks) ? id.tasks.map(sanitizeTask).filter(Boolean) : [];
       id.routineLoops = Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(Boolean) : [];
+
+      var foundExpanded = false;
+      id.tasks.forEach(function (t) {
+        if (t.expanded) {
+          if (!foundExpanded) {
+            foundExpanded = true;
+          } else {
+            t.expanded = false;
+          }
+        }
+      });
       return id;
     }
 
@@ -3941,13 +3952,33 @@
 
     window.deleteTask = function (taskId) {
       var id = getCurRef() || cur();
-      if (!id || !id.tasks) return;
+      if (!id || !Array.isArray(id.tasks)) return;
+      var task = id.tasks.find(function (t) { return t.id === taskId; });
+
       showCustomConfirm({
         title: 'Delete Task?',
-        message: 'Are you sure you want to delete this task and all its associated ideas?',
+        message: 'Are you sure you want to delete this task and all its subtasks and ideas?',
         confirmText: 'Delete Task',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
+          if (task && Array.isArray(id.logs)) {
+            id.logs = id.logs.filter(function (l) { return l.taskId !== taskId; });
+            if (Array.isArray(task.subtasks)) {
+              task.subtasks.forEach(function (st) {
+                id.logs = id.logs.filter(function (l) { return l.subtaskId !== st.id; });
+                if (Array.isArray(st.ideas)) {
+                  st.ideas.forEach(function (i) {
+                    id.logs = id.logs.filter(function (l) { return l.ideaId !== i.id; });
+                  });
+                }
+              });
+            }
+            if (Array.isArray(task.ideas)) {
+              task.ideas.forEach(function (i) {
+                id.logs = id.logs.filter(function (l) { return l.ideaId !== i.id; });
+              });
+            }
+          }
           id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
           save(true);
           render();
@@ -4065,6 +4096,7 @@
       if (!id || !Array.isArray(id.tasks)) return;
       var task = id.tasks.find(function (t) { return t.id === taskId; });
       if (!task || !Array.isArray(task.subtasks)) return;
+      var sub = task.subtasks.find(function (s) { return s.id === subtaskId; });
 
       showCustomConfirm({
         title: 'Delete Subtask?',
@@ -4072,6 +4104,14 @@
         confirmText: 'Delete Subtask',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
+          if (sub && Array.isArray(id.logs)) {
+            id.logs = id.logs.filter(function (l) { return l.subtaskId !== subtaskId; });
+            if (Array.isArray(sub.ideas)) {
+              sub.ideas.forEach(function (i) {
+                id.logs = id.logs.filter(function (l) { return l.ideaId !== i.id; });
+              });
+            }
+          }
           task.subtasks = task.subtasks.filter(function (s) { return s.id !== subtaskId; });
           task.updatedAt = new Date().toISOString();
           save(true);
@@ -5272,9 +5312,49 @@
     // DELETE / EDIT LOGS
     // ═══════════════════════════════════════════════
     window.delLog = function (i) {
-      const id = cur(); if (!id) return;
-      if (i < 0 || i >= id.logs.length) return;
-      id.logs.splice(i, 1); save(); render();
+      const id = getCurRef() || cur(); if (!id) return;
+      if (!Array.isArray(id.logs) || i < 0 || i >= id.logs.length) return;
+      const log = id.logs[i];
+
+      showCustomConfirm({
+        title: 'Delete Evidence Entry?',
+        message: 'Are you sure you want to delete this evidence entry? Points earned from it will be reduced.',
+        confirmText: 'Delete Entry',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (log) {
+            if (log.ideaId && Array.isArray(id.tasks)) {
+              id.tasks.forEach(function (t) {
+                if (Array.isArray(t.ideas)) {
+                  var idea = t.ideas.find(function (iObj) { return iObj.id === log.ideaId; });
+                  if (idea) { idea.completed = false; idea.completedAt = null; }
+                }
+                if (Array.isArray(t.subtasks)) {
+                  t.subtasks.forEach(function (st) {
+                    if (Array.isArray(st.ideas)) {
+                      var idea = st.ideas.find(function (iObj) { return iObj.id === log.ideaId; });
+                      if (idea) { idea.completed = false; idea.completedAt = null; }
+                    }
+                  });
+                }
+              });
+            } else if (log.subtaskId && Array.isArray(id.tasks)) {
+              id.tasks.forEach(function (t) {
+                if (Array.isArray(t.subtasks)) {
+                  var st = t.subtasks.find(function (stObj) { return stObj.id === log.subtaskId; });
+                  if (st) { st.completed = false; st.completedAt = null; }
+                }
+              });
+            } else if (log.taskId && Array.isArray(id.tasks)) {
+              var t = id.tasks.find(function (tObj) { return tObj.id === log.taskId; });
+              if (t) { t.completed = false; t.completedAt = null; }
+            }
+          }
+          id.logs.splice(i, 1);
+          save(true);
+          render();
+        }
+      });
     };
 
     window.editLog = function (i, btnEl) {
@@ -6012,14 +6092,7 @@
       S.creating.actions.splice(i, 1); save(); render();
     };
 
-    // ═══════════════════════════════════════════════
-    // DELETE LOGS
-    // ═══════════════════════════════════════════════
-    window.delLog = function (i) {
-      const id = cur(); if (!id) return;
-      if (i < 0 || i >= id.logs.length) return;
-      id.logs.splice(i, 1); save(); render();
-    };
+
 
     // ═══════════════════════════════════════════════
     // TUG OF WAR VISUAL
