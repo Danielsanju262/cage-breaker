@@ -5032,32 +5032,80 @@
                 + '<button class="bg" onclick="deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:4px" title="Delete subtask">✕</button>'
                 + '</div>'
                 + '</div>'
-                + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04)">'
-                + '<input type="text" value="' + esc(st.doingNow || '') + '" placeholder="⚡ Doing now..." oninput="updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:3px 6px;border-radius:4px;font-size:11px;box-sizing:border-box" />'
-                + '<input type="text" value="' + esc(st.whatNext || '') + '" placeholder="➡️ What next..." oninput="updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:3px 6px;border-radius:4px;font-size:11px;box-sizing:border-box" />'
-                + '</div>'
-                + '</div>';
+      var subtaskInputsHtml = !isSubDone ? (
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04)">'
+        + '<input type="text" value="' + esc(st.doingNow || '') + '" placeholder="⚡ Doing now..." oninput="updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:3px 6px;border-radius:4px;font-size:11px;box-sizing:border-box" />'
+        + '<input type="text" value="' + esc(st.whatNext || '') + '" placeholder="➡️ What next..." oninput="updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:3px 6px;border-radius:4px;font-size:11px;box-sizing:border-box" />'
+        + '</div>'
+      ) : ((st.doingNow || st.whatNext) ? (
+        '<div style="display:flex;gap:12px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#94a3b8;flex-wrap:wrap">'
+        + (st.doingNow ? '<span>⚡ <em>' + e(st.doingNow) + '</em></span>' : '')
+        + (st.whatNext ? '<span>➡️ <em>' + e(st.whatNext) + '</em></span>' : '')
+        + '</div>'
+      ) : '');
+
+      return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;gap:6px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
+        + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed (+2 Evidence Points)') + '">'
+        + (isSubDone ? '✓' : '')
+        + '</button>'
+        + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
+        + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas + '/' + stTotalIdeas + ' Active') : '+ Idea')
+        + '</button>'
+        + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
+        + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">✓ DONE (+2 PTS)</span>' : '')
+        + '</div>'
+        + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0">'
+        + '<button class="bg" onclick="startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;border:1px solid #374151;border-radius:4px;color:#d1d5db" title="Edit subtask">✏️</button>'
+        + '<button class="bg" onclick="deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:4px" title="Delete subtask">✕</button>'
+        + '</div>'
+        + '</div>'
+        + subtaskInputsHtml
+        + '</div>';
             }).join('')
           + '</div>';
       }
 
       var subtasksContainerHtml = '';
       if (isExpanded) {
+        var addSubtaskBarHtml = !task.completed ? (
+          '<div style="display:flex;gap:6px;align-items:center;margin-top:8px">'
+          + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
+          + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11px;padding:6px 12px;background:#3b82f6;color:#fff;font-weight:700;white-space:nowrap">+ Add Subtask</button>'
+          + '</div>'
+        ) : '';
+
         subtasksContainerHtml = '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px">'
           + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
           + '<span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#94a3b8;text-transform:uppercase">📌 SUBTASKS (' + subtasksDoneCount + ' / ' + subtasks.length + ' done)</span>'
           + '</div>'
           + subtasksListHtml
-          + '<div style="display:flex;gap:6px;align-items:center">'
-          + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
-          + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11px;padding:6px 12px;background:#3b82f6;color:#fff;font-weight:700;white-space:nowrap">+ Add Subtask</button>'
-          + '</div>'
+          + addSubtaskBarHtml
           + '</div>';
       }
 
       var ideasCounterBadge = mainTotalIdeas > 0
         ? ('<div style="font-size:11px;color:#fbbf24;font-weight:600;margin-top:4px">💡 ' + mainActiveIdeas + ' out of ' + mainTotalIdeas + ' ideas yet to be Active</div>')
         : '';
+
+      var mainTaskInputsHtml = !task.completed ? (
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">'
+        + '<div>'
+        + '<label style="font-size:9.5px;font-weight:700;color:#93c5fd;text-transform:uppercase;display:block;margin-bottom:2px">⚡ Doing Now</label>'
+        + '<input type="text" value="' + esc(task.doingNow || '') + '" placeholder="What you are doing now..." oninput="updateTaskDoingNow(\'' + task.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box" />'
+        + '</div>'
+        + '<div>'
+        + '<label style="font-size:9.5px;font-weight:700;color:#fbbf24;text-transform:uppercase;display:block;margin-bottom:2px">➡️ What to Do Next</label>'
+        + '<input type="text" value="' + esc(task.whatNext || '') + '" placeholder="What to do next..." oninput="updateTaskWhatNext(\'' + task.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box" />'
+        + '</div>'
+        + '</div>'
+      ) : ((task.doingNow || task.whatNext) ? (
+        '<div style="display:flex;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:#94a3b8;flex-wrap:wrap">'
+        + (task.doingNow ? '<span>⚡ <strong>Doing Now:</strong> <em>' + e(task.doingNow) + '</em></span>' : '')
+        + (task.whatNext ? '<span>➡️ <strong>What Next:</strong> <em>' + e(task.whatNext) + '</em></span>' : '')
+        + '</div>'
+      ) : '');
 
       return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="margin-bottom:12px;transition:box-shadow 0.2s, border-color 0.2s' + (isExpanded ? ';border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1)' : '') + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
@@ -5090,16 +5138,7 @@
         + '<button class="bg" onclick="event.stopPropagation();deleteTask(\'' + task.id + '\')" style="font-size:11px;padding:4px 8px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:6px" title="Delete task">✕</button>'
         + '</div>'
         + '</div>'
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">'
-        + '<div>'
-        + '<label style="font-size:9.5px;font-weight:700;color:#93c5fd;text-transform:uppercase;display:block;margin-bottom:2px">⚡ Doing Now</label>'
-        + '<input type="text" value="' + esc(task.doingNow || '') + '" placeholder="What you are doing now..." oninput="updateTaskDoingNow(\'' + task.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box" />'
-        + '</div>'
-        + '<div>'
-        + '<label style="font-size:9.5px;font-weight:700;color:#fbbf24;text-transform:uppercase;display:block;margin-bottom:2px">➡️ What to Do Next</label>'
-        + '<input type="text" value="' + esc(task.whatNext || '') + '" placeholder="What to do next..." oninput="updateTaskWhatNext(\'' + task.id + '\', this.value)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box" />'
-        + '</div>'
-        + '</div>'
+        + mainTaskInputsHtml
         + subtasksContainerHtml
         + '</div>';
     }
