@@ -3994,13 +3994,13 @@
       if (!Array.isArray(id.logs)) id.logs = [];
 
       if (sub.completed) {
-        // Add 1 point fine evidence to evidence log
+        // Add 2 points medium evidence to evidence log
         id.logs.push({
           date: new Date().toISOString(),
           subtaskId: subtaskId,
           taskId: taskId,
           note: 'Completed subtask: "' + sub.text + '" (Task: ' + task.text + ')',
-          weight: 'fine'
+          weight: 'medium'
         });
       } else {
         // Reverse evidence points: remove matching subtask evidence log
@@ -4138,10 +4138,17 @@
                   + '<button class="b bp bs" onclick="saveEditModalIdea(\'' + idea.id + '\')" style="font-size:11px;padding:5px 11px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">Save</button>'
                   + '</div>';
               }
-              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;gap:8px">'
-                + '<div style="display:flex;align-items:flex-start;gap:8px;flex:1">'
-                + '<span style="font-size:15px;line-height:1.2;color:#fbbf24">💡</span>'
-                + '<span style="font-size:13.5px;color:#e2e8f0;line-height:1.45;word-break:break-word">' + e(idea.text) + '</span>'
+              var isIdeaDone = !!idea.completed;
+              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:' + (isIdeaDone ? 'rgba(74,222,128,0.05)' : 'rgba(255,255,255,0.03)') + ';border:1px solid ' + (isIdeaDone ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.07)') + ';border-radius:8px;gap:8px">'
+                + '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">'
+                + '<button class="task-check-btn ' + (isIdeaDone ? 'checked' : '') + '" style="width:20px;height:20px;font-size:11px;flex-shrink:0" onclick="toggleIdeaCompletion(\'' + idea.id + '\')" title="' + (isIdeaDone ? 'Mark idea pending' : 'Mark idea completed (+1 Evidence Point)') + '">'
+                + (isIdeaDone ? '✓' : '')
+                + '</button>'
+                + '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">'
+                + '<span style="font-size:14px;color:#fbbf24;flex-shrink:0">💡</span>'
+                + '<span style="font-size:13.5px;color:' + (isIdeaDone ? '#94a3b8' : '#e2e8f0') + ';text-decoration:' + (isIdeaDone ? 'line-through' : 'none') + ';line-height:1.45;word-break:break-word">' + e(idea.text) + '</span>'
+                + (isIdeaDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.15);padding:1px 5px;border-radius:4px;flex-shrink:0">+1 PT</span>' : '')
+                + '</div>'
                 + '</div>'
                 + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0">'
                 + '<button class="bg" onclick="startEditModalIdea(\'' + idea.id + '\')" style="font-size:11px;padding:3px 7px;border:1px solid #374151;border-radius:4px;color:#d1d5db" title="Edit idea">✏️</button>'
@@ -4183,6 +4190,53 @@
       }, 50);
     }
 
+    window.toggleIdeaCompletion = function (ideaId) {
+      var targetObj = getActiveIdeasTargetObj();
+      if (!targetObj) return;
+      var item = targetObj.item;
+      var isSubtask = targetObj.isSubtask;
+      var parentTask = targetObj.parentTask;
+      if (!item || !Array.isArray(item.ideas)) return;
+
+      var idea = item.ideas.find(function (i) { return i.id === ideaId; });
+      if (!idea) return;
+
+      idea.completed = !idea.completed;
+      idea.completedAt = idea.completed ? new Date().toISOString() : null;
+      item.updatedAt = new Date().toISOString();
+
+      var id = getCurRef() || cur();
+      if (id) {
+        if (!Array.isArray(id.logs)) id.logs = [];
+
+        if (idea.completed) {
+          var noteText = isSubtask
+            ? 'Completed idea: "' + idea.text + '" (from Subtask: ' + item.text + ', Task: ' + parentTask.text + ')'
+            : 'Completed idea: "' + idea.text + '" (from Task: ' + item.text + ')';
+
+          id.logs.push({
+            date: new Date().toISOString(),
+            ideaId: idea.id,
+            subtaskId: isSubtask ? item.id : null,
+            taskId: isSubtask ? parentTask.id : item.id,
+            note: noteText,
+            weight: 'fine'
+          });
+        } else {
+          var logIdx = id.logs.findIndex(function (l) {
+            return (l.ideaId === idea.id) || (l.note && l.note.indexOf('Completed idea: "' + idea.text + '"') !== -1);
+          });
+          if (logIdx !== -1) {
+            id.logs.splice(logIdx, 1);
+          }
+        }
+      }
+
+      save(true);
+      renderIdeasModalContent();
+      render();
+    };
+
     window.addModalIdea = function () {
       var targetObj = getActiveIdeasTargetObj();
       if (!targetObj) return;
@@ -4198,6 +4252,8 @@
       item.ideas.push({
         id: 'idea_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         text: val,
+        completed: false,
+        completedAt: null,
         createdDate: new Date().toISOString()
       });
       item.updatedAt = new Date().toISOString();
@@ -4246,11 +4302,32 @@
       var item = targetObj.item;
       if (!Array.isArray(item.ideas)) return;
 
-      item.ideas = item.ideas.filter(function (i) { return i.id !== ideaId; });
-      item.updatedAt = new Date().toISOString();
+      var idea = item.ideas.find(function (i) { return i.id === ideaId; });
 
-      save(true);
-      renderIdeasModalContent();
+      showCustomConfirm({
+        title: 'Delete Idea?',
+        message: 'Are you sure you want to delete this idea?',
+        confirmText: 'Delete Idea',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (idea && idea.completed) {
+            var id = getCurRef() || cur();
+            if (id && Array.isArray(id.logs)) {
+              var logIdx = id.logs.findIndex(function (l) {
+                return (l.ideaId === ideaId) || (l.note && l.note.indexOf('Completed idea: "' + idea.text + '"') !== -1);
+              });
+              if (logIdx !== -1) {
+                id.logs.splice(logIdx, 1);
+              }
+            }
+          }
+          item.ideas = item.ideas.filter(function (i) { return i.id !== ideaId; });
+          item.updatedAt = new Date().toISOString();
+          save(true);
+          renderIdeasModalContent();
+          render();
+        }
+      });
     };
 
     function renderTaskCard(task, tIdx) {
@@ -4300,16 +4377,16 @@
               }
               return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;gap:8px">'
                 + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
-                + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed') + '">'
+                + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed (+2 Evidence Points)') + '">'
                 + (isSubDone ? '✓' : '')
                 + '</button>'
-                + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
-                + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">✓ DONE</span>' : '')
-                + '</div>'
-                + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0">'
-                + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 7px;border:1px solid ' + (stIdeas.length > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (stIdeas.length > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (stIdeas.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px" title="Subtask ideas">'
+                + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stIdeas.length > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.15)') + ';color:' + (stIdeas.length > 0 ? '#fbbf24' : '#94a3b8') + ';background:' + (stIdeas.length > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
                 + '💡 ' + (stIdeas.length > 0 ? (stIdeas.length + ' Idea' + (stIdeas.length === 1 ? '' : 's')) : '+ Idea')
                 + '</button>'
+                + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
+                + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">✓ DONE (+2 PTS)</span>' : '')
+                + '</div>'
+                + '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0">'
                 + '<button class="bg" onclick="startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;border:1px solid #374151;border-radius:4px;color:#d1d5db" title="Edit subtask">✏️</button>'
                 + '<button class="bg" onclick="deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:3px 6px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:4px" title="Delete subtask">✕</button>'
                 + '</div>'
