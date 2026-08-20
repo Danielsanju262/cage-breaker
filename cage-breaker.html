@@ -663,7 +663,8 @@
     }
 
     .task-card-has-timer:hover .task-card-details,
-    .task-card-has-timer:focus-within .task-card-details {
+    .task-card-has-timer:focus-within .task-card-details,
+    .task-card-has-timer.task-card-timer-expanded .task-card-details {
       max-height: 2000px;
       opacity: 1;
       pointer-events: auto;
@@ -675,12 +676,40 @@
     }
 
     .task-card-has-timer:hover .task-card-collapsed-timer,
-    .task-card-has-timer:focus-within .task-card-collapsed-timer {
+    .task-card-has-timer:focus-within .task-card-collapsed-timer,
+    .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer {
       max-height: 0;
       opacity: 0;
       overflow: hidden;
       margin: 0;
       padding: 0;
+    }
+
+    /* On touch devices, disable hover-based expand so only tap works */
+    @media (hover: none) {
+      .task-card-has-timer:hover .task-card-details {
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .task-card-has-timer:hover .task-card-collapsed-timer {
+        max-height: 200px;
+        opacity: 1;
+        overflow: visible;
+      }
+      /* Only the JS-toggled class works on touch */
+      .task-card-has-timer.task-card-timer-expanded .task-card-details {
+        max-height: 2000px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
     }
 
     h1, h2, h3, h4, h5, h6, .task-title, .section-title, .modal-title {
@@ -3952,6 +3981,22 @@
 
     window.toggleTaskIdeas = window.toggleTaskExpanded;
 
+    // Toggle collapsed timer card expand (for mobile tap support)
+    window.toggleTimerCardExpand = function (taskId) {
+      var allTimerCards = document.querySelectorAll('.task-card-has-timer');
+      var targetCard = null;
+      allTimerCards.forEach(function (c) {
+        if (c.id && c.id.indexOf(taskId) !== -1) {
+          targetCard = c;
+        } else {
+          c.classList.remove('task-card-timer-expanded');
+        }
+      });
+      if (targetCard) {
+        targetCard.classList.toggle('task-card-timer-expanded');
+      }
+    };
+
     window.updateTaskDoingNow = function (taskId, val) {
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
@@ -4763,7 +4808,7 @@
       if (hasActiveTimer) {
         var timerDisplayText = taskHighestCd.timerText || taskHighestCd.text;
         var timerStatusIcon = taskHighestCd.status === 'overdue' ? '🚨' : (taskHighestCd.status === 'urgent' ? '⚡' : (taskHighestCd.status === 'warning' ? '⏱️' : '⏳'));
-        collapsedTimerHtml = '<div class="task-card-collapsed-timer" style="flex-direction:column;align-items:center;justify-content:center;padding:14px 12px;gap:6px;text-align:center;cursor:pointer" onclick="toggleTaskExpanded(\'' + task.id + '\')">'
+        collapsedTimerHtml = '<div class="task-card-collapsed-timer" style="flex-direction:column;align-items:center;justify-content:center;padding:14px 12px;gap:6px;text-align:center;cursor:pointer" onclick="toggleTimerCardExpand(\'' + task.id + '\')">'
           + '<span style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3">' + e(task.text) + '</span>'
           + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px">'
           + '<span style="font-size:28px;line-height:1">' + timerStatusIcon + '</span>'
