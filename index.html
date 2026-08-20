@@ -653,6 +653,36 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
+    /* Collapsed timer task card: hide details, show only title + big timer */
+    .task-card-has-timer .task-card-details {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+      pointer-events: none;
+    }
+
+    .task-card-has-timer:hover .task-card-details,
+    .task-card-has-timer:focus-within .task-card-details {
+      max-height: 2000px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .task-card-has-timer .task-card-collapsed-timer {
+      display: flex;
+      transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
+    }
+
+    .task-card-has-timer:hover .task-card-collapsed-timer,
+    .task-card-has-timer:focus-within .task-card-collapsed-timer {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
     h1, h2, h3, h4, h5, h6, .task-title, .section-title, .modal-title {
       word-break: break-word;
       overflow-wrap: break-word;
@@ -1071,28 +1101,56 @@
       return '<div style="margin-bottom:12px">'
         + '<div class="sm" style="margin-bottom:6px;color:#e5e7eb;font-weight:600">Select Impact (Weight):</div>'
         + '<div id="' + prefix + '-wgroup" style="display:flex;gap:6px;flex-wrap:wrap">'
-        + '<button type="button" class="b bs bb ' + prefix + '-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px" onclick="setWeightSel(\'' + prefix + '\',\'fine\')">Fine (+1)</button>'
-        + '<button type="button" class="b bs bp ' + prefix + '-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px" onclick="setWeightSel(\'' + prefix + '\',\'medium\')">Medium (+2)</button>'
-        + '<button type="button" class="b bs bb ' + prefix + '-wbtn" style="flex:1;min-width:140px;font-size:12px;padding:8px 4px;color:#4ede80;border-color:rgba(74,222,128,0.5)" onclick="setWeightSel(\'' + prefix + '\',\'strong\')">Strong (+4 Growth)</button>'
+        + '<button type="button" id="' + prefix + '-wbtn-fine" class="b bs ' + prefix + '-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px;background:rgba(255,255,255,0.03);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);font-weight:600" onclick="setWeightSel(\'' + prefix + '\',\'fine\')">Fine (+1)</button>'
+        + '<button type="button" id="' + prefix + '-wbtn-medium" class="b bs ' + prefix + '-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px;background:rgba(245,158,11,0.22);color:#fbbf24;border:1px solid #f59e0b;font-weight:800" onclick="setWeightSel(\'' + prefix + '\',\'medium\')">Medium (+2)</button>'
+        + '<button type="button" id="' + prefix + '-wbtn-strong" class="b bs ' + prefix + '-wbtn" style="flex:1;min-width:140px;font-size:12px;padding:8px 4px;background:rgba(255,255,255,0.03);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);font-weight:600" onclick="setWeightSel(\'' + prefix + '\',\'strong\')">Strong (+4 Growth)</button>'
         + '</div>'
         + '<input type="hidden" id="' + prefix + '-weight" value="medium"/>'
         + '</div>';
     }
 
     window.setWeightSel = function (prefix, w) {
-      var hidden = $('#' + prefix + '-weight');
+      var hidden = document.getElementById(prefix + '-weight');
       if (hidden) hidden.value = w;
-      var btns = document.querySelectorAll('.' + prefix + '-wbtn');
-      if (btns && btns.length === 3) {
-        btns[0].className = 'b bs ' + prefix + '-wbtn ' + (w === 'fine' ? 'bp' : 'bb');
-        btns[1].className = 'b bs ' + prefix + '-wbtn ' + (w === 'medium' ? 'bp' : 'bb');
-        btns[2].className = 'b bs ' + prefix + '-wbtn ' + (w === 'strong' ? 'bp' : 'bb');
-        if (w === 'strong') {
-          btns[2].style.background = 'rgba(74,222,128,0.2)';
-          btns[2].style.color = '#4ede80';
+      var fineBtn = document.getElementById(prefix + '-wbtn-fine') || document.querySelectorAll('.' + prefix + '-wbtn')[0];
+      var medBtn = document.getElementById(prefix + '-wbtn-medium') || document.querySelectorAll('.' + prefix + '-wbtn')[1];
+      var strBtn = document.getElementById(prefix + '-wbtn-strong') || document.querySelectorAll('.' + prefix + '-wbtn')[2];
+
+      if (fineBtn && medBtn && strBtn) {
+        if (w === 'fine') {
+          fineBtn.style.background = 'rgba(59,130,246,0.22)';
+          fineBtn.style.color = '#93c5fd';
+          fineBtn.style.borderColor = '#3b82f6';
+          fineBtn.style.fontWeight = '800';
         } else {
-          btns[2].style.background = '';
-          btns[2].style.color = '#4ede80';
+          fineBtn.style.background = 'rgba(255,255,255,0.03)';
+          fineBtn.style.color = '#94a3b8';
+          fineBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+          fineBtn.style.fontWeight = '600';
+        }
+
+        if (w === 'medium') {
+          medBtn.style.background = 'rgba(245,158,11,0.22)';
+          medBtn.style.color = '#fbbf24';
+          medBtn.style.borderColor = '#f59e0b';
+          medBtn.style.fontWeight = '800';
+        } else {
+          medBtn.style.background = 'rgba(255,255,255,0.03)';
+          medBtn.style.color = '#94a3b8';
+          medBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+          medBtn.style.fontWeight = '600';
+        }
+
+        if (w === 'strong') {
+          strBtn.style.background = 'rgba(74,222,128,0.22)';
+          strBtn.style.color = '#4ede80';
+          strBtn.style.borderColor = '#22c55e';
+          strBtn.style.fontWeight = '800';
+        } else {
+          strBtn.style.background = 'rgba(255,255,255,0.03)';
+          strBtn.style.color = '#94a3b8';
+          strBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+          strBtn.style.fontWeight = '600';
         }
       }
     };
@@ -1151,12 +1209,18 @@
       };
     }
 
-    function sanitizeSubtask(st) {
+    function sanitizeSubtask(st, deletedIdeaIds) {
       if (!st || typeof st !== 'object') return null;
       var rawIdeas = Array.isArray(st.ideas) ? st.ideas : [];
       var isSubComp = !!st.completed;
       var subStatus = st.status || (isSubComp ? 'completed' : 'yet_to_start');
       if (isSubComp) subStatus = 'completed';
+
+      var ideaDelSet = (deletedIdeaIds && deletedIdeaIds instanceof Set) ? deletedIdeaIds : new Set(Array.isArray(deletedIdeaIds) ? deletedIdeaIds : []);
+
+      var sanitizedIdeas = rawIdeas.map(sanitizeTaskIdea).filter(function (idea) {
+        return idea && idea.id && !ideaDelSet.has(idea.id);
+      });
 
       return {
         id: st.id || ('subtask_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
@@ -1167,18 +1231,21 @@
         completed: isSubComp,
         completedAt: st.completedAt || null,
         status: subStatus,
-        ideas: rawIdeas.map(sanitizeTaskIdea).filter(Boolean),
+        ideas: sanitizedIdeas,
         createdDate: st.createdDate || new Date().toISOString(),
         updatedAt: st.updatedAt || new Date().toISOString()
       };
     }
 
-    function sanitizeTask(t) {
+    function sanitizeTask(t, deletedSubtaskIds, deletedIdeaIds) {
       if (!t || typeof t !== 'object') return null;
       var rawIdeas = Array.isArray(t.ideas) ? t.ideas : [];
       var rawSubtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
       var isComp = !!t.completed;
       var status = t.status || (isComp ? 'completed' : 'yet_to_start');
+
+      var ideaDelSet = (deletedIdeaIds && deletedIdeaIds instanceof Set) ? deletedIdeaIds : new Set(Array.isArray(deletedIdeaIds) ? deletedIdeaIds : []);
+      var subDelSet = (deletedSubtaskIds && deletedSubtaskIds instanceof Set) ? deletedSubtaskIds : new Set(Array.isArray(deletedSubtaskIds) ? deletedSubtaskIds : []);
 
       var sanitizedIdeas = rawIdeas.map(function (idea) {
         var sIdea = sanitizeTaskIdea(idea);
@@ -1186,10 +1253,12 @@
           sIdea.completed = true;
         }
         return sIdea;
-      }).filter(Boolean);
+      }).filter(function (idea) {
+        return idea && idea.id && !ideaDelSet.has(idea.id);
+      });
 
       var sanitizedSubtasks = rawSubtasks.map(function (sub) {
-        var sSub = sanitizeSubtask(sub);
+        var sSub = sanitizeSubtask(sub, ideaDelSet);
         if (sSub && isComp) {
           sSub.completed = true;
           if (Array.isArray(sSub.ideas)) {
@@ -1197,7 +1266,9 @@
           }
         }
         return sSub;
-      }).filter(Boolean);
+      }).filter(function (sub) {
+        return sub && sub.id && !subDelSet.has(sub.id);
+      });
 
       return {
         id: t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
@@ -1225,7 +1296,15 @@
       id.targetEventTime = id.targetEventTime || null;
       id.achieved = !!id.achieved;
       id.achievedAt = id.achievedAt || null;
+
       id.deletedLogIds = Array.isArray(id.deletedLogIds) ? id.deletedLogIds : [];
+      id.deletedTaskIds = Array.isArray(id.deletedTaskIds) ? id.deletedTaskIds : [];
+      id.deletedSubtaskIds = Array.isArray(id.deletedSubtaskIds) ? id.deletedSubtaskIds : [];
+      id.deletedIdeaIds = Array.isArray(id.deletedIdeaIds) ? id.deletedIdeaIds : [];
+      id.deletedHabitIds = Array.isArray(id.deletedHabitIds) ? id.deletedHabitIds : [];
+      id.deletedRoutineLoopIds = Array.isArray(id.deletedRoutineLoopIds) ? id.deletedRoutineLoopIds : [];
+      id.deletedReflectionIds = Array.isArray(id.deletedReflectionIds) ? id.deletedReflectionIds : [];
+
       id.logs = Array.isArray(id.logs) ? id.logs : [];
       
       // Deduplicate proof logs by content key (cleans up any existing duplicate logs)
@@ -1248,14 +1327,44 @@
       
       // Tombstone filtering
       if (id.deletedLogIds.length > 0) {
-        var delSet = new Set(id.deletedLogIds);
-        id.logs = id.logs.filter(function (l) { return l && l.id && !delSet.has(l.id); });
+        var delLogSet = new Set(id.deletedLogIds);
+        id.logs = id.logs.filter(function (l) { return l && l.id && !delLogSet.has(l.id); });
       }
 
-      id.reflections = Array.isArray(id.reflections) ? id.reflections : [];
-      id.habits = Array.isArray(id.habits) ? id.habits : [];
-      id.tasks = Array.isArray(id.tasks) ? id.tasks.map(sanitizeTask).filter(Boolean) : [];
-      id.routineLoops = Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(Boolean) : [];
+      var delTaskSet = new Set(id.deletedTaskIds);
+      var delSubtaskSet = new Set(id.deletedSubtaskIds);
+      var delIdeaSet = new Set(id.deletedIdeaIds);
+      var delHabitSet = new Set(id.deletedHabitIds);
+      var delRoutineLoopSet = new Set(id.deletedRoutineLoopIds);
+      var delReflectionSet = new Set(id.deletedReflectionIds);
+
+      id.reflections = Array.isArray(id.reflections) ? id.reflections.map(function (r) {
+        if (!r) return null;
+        return {
+          ...r,
+          id: r.id || ('ref_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4))
+        };
+      }).filter(function (r) {
+        return r && r.id && !delReflectionSet.has(r.id);
+      }) : [];
+
+      id.habits = Array.isArray(id.habits) ? id.habits.map(function (h) {
+        if (!h) return null;
+        var hId = h.id || ('habit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+        return { ...h, id: hId };
+      }).filter(function (h) {
+        return h && h.id && !delHabitSet.has(h.id) && (!h.text || !delHabitSet.has(h.text));
+      }) : [];
+
+      id.tasks = Array.isArray(id.tasks) ? id.tasks.map(function (t) {
+        return sanitizeTask(t, delSubtaskSet, delIdeaSet);
+      }).filter(function (t) {
+        return t && t.id && !delTaskSet.has(t.id);
+      }) : [];
+
+      id.routineLoops = Array.isArray(id.routineLoops) ? id.routineLoops.map(sanitizeRoutineLoop).filter(function (rl) {
+        return rl && rl.id && !delRoutineLoopSet.has(rl.id);
+      }) : [];
 
       return id;
     }
@@ -1652,14 +1761,16 @@
     var _syncStatus = 'idle';
     var _isRemoteUpdate = false;
 
-    function mergeTaskIdeas(ideas1, ideas2) {
+    function mergeTaskIdeas(ideas1, ideas2, deletedIdeaSet) {
       var arr1 = Array.isArray(ideas1) ? ideas1 : [];
       var arr2 = Array.isArray(ideas2) ? ideas2 : [];
+      var delSet = deletedIdeaSet || new Set();
       var map = new Map();
       [...arr1, ...arr2].forEach(function (idea) {
         if (!idea) return;
         var sanitized = sanitizeTaskIdea(idea);
         if (sanitized && sanitized.id) {
+          if (delSet.has(sanitized.id)) return;
           if (!map.has(sanitized.id)) {
             map.set(sanitized.id, sanitized);
           } else {
@@ -1668,6 +1779,40 @@
             var existingTime = new Date(existing.completedAt || existing.createdDate || 0).getTime();
             var newest = (sanitizedTime >= existingTime) ? sanitized : existing;
             map.set(sanitized.id, newest);
+          }
+        }
+      });
+      return Array.from(map.values());
+    }
+
+    function mergeTaskSubtasks(subtasks1, subtasks2, deletedSubtaskSet, deletedIdeaSet) {
+      var arr1 = Array.isArray(subtasks1) ? subtasks1 : [];
+      var arr2 = Array.isArray(subtasks2) ? subtasks2 : [];
+      var delSubSet = deletedSubtaskSet || new Set();
+      var delIdeaSet = deletedIdeaSet || new Set();
+      var map = new Map();
+
+      [...arr1, ...arr2].forEach(function (st) {
+        if (!st) return;
+        var sanitized = sanitizeSubtask(st, delIdeaSet);
+        if (sanitized && sanitized.id) {
+          if (delSubSet.has(sanitized.id)) return;
+          var key = sanitized.id || sanitized.text;
+          if (!map.has(key)) {
+            map.set(key, sanitized);
+          } else {
+            var existing = map.get(key);
+            var stTime = new Date(st.updatedAt || st.createdDate || 0).getTime();
+            var exTime = new Date(existing.updatedAt || existing.createdDate || 0).getTime();
+            var newest = (stTime >= exTime) ? st : existing;
+            map.set(key, sanitizeSubtask({
+              ...existing,
+              ...st,
+              completed: newest.completed,
+              completedAt: newest.completedAt,
+              status: newest.status,
+              ideas: mergeTaskIdeas(existing.ideas, st.ideas, delIdeaSet)
+            }, delIdeaSet));
           }
         }
       });
@@ -1687,6 +1832,24 @@
       const mergedDeletedLogIds = [...new Set([...(i1.deletedLogIds || []), ...(i2.deletedLogIds || [])])];
       const deletedLogSet = new Set(mergedDeletedLogIds);
 
+      const mergedDeletedTaskIds = [...new Set([...(i1.deletedTaskIds || []), ...(i2.deletedTaskIds || [])])];
+      const deletedTaskSet = new Set(mergedDeletedTaskIds);
+
+      const mergedDeletedSubtaskIds = [...new Set([...(i1.deletedSubtaskIds || []), ...(i2.deletedSubtaskIds || [])])];
+      const deletedSubtaskSet = new Set(mergedDeletedSubtaskIds);
+
+      const mergedDeletedIdeaIds = [...new Set([...(i1.deletedIdeaIds || []), ...(i2.deletedIdeaIds || [])])];
+      const deletedIdeaSet = new Set(mergedDeletedIdeaIds);
+
+      const mergedDeletedHabitIds = [...new Set([...(i1.deletedHabitIds || []), ...(i2.deletedHabitIds || [])])];
+      const deletedHabitSet = new Set(mergedDeletedHabitIds);
+
+      const mergedDeletedRoutineLoopIds = [...new Set([...(i1.deletedRoutineLoopIds || []), ...(i2.deletedRoutineLoopIds || [])])];
+      const deletedRoutineLoopSet = new Set(mergedDeletedRoutineLoopIds);
+
+      const mergedDeletedReflectionIds = [...new Set([...(i1.deletedReflectionIds || []), ...(i2.deletedReflectionIds || [])])];
+      const deletedReflectionSet = new Set(mergedDeletedReflectionIds);
+
       const logsMap = new Map();
       [...(i1.logs || []), ...(i2.logs || [])].forEach(l => {
         if (!l || !l.note) return;
@@ -1694,6 +1857,8 @@
 
         const dayStr = l.date ? l.date.split('T')[0] : '';
         const key = (l.note || '').trim().toLowerCase() + '_' + dayStr + '_' + (l.taskId || '') + '_' + (l.ideaId || '');
+        if (deletedLogSet.has(key)) return;
+
         if (!logsMap.has(key)) {
           logsMap.set(key, l);
         } else {
@@ -1708,9 +1873,12 @@
       const habitsMap = new Map();
       [...(i1.habits || []), ...(i2.habits || [])].forEach(h => {
         if (!h) return;
+        var hId = h.id || h.text || '';
+        if (hId && deletedHabitSet.has(hId)) return;
+        if (h.text && deletedHabitSet.has(h.text)) return;
         const key = h.text || '';
         if (!habitsMap.has(key)) {
-          habitsMap.set(key, { ...h, checks: Array.isArray(h.checks) ? [...h.checks] : [] });
+          habitsMap.set(key, { ...h, id: h.id || ('habit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)), checks: Array.isArray(h.checks) ? [...h.checks] : [] });
         } else {
           const existing = habitsMap.get(key);
           const combinedChecks = [...new Set([...(existing.checks || []), ...(h.checks || [])])];
@@ -1722,13 +1890,15 @@
       const refMap = new Map();
       [...(i1.reflections || []), ...(i2.reflections || [])].forEach(r => {
         if (!r) return;
-        const key = r.date || JSON.stringify(r);
-        refMap.set(key, r);
+        var rId = r.id || r.date || JSON.stringify(r);
+        if (r.id && deletedReflectionSet.has(r.id)) return;
+        refMap.set(rId, r);
       });
       const mergedReflections = Array.from(refMap.values());
 
-      const mergedOldEvidence = [...new Set([...(i1.oldEvidence || []), ...(i2.oldEvidence || [])])];
-      const mergedActions = [...new Set([...(i1.actions || []), ...(i2.actions || [])])];
+      const mergedOldEvidence = primary.oldEvidence ? [...primary.oldEvidence] : (secondary.oldEvidence ? [...secondary.oldEvidence] : []);
+      const mergedActions = primary.actions ? [...primary.actions] : (secondary.actions ? [...secondary.actions] : []);
+      const mergedGoalActions = primary.goalActions ? [...primary.goalActions] : (secondary.goalActions ? [...secondary.goalActions] : []);
 
       var mergedDailyCrack = i1.dailyCrack || i2.dailyCrack || null;
       if (i1.dailyCrack && i2.dailyCrack) {
@@ -1749,6 +1919,7 @@
 
       (primary.routineLoops || []).forEach(rl => {
         if (!rl) return;
+        if (rl.id && deletedRoutineLoopSet.has(rl.id)) return;
         const key = rl.id || rl.title;
         processedLoopKeys.add(key);
 
@@ -1765,6 +1936,7 @@
 
       (secondary.routineLoops || []).forEach(rl => {
         if (!rl) return;
+        if (rl.id && deletedRoutineLoopSet.has(rl.id)) return;
         const key = rl.id || rl.title;
         if (!processedLoopKeys.has(key)) {
           processedLoopKeys.add(key);
@@ -1784,6 +1956,7 @@
 
       (primary.tasks || []).forEach(t => {
         if (!t) return;
+        if (t.id && deletedTaskSet.has(t.id)) return;
         const key = t.id || t.text;
         processedTaskKeys.add(key);
 
@@ -1797,19 +1970,22 @@
             ...t,
             completed: newest.completed,
             completedAt: newest.completedAt,
-            ideas: mergeTaskIdeas(t.ideas, secTask.ideas)
-          }));
+            status: newest.status,
+            ideas: mergeTaskIdeas(t.ideas, secTask.ideas, deletedIdeaSet),
+            subtasks: mergeTaskSubtasks(t.subtasks, secTask.subtasks, deletedSubtaskSet, deletedIdeaSet)
+          }, deletedSubtaskSet, deletedIdeaSet));
         } else {
-          mergedTasks.push(sanitizeTask(t));
+          mergedTasks.push(sanitizeTask(t, deletedSubtaskSet, deletedIdeaSet));
         }
       });
 
       (secondary.tasks || []).forEach(t => {
         if (!t) return;
+        if (t.id && deletedTaskSet.has(t.id)) return;
         const key = t.id || t.text;
         if (!processedTaskKeys.has(key)) {
           processedTaskKeys.add(key);
-          mergedTasks.push(sanitizeTask(t));
+          mergedTasks.push(sanitizeTask(t, deletedSubtaskSet, deletedIdeaSet));
         }
       });
 
@@ -1818,11 +1994,18 @@
         ...primary,
         dailyCrack: mergedDailyCrack,
         deletedLogIds: mergedDeletedLogIds,
+        deletedTaskIds: mergedDeletedTaskIds,
+        deletedSubtaskIds: mergedDeletedSubtaskIds,
+        deletedIdeaIds: mergedDeletedIdeaIds,
+        deletedHabitIds: mergedDeletedHabitIds,
+        deletedRoutineLoopIds: mergedDeletedRoutineLoopIds,
+        deletedReflectionIds: mergedDeletedReflectionIds,
         logs: mergedLogs,
         habits: mergedHabits,
         reflections: mergedReflections,
         oldEvidence: mergedOldEvidence,
         actions: mergedActions,
+        goalActions: mergedGoalActions,
         routineLoops: mergedRoutineLoops,
         tasks: mergedTasks
       };
@@ -2523,13 +2706,22 @@
 
       var now = new Date();
       var diffMs = targetDate - now;
+      var totalMinutes = Math.floor(Math.abs(diffMs) / (1000 * 60));
+      var displayH = Math.floor(totalMinutes / 60);
+      var displayM = totalMinutes % 60;
       var diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
 
-      if (diffHours <= 0) {
-        var overdueHours = Math.abs(diffHours);
-        var overdueText = overdueHours > 1 ? ('🚨 ' + overdueHours + 'h overdue') : '🚨 DUE NOW';
+      function fmtTime(h, m) {
+        if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+        if (h > 0) return h + 'h';
+        return m + 'm';
+      }
+
+      if (diffMs <= 0) {
+        var overdueText = totalMinutes > 0 ? ('🚨 ' + fmtTime(displayH, displayM) + ' overdue') : '🚨 DUE NOW';
         return {
           text: overdueText,
+          timerText: totalMinutes > 0 ? (fmtTime(displayH, displayM) + ' overdue') : 'DUE NOW',
           hours: diffHours,
           status: 'overdue',
           color: '#fca5a5',
@@ -2540,7 +2732,8 @@
       }
       if (diffHours <= 6) {
         return {
-          text: '⚡ ' + diffHours + 'h left',
+          text: '⚡ ' + fmtTime(displayH, displayM) + ' left',
+          timerText: fmtTime(displayH, displayM) + ' left',
           hours: diffHours,
           status: 'urgent',
           color: '#fbbf24',
@@ -2551,7 +2744,8 @@
       }
       if (diffHours <= 24) {
         return {
-          text: '⏱️ ' + diffHours + 'h left',
+          text: '⏱️ ' + fmtTime(displayH, displayM) + ' left',
+          timerText: fmtTime(displayH, displayM) + ' left',
           hours: diffHours,
           status: 'warning',
           color: '#fde047',
@@ -2561,7 +2755,8 @@
         };
       }
       return {
-        text: '⏳ ' + diffHours + 'h left',
+        text: '⏳ ' + fmtTime(displayH, displayM) + ' left',
+        timerText: fmtTime(displayH, displayM) + ' left',
         hours: diffHours,
         status: 'normal',
         color: '#38bdf8',
@@ -2808,12 +3003,19 @@
             ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:6px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
             ${renderTargetEventCountdown(id)}
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end" onclick="event.stopPropagation()">
-            <button onclick="toggleAchievedIdentity('${id.id}')" style="background:${id.achieved ? 'rgba(59,130,246,0.15)' : 'rgba(234,179,8,0.15)'};border:1px solid ${id.achieved ? 'rgba(59,130,246,0.4)' : 'rgba(234,179,8,0.4)'};color:${id.achieved ? '#93c5fd' : '#fde047'};font-size:11.5px;padding:5px 9px;border-radius:6px;cursor:pointer;font-weight:700;white-space:nowrap" title="${id.achieved ? 'Re-open live identity' : 'Archive & mark identity achieved'}">
-              ${id.achieved ? 'Re-open' : 'Achieve'}
-            </button>
-            <button onclick="editIdentityFromHub('${id.id}')" style="background:none;border:1px solid #374151;color:#d1d5db;font-size:12px;padding:5px 9px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Edit</button>
-            <button onclick="delFromHub('${id.id}')" style="background:none;border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;padding:5px 9px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap">Delete</button>
+          <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
+            <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
+            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:120px;overflow:hidden">
+              <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#fde047'};font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.08)'" onmouseleave="this.style.background='none'">
+                ${id.achieved ? 'Re-open' : 'Achieve'}
+              </button>
+              <button onclick="event.stopPropagation();closeAllTaskMenus();editIdentityFromHub('${id.id}')" style="width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:#f1f5f9;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.08)'" onmouseleave="this.style.background='none'">
+                Edit
+              </button>
+              <button onclick="event.stopPropagation();closeAllTaskMenus();delFromHub('${id.id}')" style="width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:#fca5a5;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(239,68,68,0.15)'" onmouseleave="this.style.background='none'">
+                Delete
+              </button>
+            </div>
           </div>
         </div>
         <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
@@ -3813,22 +4015,47 @@
         confirmText: 'Delete Task',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
-          if (task && Array.isArray(id.logs)) {
-            removeAndTombstoneLogs(id, function (l) {
-              if (l.taskId === taskId) return true;
-              if (l.subtaskId && Array.isArray(task.subtasks) && task.subtasks.some(function (st) { return st.id === l.subtaskId; })) return true;
-              if (l.ideaId) {
-                if (Array.isArray(task.ideas) && task.ideas.some(function (i) { return i.id === l.ideaId; })) return true;
-                if (Array.isArray(task.subtasks)) {
-                  return task.subtasks.some(function (st) {
-                    return Array.isArray(st.ideas) && st.ideas.some(function (i) { return i.id === l.ideaId; });
+          if (!Array.isArray(id.deletedTaskIds)) id.deletedTaskIds = [];
+          if (taskId && !id.deletedTaskIds.includes(taskId)) {
+            id.deletedTaskIds.push(taskId);
+          }
+          if (task) {
+            if (Array.isArray(task.ideas)) {
+              if (!Array.isArray(id.deletedIdeaIds)) id.deletedIdeaIds = [];
+              task.ideas.forEach(function (i) {
+                if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+              });
+            }
+            if (Array.isArray(task.subtasks)) {
+              if (!Array.isArray(id.deletedSubtaskIds)) id.deletedSubtaskIds = [];
+              task.subtasks.forEach(function (st) {
+                if (st && st.id && !id.deletedSubtaskIds.includes(st.id)) id.deletedSubtaskIds.push(st.id);
+                if (st && Array.isArray(st.ideas)) {
+                  if (!Array.isArray(id.deletedIdeaIds)) id.deletedIdeaIds = [];
+                  st.ideas.forEach(function (i) {
+                    if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
                   });
                 }
-              }
-              return false;
-            });
+              });
+            }
+            if (Array.isArray(id.logs)) {
+              removeAndTombstoneLogs(id, function (l) {
+                if (l.taskId === taskId) return true;
+                if (l.subtaskId && Array.isArray(task.subtasks) && task.subtasks.some(function (st) { return st.id === l.subtaskId; })) return true;
+                if (l.ideaId) {
+                  if (Array.isArray(task.ideas) && task.ideas.some(function (i) { return i.id === l.ideaId; })) return true;
+                  if (Array.isArray(task.subtasks)) {
+                    return task.subtasks.some(function (st) {
+                      return Array.isArray(st.ideas) && st.ideas.some(function (i) { return i.id === l.ideaId; });
+                    });
+                  }
+                }
+                return false;
+              });
+            }
           }
           id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
+          id.updatedAt = new Date().toISOString();
           save(true);
           render();
         }
@@ -4047,15 +4274,28 @@
         confirmText: 'Delete Subtask',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
-          if (sub && Array.isArray(id.logs)) {
-            removeAndTombstoneLogs(id, function (l) {
-              if (l.subtaskId === subtaskId) return true;
-              if (l.ideaId && Array.isArray(sub.ideas) && sub.ideas.some(function (i) { return i.id === l.ideaId; })) return true;
-              return false;
-            });
+          if (!Array.isArray(id.deletedSubtaskIds)) id.deletedSubtaskIds = [];
+          if (subtaskId && !id.deletedSubtaskIds.includes(subtaskId)) {
+            id.deletedSubtaskIds.push(subtaskId);
+          }
+          if (sub) {
+            if (Array.isArray(sub.ideas)) {
+              if (!Array.isArray(id.deletedIdeaIds)) id.deletedIdeaIds = [];
+              sub.ideas.forEach(function (i) {
+                if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+              });
+            }
+            if (Array.isArray(id.logs)) {
+              removeAndTombstoneLogs(id, function (l) {
+                if (l.subtaskId === subtaskId) return true;
+                if (l.ideaId && Array.isArray(sub.ideas) && sub.ideas.some(function (i) { return i.id === l.ideaId; })) return true;
+                return false;
+              });
+            }
           }
           task.subtasks = task.subtasks.filter(function (s) { return s.id !== subtaskId; });
           task.updatedAt = new Date().toISOString();
+          id.updatedAt = new Date().toISOString();
           save(true);
           render();
         }
@@ -4304,9 +4544,13 @@
         confirmText: 'Delete Idea',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
-          if (idea) {
-            var id = getCurRef() || cur();
-            if (id && Array.isArray(id.logs)) {
+          var id = getCurRef() || cur();
+          if (id) {
+            if (!Array.isArray(id.deletedIdeaIds)) id.deletedIdeaIds = [];
+            if (ideaId && !id.deletedIdeaIds.includes(ideaId)) {
+              id.deletedIdeaIds.push(ideaId);
+            }
+            if (idea && Array.isArray(id.logs)) {
               removeAndTombstoneLogs(id, function (l) {
                 return (l.ideaId === ideaId) || (l.note && l.note.indexOf('Completed idea: "' + idea.text + '"') !== -1);
               });
@@ -4314,6 +4558,7 @@
           }
           item.ideas = item.ideas.filter(function (i) { return i.id !== ideaId; });
           item.updatedAt = new Date().toISOString();
+          if (id) id.updatedAt = new Date().toISOString();
           save(true);
           renderIdeasModalContent();
           render();
@@ -4348,6 +4593,17 @@
           + '</div>';
       }
 
+      var taskHighestCd = getTaskHighestTimerStatus(task);
+      var taskItemCd = getItemTimerStatus(task) || taskHighestCd;
+
+      var mainStatusBorder = taskItemCd ? taskItemCd.border : 'rgba(147,197,253,0.25)';
+      var mainStatusBg = taskItemCd ? taskItemCd.bg : 'rgba(15,23,42,0.6)';
+      var mainStatusLabelColor = taskItemCd ? taskItemCd.color : '#60a5fa';
+
+      var mainNextBorder = taskItemCd ? taskItemCd.border : 'rgba(251,191,36,0.25)';
+      var mainNextBg = taskItemCd ? taskItemCd.bg : 'rgba(15,23,42,0.6)';
+      var mainNextLabelColor = taskItemCd ? taskItemCd.color : '#fbbf24';
+
       var sortedSubtasks = subtasks.map(function (st, origIdx) {
         return { st: st, origIdx: origIdx };
       });
@@ -4381,15 +4637,24 @@
               var subStatusBg = curSubStatus === 'completed' ? 'rgba(74,222,128,0.15)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.15)' : 'rgba(148,163,184,0.1)');
               var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
 
+              var stTimerCd = getItemTimerStatus(st) || taskHighestCd;
+              var stStatusBorder = stTimerCd ? stTimerCd.border : 'rgba(147,197,253,0.25)';
+              var stStatusBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
+              var stStatusLabelColor = stTimerCd ? stTimerCd.color : '#60a5fa';
+
+              var stNextBorder = stTimerCd ? stTimerCd.border : 'rgba(251,191,36,0.25)';
+              var stNextBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
+              var stNextLabelColor = stTimerCd ? stTimerCd.color : '#fbbf24';
+
               var subtaskInputsHtml = (curSubStatus === 'in_process' && !isSubDone) ? (
                 '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:4px;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);flex-wrap:wrap">'
-                + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:rgba(15,23,42,0.6);padding:3px 6px;border-radius:6px;border:1px solid rgba(147,197,253,0.25);box-sizing:border-box">'
-                + '<span style="font-size:10.5px;font-weight:700;color:#60a5fa;white-space:nowrap;flex-shrink:0;margin-top:1px">Status:</span>'
+                + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:' + stStatusBg + ';padding:3px 6px;border-radius:6px;border:1px solid ' + stStatusBorder + ';box-sizing:border-box">'
+                + '<span style="font-size:10.5px;font-weight:700;color:' + stStatusLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:1px">Status:</span>'
                 + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="Status..." onfocus="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.doingNow || '') + '</textarea>'
                 + '</div>'
                 + '<span style="color:#64748b;font-size:10px;font-weight:700;align-self:center">➔</span>'
-                + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:rgba(15,23,42,0.6);padding:3px 6px;border-radius:6px;border:1px solid rgba(251,191,36,0.25);box-sizing:border-box">'
-                + '<span style="font-size:10.5px;font-weight:700;color:#fbbf24;white-space:nowrap;flex-shrink:0;margin-top:1px">Next:</span>'
+                + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:' + stNextBg + ';padding:3px 6px;border-radius:6px;border:1px solid ' + stNextBorder + ';box-sizing:border-box">'
+                + '<span style="font-size:10.5px;font-weight:700;color:' + stNextLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:1px">Next:</span>'
                 + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="Next step..." onfocus="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.whatNext || '') + '</textarea>'
                 + (!st.nextTargetTime ? renderNextTimePill('subtask', task.id, st.id, null) : '')
                 + '</div>'
@@ -4402,8 +4667,7 @@
                 + '</div>'
               ) : '') : '');
 
-              var stTimerCd = getItemTimerStatus(st);
-              var subBg = stTimerCd && stTimerCd.status === 'overdue' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)';
+              var subBg = stTimerCd ? stTimerCd.bg : 'rgba(255,255,255,0.03)';
               var subBorder = stTimerCd ? ('1px solid ' + stTimerCd.border) : '1px solid rgba(255,255,255,0.06)';
               var subShadow = stTimerCd ? ('box-shadow:0 0 14px ' + stTimerCd.glow + ';') : '';
 
@@ -4448,9 +4712,12 @@
         + '</div>'
       ) : '';
 
+      var subtasksContainerBorder = taskHighestCd ? ('1px solid ' + taskHighestCd.border) : '1px solid rgba(255,255,255,0.08)';
+      var subtasksContainerBg = taskHighestCd ? taskHighestCd.bg : 'rgba(15,23,42,0.6)';
+
       var subtasksContainerHtml = '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '">'
         + '<div class="subtasks-inner">'
-        + '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px">'
+        + '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:' + subtasksContainerBg + ';border:' + subtasksContainerBorder + ';border-radius:10px">'
         + subtasksListHtml
         + addSubtaskBarHtml
         + '</div>'
@@ -4461,13 +4728,13 @@
 
       var mainTaskInputsHtml = (curStatus === 'in_process' && !task.completed) ? (
         '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap">'
-        + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:rgba(15,23,42,0.6);padding:4px 8px;border-radius:6px;border:1px solid rgba(147,197,253,0.25);box-sizing:border-box">'
-        + '<span style="font-size:11.5px;font-weight:700;color:#60a5fa;white-space:nowrap;flex-shrink:0;margin-top:2px">Status:</span>'
+        + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:' + mainStatusBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + mainStatusBorder + ';box-sizing:border-box">'
+        + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:2px">Status:</span>'
         + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Status..." onfocus="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.doingNow || '') + '</textarea>'
         + '</div>'
         + '<span style="color:#64748b;font-size:12px;font-weight:700;align-self:center">➔</span>'
-        + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:rgba(15,23,42,0.6);padding:4px 8px;border-radius:6px;border:1px solid rgba(251,191,36,0.25);box-sizing:border-box">'
-        + '<span style="font-size:11.5px;font-weight:700;color:#fbbf24;white-space:nowrap;flex-shrink:0;margin-top:2px">Next:</span>'
+        + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:' + mainNextBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box">'
+        + '<span style="font-size:11.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:2px">Next:</span>'
         + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Next step..." onfocus="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.whatNext || '') + '</textarea>'
         + (!task.nextTargetTime ? renderNextTimePill('task', task.id, null, null) : '')
         + '</div>'
@@ -4480,7 +4747,6 @@
         + '</div>'
       ) : '') : '');
 
-      var taskHighestCd = getTaskHighestTimerStatus(task);
       var taskCardStyle = 'margin-bottom:12px;transition:box-shadow 0.25s, border-color 0.25s;';
       if (taskHighestCd) {
         taskCardStyle += 'border-color:' + taskHighestCd.border + ';box-shadow:0 0 20px ' + taskHighestCd.glow + ';';
@@ -4491,7 +4757,27 @@
         taskCardStyle += 'border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1);';
       }
 
-      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+      // Build collapsed timer overlay for tasks with active timers
+      var hasActiveTimer = taskHighestCd && !task.completed;
+      var collapsedTimerHtml = '';
+      if (hasActiveTimer) {
+        var timerDisplayText = taskHighestCd.timerText || taskHighestCd.text;
+        var timerStatusIcon = taskHighestCd.status === 'overdue' ? '🚨' : (taskHighestCd.status === 'urgent' ? '⚡' : (taskHighestCd.status === 'warning' ? '⏱️' : '⏳'));
+        collapsedTimerHtml = '<div class="task-card-collapsed-timer" style="flex-direction:column;align-items:center;justify-content:center;padding:14px 12px;gap:6px;text-align:center;cursor:pointer" onclick="toggleTaskExpanded(\'' + task.id + '\')">'
+          + '<span style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3">' + e(task.text) + '</span>'
+          + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px">'
+          + '<span style="font-size:28px;line-height:1">' + timerStatusIcon + '</span>'
+          + '<span style="font-size:22px;font-weight:800;color:' + taskHighestCd.color + ';text-shadow:0 0 18px ' + taskHighestCd.glow + '">' + timerDisplayText + '</span>'
+          + '</div>'
+          + (subtasks.length > 0 ? '<span style="font-size:11px;color:#94a3b8;margin-top:2px">' + subtasksDoneCount + '/' + subtasks.length + ' subtasks</span>' : '')
+          + '</div>';
+      }
+
+      var timerCardClass = hasActiveTimer ? ' task-card-has-timer' : '';
+
+      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" class="task-card ' + (task.completed ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+        + collapsedTimerHtml
+        + '<div class="task-card-details">'
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">'
         + '<div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:200px">'
         + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:4px 8px;line-height:1;touch-action:none;display:inline-flex;align-items:center" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
@@ -4528,6 +4814,7 @@
         + '</div>'
         + mainTaskInputsHtml
         + subtasksContainerHtml
+        + '</div>'
         + '</div>';
     }
 
@@ -5030,8 +5317,10 @@
   </div>`;
     };
     window.delIdentity = function () {
+      if (!Array.isArray(S.deletedIds)) S.deletedIds = [];
+      if (S.currentId && !S.deletedIds.includes(S.currentId)) S.deletedIds.push(S.currentId);
       S.identities = S.identities.filter(i => i.id !== S.currentId);
-      S.currentId = null; save();
+      S.currentId = null; save(true);
       go('hub');
     };
 
@@ -5339,9 +5628,16 @@
     };
 
     window.confirmRemoveHabit = function (i) {
-      const id = cur(); if (!id) return;
-      id.habits.splice(i, 1);
-      save(); render();
+      const id = getCurRef() || cur(); if (!id) return;
+      if (id.habits && id.habits[i]) {
+        var h = id.habits[i];
+        if (!Array.isArray(id.deletedHabitIds)) id.deletedHabitIds = [];
+        var hId = h.id || h.text;
+        if (hId && !id.deletedHabitIds.includes(hId)) id.deletedHabitIds.push(hId);
+        id.habits.splice(i, 1);
+        id.updatedAt = new Date().toISOString();
+        save(true); render();
+      }
     };
 
     window.editOldEv = function (i, btnEl) {
@@ -5698,16 +5994,21 @@
     };
 
     window.delModalReflection = function (i) {
-      var id = cur();
+      var id = getCurRef() || cur();
       if (!id || !id.reflections || i < 0 || i >= id.reflections.length) return;
+      var r = id.reflections[i];
       showCustomConfirm({
         title: 'Delete Reflection?',
         message: 'Are you sure you want to delete this weekly reflection entry?',
         confirmText: 'Delete Entry',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
+          if (!Array.isArray(id.deletedReflectionIds)) id.deletedReflectionIds = [];
+          var rId = r.id || r.date;
+          if (rId && !id.deletedReflectionIds.includes(rId)) id.deletedReflectionIds.push(rId);
           id.reflections.splice(i, 1);
-          save();
+          id.updatedAt = new Date().toISOString();
+          save(true);
           var modal = document.getElementById('evidence-modal');
           if (modal) renderEvidenceModalContent(modal, id);
           render();
@@ -7158,7 +7459,7 @@
     }
 
     window.deleteRoutineLoop = function (loopId) {
-      var id = cur();
+      var id = getCurRef() || cur();
       if (!id || !id.routineLoops) return;
       showCustomConfirm({
         title: 'Delete Routine Loop?',
@@ -7166,8 +7467,11 @@
         confirmText: 'Delete Loop',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
+          if (!Array.isArray(id.deletedRoutineLoopIds)) id.deletedRoutineLoopIds = [];
+          if (loopId && !id.deletedRoutineLoopIds.includes(loopId)) id.deletedRoutineLoopIds.push(loopId);
           id.routineLoops = id.routineLoops.filter(function (item) { return item.id !== loopId; });
-          save();
+          id.updatedAt = new Date().toISOString();
+          save(true);
           render();
           closeRoutineLoopModal();
         }
