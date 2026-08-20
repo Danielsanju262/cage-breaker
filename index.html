@@ -1335,23 +1335,15 @@
       id.deletedReflectionIds = Array.isArray(id.deletedReflectionIds) ? id.deletedReflectionIds : [];
 
       id.logs = Array.isArray(id.logs) ? id.logs : [];
-      
-      // Deduplicate proof logs by content key (cleans up any existing duplicate logs)
-      var seenLogs = new Map();
+      var seenLogIds = new Set();
       id.logs = id.logs.filter(function (l) {
         if (!l || !l.note) return false;
-        var dayStr = l.date ? l.date.split('T')[0] : '';
-        var key = (l.note || '').trim().toLowerCase() + '_' + dayStr + '_' + (l.taskId || '') + '_' + (l.ideaId || '');
-        if (seenLogs.has(key)) return false;
-        seenLogs.set(key, true);
-        return true;
-      });
-
-      // Ensure logs have unique IDs
-      id.logs.forEach(function (l) {
-        if (l && !l.id) {
-          l.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        if (!l.id) {
+          l.id = 'log_' + (l.date ? new Date(l.date).getTime() : Date.now()) + '_' + Math.random().toString(36).substr(2, 6);
         }
+        if (seenLogIds.has(l.id)) return false;
+        seenLogIds.add(l.id);
+        return true;
       });
       
       // Tombstone filtering
@@ -1892,19 +1884,18 @@
       const logsMap = new Map();
       [...(i1.logs || []), ...(i2.logs || [])].forEach(l => {
         if (!l || !l.note) return;
-        if (l.id && deletedLogSet.has(l.id)) return;
+        if (!l.id) {
+          l.id = 'log_' + (l.date ? new Date(l.date).getTime() : Date.now()) + '_' + Math.random().toString(36).substr(2, 6);
+        }
+        if (deletedLogSet.has(l.id)) return;
 
-        const dayStr = l.date ? l.date.split('T')[0] : '';
-        const key = (l.note || '').trim().toLowerCase() + '_' + dayStr + '_' + (l.taskId || '') + '_' + (l.ideaId || '');
-        if (deletedLogSet.has(key)) return;
-
-        if (!logsMap.has(key)) {
-          logsMap.set(key, l);
+        if (!logsMap.has(l.id)) {
+          logsMap.set(l.id, l);
         } else {
-          const existing = logsMap.get(key);
-          const lTime = new Date(l.date || 0).getTime();
-          const exTime = new Date(existing.date || 0).getTime();
-          logsMap.set(key, lTime >= exTime ? l : existing);
+          const existing = logsMap.get(l.id);
+          const lTime = new Date(l.updatedAt || l.date || 0).getTime();
+          const exTime = new Date(existing.updatedAt || existing.date || 0).getTime();
+          logsMap.set(l.id, lTime >= exTime ? l : existing);
         }
       });
       const mergedLogs = Array.from(logsMap.values()).sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
@@ -3385,10 +3376,6 @@
               if (targetLog.id) {
                 id.deletedLogIds.push(targetLog.id);
               }
-              var dayStr = targetLog.date ? targetLog.date.split('T')[0] : '';
-              var contentKey = (targetLog.note || '').trim().toLowerCase() + '_' + dayStr;
-              id.deletedLogIds.push(contentKey);
-
               id.logs.splice(logIdx, 1);
               id.updatedAt = new Date().toISOString();
               save(true);
