@@ -1593,9 +1593,13 @@
 
     function load() {
       try {
-        setTimeout(function () { pullFromCloud(); }, 300);
+        // Note: Firebase sync happens in the auto-start block after init.
+        // Do NOT call pullFromCloud() here — fbDb is null at this point.
         let r = localStorage.getItem(SK);
         if (!r) r = localStorage.getItem(SK + '_backup');
+        if (!r) r = localStorage.getItem('cage-v2');
+        if (!r) r = localStorage.getItem('cage-v1');
+        if (!r) r = localStorage.getItem('cb_state');
         let res = { ...DEF };
         if (r) {
           const p = JSON.parse(r);
@@ -1639,6 +1643,11 @@
         const data = JSON.stringify(S);
         localStorage.setItem(SK, data);
         localStorage.setItem(SK + '_backup', data);
+        // GUARD: Don't push to cloud until initial sync is done.
+        // This prevents empty localhost state from overwriting real Firebase data.
+        if (!_initialSyncDone) {
+          return;
+        }
         if (immediate) {
           clearTimeout(syncTimeout);
           pushToCloud();
@@ -1789,6 +1798,7 @@
     var fbApp = null, fbDb = null, unsubscribeFirestore = null;
     var _syncStatus = 'idle';
     var _isRemoteUpdate = false;
+    var _initialSyncDone = false; // Guard: prevents pushing empty state before first cloud pull
 
     function mergeTaskIdeas(ideas1, ideas2, deletedIdeaSet) {
       var arr1 = Array.isArray(ideas1) ? ideas1 : [];
@@ -2125,20 +2135,16 @@
             var data = doc.data();
             if (data && data.payload) {
               try {
-                var payloadStr = typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
-                var currentLocalData = localStorage.getItem(SK);
-
-                if (payloadStr === currentLocalData || payloadStr === _lastPushedPayload) {
-                  _syncStatus = 'synced'; updateSyncStatusUI();
-                  return;
-                }
-
                 var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
                 if (parsed) {
+                  var currentIdentitiesCount = (S && Array.isArray(S.identities)) ? S.identities.length : 0;
+                  var cloudIdentitiesCount = Array.isArray(parsed.identities) ? parsed.identities.length : 0;
+
                   var oldLocalStr = JSON.stringify(S);
                   var merged = mergeStates(S, parsed);
                   var newLocalStr = JSON.stringify(merged);
-                  if (oldLocalStr === newLocalStr) {
+
+                  if (oldLocalStr === newLocalStr && currentIdentitiesCount > 0) {
                     _syncStatus = 'synced'; updateSyncStatusUI();
                     return;
                   }
@@ -2147,7 +2153,10 @@
                   if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
                     S.screen = 'hub';
                   }
-                  localStorage.setItem(SK, JSON.stringify(S));
+                  var dataStr = JSON.stringify(S);
+                  localStorage.setItem(SK, dataStr);
+                  localStorage.setItem(SK + '_backup', dataStr);
+                  localStorage.setItem(SK + '_cloud_snapshot', dataStr);
                   _syncStatus = 'synced'; updateSyncStatusUI();
 
                   var activeTag = document.activeElement ? document.activeElement.tagName : '';
@@ -2189,6 +2198,13 @@
         initFirebaseSync();
         if (!fbDb) return false;
       }
+
+      // CRITICAL SAFEGUARD: Never push empty identities array to cloud
+      if (!S || !Array.isArray(S.identities) || S.identities.length === 0) {
+        console.warn('[CageBreaker Firebase] Safeguard active: skipping push of empty local state to cloud.');
+        return false;
+      }
+
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
         var payloadStr = JSON.stringify(S);
@@ -2209,7 +2225,7 @@
 
     window.pullFromCloud = async function () {
       if (!fbDb) initFirebaseSync();
-      if (!fbDb) return false;
+      if (!fbDb) { _initialSyncDone = true; return false; }
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
         var doc = await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).get();
@@ -2217,29 +2233,35 @@
           var data = doc.data();
           if (data && data.payload) {
             var payloadStr = typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
-            var currentLocalData = localStorage.getItem(SK);
-            if (payloadStr === currentLocalData || payloadStr === _lastPushedPayload) {
-              _syncStatus = 'synced'; updateSyncStatusUI();
-              return true;
-            }
-
             var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
+
             if (parsed) {
-              S = mergeStates(S, parsed);
-              localStorage.setItem(SK, JSON.stringify(S));
-              _syncStatus = 'synced'; updateSyncStatusUI();
-              var activeTag = document.activeElement ? document.activeElement.tagName : '';
-              var hasModal = !!document.querySelector('.modal-overlay');
-              if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && !hasModal) {
+              var currentIdentitiesCount = (S && Array.isArray(S.identities)) ? S.identities.length : 0;
+              var cloudIdentitiesCount = Array.isArray(parsed.identities) ? parsed.identities.length : 0;
+
+              // If local is empty but cloud has data, ALWAYS adopt cloud data!
+              var shouldAdoptCloud = (currentIdentitiesCount === 0 && cloudIdentitiesCount > 0) ||
+                (payloadStr !== localStorage.getItem(SK));
+
+              if (shouldAdoptCloud) {
+                S = mergeStates(S, parsed);
+                var dataStr = JSON.stringify(S);
+                localStorage.setItem(SK, dataStr);
+                localStorage.setItem(SK + '_backup', dataStr);
+                localStorage.setItem(SK + '_cloud_snapshot', dataStr);
+                _syncStatus = 'synced'; updateSyncStatusUI();
+                _initialSyncDone = true;
                 render(true);
+                return true;
               }
-              return true;
             }
           }
         }
+        _initialSyncDone = true;
       } catch (err) {
         console.warn('[CageBreaker Firebase] Pull error:', err);
         _syncStatus = 'error'; updateSyncStatusUI();
+        _initialSyncDone = true;
       }
       return false;
     };
@@ -2251,11 +2273,14 @@
     };
 
     // Auto-start Firebase Realtime Listener & Initial Sync on App Load
-    setTimeout(function () {
+    // Pull cloud data FIRST, then mark sync done so save() can push.
+    setTimeout(async function () {
       try {
         initFirebaseSync();
-        pullFromCloud();
-      } catch (e) { }
+        await pullFromCloud();
+      } catch (e) {
+        _initialSyncDone = true; // Ensure app still works if sync fails
+      }
     }, 100);
 
     window.openSyncModal = function () {
