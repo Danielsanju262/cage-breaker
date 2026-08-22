@@ -4820,7 +4820,7 @@
               var stNextBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
               var stNextLabelColor = stTimerCd ? stTimerCd.color : '#fbbf24';
 
-              var subtaskInputsHtml = (curSubStatus === 'in_process' && !isSubDone) ? (
+              var subtaskInputsHtml = (
                 '<div style="display:flex;gap:6px;align-items:flex-start;margin-top:4px;padding-top:4px;border-top:1px dashed rgba(255,255,255,0.06);flex-wrap:wrap">'
                 + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:' + stStatusBg + ';padding:3px 6px;border-radius:6px;border:1px solid ' + stStatusBorder + ';box-sizing:border-box">'
                 + '<span style="font-size:10.5px;font-weight:700;color:' + stStatusLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:1px">Status:</span>'
@@ -4833,13 +4833,7 @@
                 + (!st.nextTargetTime ? renderNextTimePill('subtask', task.id, st.id, null) : '')
                 + '</div>'
                 + '</div>'
-              ) : (isSubDone ? ((st.doingNow || st.whatNext) ? (
-                '<div style="display:flex;gap:12px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#94a3b8;flex-wrap:wrap;align-items:center;word-break:break-word;white-space:pre-wrap">'
-                + (st.doingNow ? '<span><strong style="color:#60a5fa">Status:</strong> <em>' + e(st.doingNow) + '</em></span>' : '')
-                + (st.doingNow && st.whatNext ? '<span style="color:#64748b">➔</span>' : '')
-                + (st.whatNext ? '<span><strong style="color:#fbbf24">Next:</strong> <em>' + e(st.whatNext) + '</em></span>' : '')
-                + '</div>'
-              ) : '') : '');
+              );
 
               var subBg = stTimerCd ? stTimerCd.bg : 'rgba(255,255,255,0.03)';
               var subBorder = stTimerCd ? ('1px solid ' + stTimerCd.border) : '1px solid rgba(255,255,255,0.06)';
@@ -4900,7 +4894,7 @@
 
       var ideasCounterBadge = '';
 
-      var mainTaskInputsHtml = (curStatus === 'in_process' && !task.completed) ? (
+      var mainTaskInputsHtml = (
         '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap">'
         + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:' + mainStatusBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + mainStatusBorder + ';box-sizing:border-box">'
         + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:2px">Status:</span>'
