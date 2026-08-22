@@ -1947,6 +1947,8 @@
             map.set(key, sanitizeSubtask({
               ...existing,
               ...st,
+              doingNow: (st.doingNow && st.doingNow.trim()) ? st.doingNow : (existing.doingNow || ''),
+              whatNext: (st.whatNext && st.whatNext.trim()) ? st.whatNext : (existing.whatNext || ''),
               completed: newest.completed,
               completedAt: newest.completedAt,
               status: newest.status,
@@ -2106,6 +2108,8 @@
           mergedTasks.push(sanitizeTask({
             ...secTask,
             ...t,
+            doingNow: (t.doingNow && t.doingNow.trim()) ? t.doingNow : (secTask.doingNow || ''),
+            whatNext: (t.whatNext && t.whatNext.trim()) ? t.whatNext : (secTask.whatNext || ''),
             completed: newest.completed,
             completedAt: newest.completedAt,
             status: newest.status,
