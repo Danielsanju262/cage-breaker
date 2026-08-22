@@ -4834,7 +4834,7 @@
                 + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:' + stNextBg + ';padding:3px 6px;border-radius:6px;border:1px solid ' + stNextBorder + ';box-sizing:border-box">'
                 + '<span style="font-size:10.5px;font-weight:700;color:' + stNextLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:1px">Next:</span>'
                 + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="Next step..." onfocus="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.whatNext || '') + '</textarea>'
-                + (!st.nextTargetTime ? renderNextTimePill('subtask', task.id, st.id, null) : '')
+                + renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime)
                 + '</div>'
                 + '</div>'
               ) : ((st.doingNow || st.whatNext) ? (
