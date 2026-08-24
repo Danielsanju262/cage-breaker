@@ -6,3 +6,4 @@ node_modules/
 test_out*.html
 test_unfill*.html
 check_syntax.py
+.env*
