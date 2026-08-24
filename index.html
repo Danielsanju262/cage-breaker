@@ -653,21 +653,61 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
-    /* Timer task card mode rules: strictly manual toggle, no hover collapse */
-    .task-card-has-timer.timer-mode-active .task-card-details {
-      display: none !important;
+    /* Collapsed timer task card: hide details, show only title + big timer */
+    .task-card-has-timer .task-card-details {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+      pointer-events: none;
     }
 
-    .task-card-has-timer.timer-mode-active .task-card-collapsed-timer {
-      display: flex !important;
+    .task-card-has-timer:focus-within .task-card-details,
+    .task-card-has-timer.task-card-timer-expanded .task-card-details {
+      max-height: 2000px;
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .task-card-has-timer:not(.timer-mode-active) .task-card-collapsed-timer {
-      display: none !important;
+    .task-card-has-timer .task-card-collapsed-timer {
+      display: flex;
+      transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
     }
 
-    .task-card-has-timer:not(.timer-mode-active) .task-card-details {
-      display: block !important;
+    .task-card-has-timer:focus-within .task-card-collapsed-timer,
+    .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* On touch devices, disable hover-based expand so only tap works */
+    @media (hover: none) {
+      .task-card-has-timer:hover .task-card-details {
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .task-card-has-timer:hover .task-card-collapsed-timer {
+        max-height: 200px;
+        opacity: 1;
+        overflow: visible;
+      }
+      /* Only the JS-toggled class works on touch */
+      .task-card-has-timer.task-card-timer-expanded .task-card-details {
+        max-height: 2000px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      }
     }
 
     h1, h2, h3, h4, h5, h6, .task-title, .section-title, .modal-title {
@@ -949,88 +989,195 @@
       "How did the new you show up in a conversation or decision today?"
     ];
 
-    function getLogCounts(id) {
-      if (!id || !Array.isArray(id.logs)) return { evidence: 0, appreciation: 0, realisation: 0, total: 0 };
-      var ev = 0, app = 0, real = 0;
-      id.logs.forEach(function (l) {
-        var t = l.type || 'evidence';
-        if (t === 'appreciation') app++;
-        else if (t === 'realisation') real++;
-        else ev++;
-      });
+    function getEvidencePoints(id) {
+      if (!id || !id.logs) return 0;
+      return id.logs.reduce(function (sum, l) {
+        var w = l.weight || 'medium';
+        if (w === 'fine') return sum + 1;
+        if (w === 'strong') return sum + 4; // Significant growth!
+        return sum + 2; // medium
+      }, 0);
+    }
+
+    const STAGES_30 = [
+      { level: 1, max: 5, name: "Lvl 1: Spark of Intent", desc: "First crack declared. Proof is beginning." },
+      { level: 2, max: 15, name: "Lvl 2: Fragile Momentum", desc: "Early steps. Resistance will attempt to return." },
+      { level: 3, max: 30, name: "Lvl 3: Taking Root", desc: "The old identity feels slight tremors of change." },
+      { level: 4, max: 50, name: "Lvl 4: Pattern Disrupter", desc: "You are actively breaking old habit loops." },
+      { level: 5, max: 75, name: "Lvl 5: Cage Fracture", desc: "The bars of the old cage are visibly weakening." },
+      { level: 6, max: 110, name: "Lvl 6: Solidifying Will", desc: "Evidence is accumulating day by day." },
+      { level: 7, max: 155, name: "Lvl 7: Resilient Identity", desc: "Distractions and cravings are losing power." },
+      { level: 8, max: 210, name: "Lvl 8: Mindset Shift", desc: "New identity choices are becoming natural." },
+      { level: 9, max: 280, name: "Lvl 9: Deep Anchoring", desc: "The old pattern is fading into memory." },
+      { level: 10, max: 365, name: "Lvl 10: Iron Foundation", desc: "Double-digit mastery! You have built real grit." },
+      { level: 11, max: 465, name: "Lvl 11: Steel Will", desc: "Escalating challenge. Consistency is your armor." },
+      { level: 12, max: 580, name: "Lvl 12: Unbending Resolve", desc: "Old temptations no longer move you easily." },
+      { level: 13, max: 710, name: "Lvl 13: Identity Architect", desc: "You actively design your daily decisions." },
+      { level: 14, max: 860, name: "Lvl 14: Dominant Trajectory", desc: "Progress feels deliberate and unstoppable." },
+      { level: 15, max: 1030, name: "Lvl 15: Halfway Sovereign", desc: "Massive milestone! Over 1,000 proof points built." },
+      { level: 16, max: 1225, name: "Lvl 16: Unshakable Focus", desc: "High-level mastery requiring deep focus." },
+      { level: 17, max: 1445, name: "Lvl 17: Vanguard Mindset", desc: "Leading yourself with complete clarity." },
+      { level: 18, max: 1695, name: "Lvl 18: Fortress of Habit", desc: "Extremely difficult to break. True discipline." },
+      { level: 19, max: 1975, name: "Lvl 19: Master of Impulse", desc: "Impervious to old triggers and excuses." },
+      { level: 20, max: 2290, name: "Lvl 20: Titan Identity", desc: "Level 20 Elite! A powerhouse of personal proof." },
+      { level: 21, max: 2645, name: "Lvl 21: Legendary Willpower", desc: "Escalating requirements test your ultimate conviction." },
+      { level: 22, max: 3045, name: "Lvl 22: Mythic Consistency", desc: "Over 3,000 points. You operate on a higher plane." },
+      { level: 23, max: 3495, name: "Lvl 23: Grandmaster", desc: "Sublime mastery over your actions and identity." },
+      { level: 24, max: 4000, name: "Lvl 24: Diamond Standard", desc: "Precision and consistency across all fronts." },
+      { level: 25, max: 4565, name: "Lvl 25: Apex Threshold", desc: "Unlocking transcendent Tier-5 mastery." },
+      { level: 26, max: 5200, name: "Lvl 26: Ascended Will", desc: "Automatic excellence in every decision." },
+      { level: 27, max: 5910, name: "Lvl 27: Absolute Sovereign", desc: "Old cage is an ancient relic of the past." },
+      { level: 28, max: 6700, name: "Lvl 28: Epoch Master", desc: "A testament to relentless personal proof." },
+      { level: 29, max: 7580, name: "Lvl 29: Final Horizon", desc: "On the absolute brink of total transcendence." },
+      { level: 30, max: Infinity, name: "Lvl 30: Apex Transcendent Supreme", desc: "Ultimate Peak! The new identity is immutable reality." }
+    ];
+    const STAGES_25 = STAGES_30;
+
+    function getStage(n) {
+      var pts = 0;
+      if (typeof n === 'object' && n !== null) {
+        pts = getEvidencePoints(n);
+      } else {
+        pts = parseInt(n) || 0;
+      }
+
+      var stage = STAGES_30[0];
+      var stageIdx = 0;
+
+      for (var i = 0; i < STAGES_30.length; i++) {
+        if (pts <= STAGES_30[i].max) {
+          stage = STAGES_30[i];
+          stageIdx = i;
+          break;
+        }
+      }
+      if (pts > STAGES_30[STAGES_30.length - 2].max) {
+        stage = STAGES_30[STAGES_30.length - 1];
+        stageIdx = STAGES_30.length - 1;
+      }
+
+      var levelMin = (stageIdx === 0) ? 0 : STAGES_30[stageIdx - 1].max + 1;
+      var levelMax = stage.max;
+      var ptsInLevel = Math.max(0, pts - levelMin);
+      var levelSpan = (levelMax === Infinity) ? 1000 : (levelMax - levelMin + 1);
+      var levelPct = Math.min(100, Math.round((ptsInLevel / levelSpan) * 100));
+      var overallPct = Math.min(100, Math.round(((stageIdx + (levelPct / 100)) / 30) * 100));
+
       return {
-        evidence: ev,
-        appreciation: app,
-        realisation: real,
-        total: id.logs.length
+        level: stage.level,
+        maxLevel: 30,
+        name: stage.name,
+        desc: stage.desc,
+        pct: Math.max(3, overallPct),
+        levelPct: levelPct,
+        pts: pts,
+        nextPts: stage.max === Infinity ? pts : stage.max + 1,
+        minPts: levelMin
       };
     }
 
-    function renderCategoryBadge(t) {
-      t = t || 'evidence';
-      if (t === 'appreciation') {
-        return '<span style="font-size:10px;font-weight:700;background:rgba(251,113,133,0.18);color:#fb7185;border:1px solid rgba(251,113,133,0.35);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px">❤️ APPRECIATION</span>';
+    function renderLevelDots(currentLevel, maxLevel) {
+      maxLevel = maxLevel || 30;
+      var html = '<div style="margin-top:12px;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.07);border-radius:10px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<span style="font-size:10px;font-weight:800;color:#9ca3af;letter-spacing:0.8px;text-transform:uppercase">Level 1 - 30 Progress Track</span>'
+        + '<span style="font-size:11px;font-weight:700;color:#fbbf24">Lvl ' + currentLevel + ' / 30</span>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(30, 1fr);gap:3px;align-items:center">';
+
+      for (var i = 1; i <= maxLevel; i++) {
+        var isPassed = i < currentLevel;
+        var isCurrent = i === currentLevel;
+        var stageObj = STAGES_30[i - 1] || {};
+        var minP = (i === 1 ? 0 : (STAGES_30[i - 2].max + 1));
+        var maxP = (stageObj.max === Infinity ? '∞' : stageObj.max);
+        var title = 'Level ' + i + ': ' + (stageObj.name || '') + ' (' + minP + ' - ' + maxP + ' pts)';
+
+        if (isCurrent) {
+          html += '<div title="' + esc(title) + '" style="height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer">'
+            + '<div style="width:12px;height:12px;border-radius:50%;background:#fbbf24;border:2px solid #ffffff;box-shadow:0 0 10px rgba(251,191,36,0.9);transform:scale(1.25)"></div>'
+            + '</div>';
+        } else if (isPassed) {
+          html += '<div title="' + esc(title) + '" style="height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer">'
+            + '<div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 4px rgba(34,197,94,0.6)"></div>'
+            + '</div>';
+        } else {
+          var isMilestone = (i % 5 === 0);
+          html += '<div title="' + esc(title) + '" style="height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer">'
+            + '<div style="width:' + (isMilestone ? '7px' : '5px') + ';height:' + (isMilestone ? '7px' : '5px') + ';border-radius:50%;background:' + (isMilestone ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)') + ';border:1px solid ' + (isMilestone ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)') + '"></div>'
+            + '</div>';
+        }
       }
-      if (t === 'realisation') {
-        return '<span style="font-size:10px;font-weight:700;background:rgba(168,85,247,0.18);color:#c084fc;border:1px solid rgba(168,85,247,0.35);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px">💡 REALISATION</span>';
-      }
-      return '<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,0.18);color:#4ede80;border:1px solid rgba(34,197,94,0.35);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px">🛡️ EVIDENCE</span>';
+
+      html += '</div></div>';
+      return html;
     }
 
-    function renderTypeSelector(prefix) {
+    function renderWeightBadge(w) {
+      w = w || 'medium';
+      if (w === 'strong') {
+        return '<span style="font-size:10px;font-weight:700;background:rgba(74,222,128,0.2);color:#4ede80;border:1px solid rgba(74,222,128,0.4);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Significant Growth (+4 points)">STRONG +4</span>';
+      }
+      if (w === 'fine') {
+        return '<span style="font-size:10px;font-weight:600;background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.2);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Fine step (+1 point)">Fine +1</span>';
+      }
+      return '<span style="font-size:10px;font-weight:700;background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.45);padding:3px 8px;border-radius:4px;white-space:nowrap;margin-right:6px" title="Medium proof (+2 points)">Medium +2</span>';
+    }
+
+    function renderWeightSelector(prefix) {
       return '<div style="margin-bottom:12px">'
-        + '<div class="sm" style="margin-bottom:6px;color:#e5e7eb;font-weight:600">Select Category:</div>'
-        + '<div id="' + prefix + '-typegroup" style="display:flex;gap:6px;flex-wrap:wrap">'
-        + '<button type="button" id="' + prefix + '-typebtn-evidence" class="b bs ' + prefix + '-typebtn" style="flex:1;min-width:100px;font-size:12px;padding:8px 4px;background:rgba(34,197,94,0.22);color:#4ede80;border:1px solid #22c55e;font-weight:800" onclick="setTypeSel(\'' + prefix + '\',\'evidence\')">🛡️ Evidence</button>'
-        + '<button type="button" id="' + prefix + '-typebtn-appreciation" class="b bs ' + prefix + '-typebtn" style="flex:1;min-width:100px;font-size:12px;padding:8px 4px;background:rgba(255,255,255,0.03);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);font-weight:600" onclick="setTypeSel(\'' + prefix + '\',\'appreciation\')">❤️ Appreciation</button>'
-        + '<button type="button" id="' + prefix + '-typebtn-realisation" class="b bs ' + prefix + '-typebtn" style="flex:1;min-width:100px;font-size:12px;padding:8px 4px;background:rgba(255,255,255,0.03);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);font-weight:600" onclick="setTypeSel(\'' + prefix + '\',\'realisation\')">💡 Realisation</button>'
+        + '<div class="sm" style="margin-bottom:6px;color:#e5e7eb;font-weight:600">Select Impact (Weight):</div>'
+        + '<div id="' + prefix + '-wgroup" style="display:flex;gap:6px;flex-wrap:wrap">'
+        + '<button type="button" id="' + prefix + '-wbtn-fine" class="b bs ' + prefix + '-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px;background:rgba(255,255,255,0.03);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);font-weight:600" onclick="setWeightSel(\'' + prefix + '\',\'fine\')">Fine (+1)</button>'
+        + '<button type="button" id="' + prefix + '-wbtn-medium" class="b bs ' + prefix + '-wbtn" style="flex:1;min-width:80px;font-size:12px;padding:8px 4px;background:rgba(245,158,11,0.22);color:#fbbf24;border:1px solid #f59e0b;font-weight:800" onclick="setWeightSel(\'' + prefix + '\',\'medium\')">Medium (+2)</button>'
+        + '<button type="button" id="' + prefix + '-wbtn-strong" class="b bs ' + prefix + '-wbtn" style="flex:1;min-width:140px;font-size:12px;padding:8px 4px;background:rgba(255,255,255,0.03);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);font-weight:600" onclick="setWeightSel(\'' + prefix + '\',\'strong\')">Strong (+4 Growth)</button>'
         + '</div>'
-        + '<input type="hidden" id="' + prefix + '-type" value="evidence"/>'
+        + '<input type="hidden" id="' + prefix + '-weight" value="medium"/>'
         + '</div>';
     }
 
-    window.setTypeSel = function (prefix, t) {
-      var hidden = document.getElementById(prefix + '-type');
-      if (hidden) hidden.value = t;
-      var evBtn = document.getElementById(prefix + '-typebtn-evidence');
-      var appBtn = document.getElementById(prefix + '-typebtn-appreciation');
-      var realBtn = document.getElementById(prefix + '-typebtn-realisation');
+    window.setWeightSel = function (prefix, w) {
+      var hidden = document.getElementById(prefix + '-weight');
+      if (hidden) hidden.value = w;
+      var fineBtn = document.getElementById(prefix + '-wbtn-fine') || document.querySelectorAll('.' + prefix + '-wbtn')[0];
+      var medBtn = document.getElementById(prefix + '-wbtn-medium') || document.querySelectorAll('.' + prefix + '-wbtn')[1];
+      var strBtn = document.getElementById(prefix + '-wbtn-strong') || document.querySelectorAll('.' + prefix + '-wbtn')[2];
 
-      if (evBtn && appBtn && realBtn) {
-        if (t === 'evidence') {
-          evBtn.style.background = 'rgba(34,197,94,0.22)';
-          evBtn.style.color = '#4ede80';
-          evBtn.style.borderColor = '#22c55e';
-          evBtn.style.fontWeight = '800';
+      if (fineBtn && medBtn && strBtn) {
+        if (w === 'fine') {
+          fineBtn.style.background = 'rgba(59,130,246,0.22)';
+          fineBtn.style.color = '#93c5fd';
+          fineBtn.style.borderColor = '#3b82f6';
+          fineBtn.style.fontWeight = '800';
         } else {
-          evBtn.style.background = 'rgba(255,255,255,0.03)';
-          evBtn.style.color = '#94a3b8';
-          evBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-          evBtn.style.fontWeight = '600';
+          fineBtn.style.background = 'rgba(255,255,255,0.03)';
+          fineBtn.style.color = '#94a3b8';
+          fineBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+          fineBtn.style.fontWeight = '600';
         }
 
-        if (t === 'appreciation') {
-          appBtn.style.background = 'rgba(251,113,133,0.22)';
-          appBtn.style.color = '#fb7185';
-          appBtn.style.borderColor = '#f43f5e';
-          appBtn.style.fontWeight = '800';
+        if (w === 'medium') {
+          medBtn.style.background = 'rgba(245,158,11,0.22)';
+          medBtn.style.color = '#fbbf24';
+          medBtn.style.borderColor = '#f59e0b';
+          medBtn.style.fontWeight = '800';
         } else {
-          appBtn.style.background = 'rgba(255,255,255,0.03)';
-          appBtn.style.color = '#94a3b8';
-          appBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-          appBtn.style.fontWeight = '600';
+          medBtn.style.background = 'rgba(255,255,255,0.03)';
+          medBtn.style.color = '#94a3b8';
+          medBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+          medBtn.style.fontWeight = '600';
         }
 
-        if (t === 'realisation') {
-          realBtn.style.background = 'rgba(168,85,247,0.22)';
-          realBtn.style.color = '#c084fc';
-          realBtn.style.borderColor = '#a855f7';
-          realBtn.style.fontWeight = '800';
+        if (w === 'strong') {
+          strBtn.style.background = 'rgba(74,222,128,0.22)';
+          strBtn.style.color = '#4ede80';
+          strBtn.style.borderColor = '#22c55e';
+          strBtn.style.fontWeight = '800';
         } else {
-          realBtn.style.background = 'rgba(255,255,255,0.03)';
-          realBtn.style.color = '#94a3b8';
-          realBtn.style.borderColor = 'rgba(255,255,255,0.12)';
-          realBtn.style.fontWeight = '600';
+          strBtn.style.background = 'rgba(255,255,255,0.03)';
+          strBtn.style.color = '#94a3b8';
+          strBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+          strBtn.style.fontWeight = '600';
         }
       }
     };
@@ -1276,7 +1423,7 @@
         id: data.id || ('log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)),
         date: data.date || new Date().toISOString(),
         note: data.note || '',
-        type: data.type || 'evidence',
+        weight: data.weight || 'medium',
         taskId: data.taskId || null,
         subtaskId: data.subtaskId || null,
         ideaId: data.ideaId || null
@@ -1745,8 +1892,8 @@
       else if (scr.startsWith('create-') || scr === 'quick-create') rQuickCreate(a);
       else if (scr === 'identity') rIdentity(a);
       else if (scr === 'practice') rPractice(a);
-      
-      
+      else if (scr === 'reflect') rReflect(a);
+      else if (scr === 'history') rHistory(a);
       else if (scr === 'manage') rManage(a);
       else if (scr === 'quick') rQuick(a);
       else if (scr === 'goal') rGoal(a);
@@ -2993,53 +3140,20 @@
     }
 
     function updateLiveCountdowns() {
-      // 1. Identity Target Event Countdowns
       var cardBadges = document.querySelectorAll('.live-target-countdown');
-      if (cardBadges && cardBadges.length) {
-        cardBadges.forEach(function (badge) {
-          var timeStr = badge.getAttribute('data-target-time');
-          var isDetail = badge.getAttribute('data-is-detail') === 'true';
-          if (!timeStr) return;
+      if (!cardBadges || !cardBadges.length) return;
 
-          var details = getCountdownDetails(timeStr, isDetail);
-          if (!details) return;
+      cardBadges.forEach(function (badge) {
+        var timeStr = badge.getAttribute('data-target-time');
+        var isDetail = badge.getAttribute('data-is-detail') === 'true';
+        if (!timeStr) return;
 
-          badge.setAttribute('style', details.scaleStyle);
-          badge.textContent = details.countdownText;
-        });
-      }
+        var details = getCountdownDetails(timeStr, isDetail);
+        if (!details) return;
 
-      // 2. Task & Subtask Live Countdown Pills
-      var taskBadges = document.querySelectorAll('.live-task-countdown');
-      if (taskBadges && taskBadges.length) {
-        taskBadges.forEach(function (btn) {
-          var timeStr = btn.getAttribute('data-target-time');
-          if (!timeStr) return;
-
-          var cd = getNextHoursCountdown(timeStr);
-          if (!cd) return;
-
-          btn.textContent = cd.text;
-          btn.style.color = cd.color;
-          btn.style.background = cd.bg;
-          btn.style.borderColor = cd.border;
-        });
-      }
-
-      // 3. Collapsed Task Card Live Timers
-      var timerTexts = document.querySelectorAll('.live-timer-text');
-      if (timerTexts && timerTexts.length) {
-        timerTexts.forEach(function (el) {
-          var timeStr = el.getAttribute('data-target-time');
-          if (!timeStr) return;
-
-          var cd = getNextHoursCountdown(timeStr);
-          if (!cd) return;
-
-          el.textContent = cd.timerText;
-          el.style.color = cd.color;
-        });
-      }
+        badge.setAttribute('style', details.scaleStyle);
+        badge.textContent = details.countdownText;
+      });
     }
 
     if (window._liveCountdownInterval) {
@@ -3057,29 +3171,22 @@
 
       var now = new Date();
       var diffMs = targetDate - now;
-      var totalSeconds = Math.floor(Math.abs(diffMs) / 1000);
-      var totalMinutes = Math.floor(totalSeconds / 60);
+      var totalMinutes = Math.floor(Math.abs(diffMs) / (1000 * 60));
       var displayH = Math.floor(totalMinutes / 60);
       var displayM = totalMinutes % 60;
-      var displayS = totalSeconds % 60;
-      var displayD = Math.floor(displayH / 24);
-      var remH = displayH % 24;
       var diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
 
-      function fmtTime(d, h, m, s) {
-        var parts = [];
-        if (d > 0) parts.push(d + 'd');
-        if (h > 0 || d > 0) parts.push(h + 'h');
-        if (m > 0 || h > 0 || d > 0) parts.push(m + 'm');
-        parts.push(s + 's');
-        return parts.join(' ');
+      function fmtTime(h, m) {
+        if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+        if (h > 0) return h + 'h';
+        return m + 'm';
       }
 
       if (diffMs <= 0) {
-        var overdueText = totalMinutes > 0 ? ('🚨 ' + fmtTime(displayD, remH, displayM, displayS) + ' overdue') : '🚨 DUE NOW';
+        var overdueText = totalMinutes > 0 ? ('🚨 ' + fmtTime(displayH, displayM) + ' overdue') : '🚨 DUE NOW';
         return {
           text: overdueText,
-          timerText: totalMinutes > 0 ? (fmtTime(displayD, remH, displayM, displayS) + ' overdue') : 'DUE NOW',
+          timerText: totalMinutes > 0 ? (fmtTime(displayH, displayM) + ' overdue') : 'DUE NOW',
           hours: diffHours,
           status: 'overdue',
           color: '#fca5a5',
@@ -3090,8 +3197,8 @@
       }
       if (diffHours <= 6) {
         return {
-          text: '⚡ ' + fmtTime(displayD, remH, displayM, displayS) + ' left',
-          timerText: fmtTime(displayD, remH, displayM, displayS) + ' left',
+          text: '⚡ ' + fmtTime(displayH, displayM) + ' left',
+          timerText: fmtTime(displayH, displayM) + ' left',
           hours: diffHours,
           status: 'urgent',
           color: '#fbbf24',
@@ -3102,8 +3209,8 @@
       }
       if (diffHours <= 24) {
         return {
-          text: '⏱️ ' + fmtTime(displayD, remH, displayM, displayS) + ' left',
-          timerText: fmtTime(displayD, remH, displayM, displayS) + ' left',
+          text: '⏱️ ' + fmtTime(displayH, displayM) + ' left',
+          timerText: fmtTime(displayH, displayM) + ' left',
           hours: diffHours,
           status: 'warning',
           color: '#fde047',
@@ -3113,8 +3220,8 @@
         };
       }
       return {
-        text: '⏳ ' + fmtTime(displayD, remH, displayM, displayS) + ' left',
-        timerText: fmtTime(displayD, remH, displayM, displayS) + ' left',
+        text: '⏳ ' + fmtTime(displayH, displayM) + ' left',
+        timerText: fmtTime(displayH, displayM) + ' left',
         hours: diffHours,
         status: 'normal',
         color: '#38bdf8',
@@ -3167,78 +3274,12 @@
       return !!(cd && cd.status === 'overdue');
     }
 
-    
-    function renderTimeframeSelect(targetType, parentTaskId, subtaskId, currentTimeToResult, currentTargetTime) {
-      var timeOptions = [
-        { val: 'Immediately', label: 'Immediately' },
-        { val: '15-30 mins', label: '15-30 mins' },
-        { val: '1-2 hours', label: '1-2 hours' },
-        { val: 'Same day', label: 'Same day' },
-        { val: '2-3 days', label: '2-3 days' },
-        { val: '1 week+', label: '1 week+' }
-      ];
-
-      var val = currentTimeToResult || '';
-
-      var selectStyle = 'font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px;'
-        + (val ? 'background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.45);' : 'background:rgba(255,255,255,0.04);color:#94a3b8;border:1px solid rgba(255,255,255,0.12);')
-        + 'cursor:pointer;outline:none;flex-shrink:0;color-scheme:dark;margin-left:4px;height:24px;align-self:center';
-
-      var html = '<select class="timeframe-select" onclick="event.stopPropagation()" onchange="changeTimeframePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', this.value)" style="' + selectStyle + '">'
-        + '<option value="" ' + (!val ? 'selected' : '') + ' style="background:#111827;color:#94a3b8">Timeframe ▾</option>';
-
-      timeOptions.forEach(function (opt) {
-        html += '<option value="' + opt.val + '" ' + (val === opt.val ? 'selected' : '') + ' style="background:#111827;color:#f8fafc">' + opt.label + '</option>';
-      });
-
-      html += '</select>';
-
-      html += renderNextTimePill(targetType, parentTaskId, subtaskId, currentTargetTime);
-
-      return html;
-    }
-
-    window.changeTimeframePreset = function (targetType, parentTaskId, subtaskId, val) {
-      var id = getCurRef() || cur();
-      if (!id || !Array.isArray(id.tasks)) return;
-
-      var task = id.tasks.find(function (t) { return t.id === parentTaskId; });
-      if (!task) return;
-
-      var targetItem = targetType === 'subtask' ? (task.subtasks || []).find(function (s) { return s.id === subtaskId; }) : task;
-      if (!targetItem) return;
-
-      targetItem.timeToResult = val;
-      var now = new Date();
-
-      if (val === 'Immediately') {
-        targetItem.nextTargetTime = now.toISOString();
-      } else if (val === '15-30 mins') {
-        targetItem.nextTargetTime = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
-      } else if (val === '1-2 hours') {
-        targetItem.nextTargetTime = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
-      } else if (val === 'Same day') {
-        var endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-        targetItem.nextTargetTime = endOfDay.toISOString();
-      } else if (val === '2-3 days') {
-        targetItem.nextTargetTime = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
-      } else if (val === '1 week+') {
-        targetItem.nextTargetTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      }
-
-      targetItem.updatedAt = new Date().toISOString();
-      id.updatedAt = new Date().toISOString();
-      save(true);
-      render();
-    };
-
     function renderNextTimePill(targetType, parentTaskId, subtaskId, currentTargetTime) {
       var cd = getNextHoursCountdown(currentTargetTime);
       var clickHandler = "event.stopPropagation();openNextTimePickerModal('" + targetType + "', '" + parentTaskId + "', '" + (subtaskId || '') + "')";
 
-      if (cd && currentTargetTime) {
-        return '<button onclick="' + clickHandler + '" class="live-task-countdown" data-target-time="' + esc(currentTargetTime) + '" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:' + cd.bg + ';border:1px solid ' + cd.border + ';color:' + cd.color + ';cursor:pointer;white-space:nowrap;margin-left:4px;flex-shrink:0" title="Click to edit or clear target time">' + cd.text + '</button>';
+      if (cd) {
+        return '<button onclick="' + clickHandler + '" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:' + cd.bg + ';border:1px solid ' + cd.border + ';color:' + cd.color + ';cursor:pointer;white-space:nowrap;margin-left:4px;flex-shrink:0" title="Click to edit or clear target time">' + cd.text + '</button>';
       } else {
         return '<button onclick="' + clickHandler + '" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;cursor:pointer;white-space:nowrap;margin-left:4px;flex-shrink:0" title="Set Target Wait Time">+ Set Time</button>';
       }
@@ -3410,11 +3451,10 @@
       });
 
       function renderCard(id) {
-        const counts = getLogCounts(id);
+        const st = getStage(id);
         const streak = getStreak(id);
         const logged = loggedToday(id);
         const days = daysOld(id);
-        const pct = Math.min(100, Math.max(8, counts.total * 4));
         return `<div class="icard ${logged ? 'done' : 'needs'}" onclick="openIdentity('${id.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div style="flex:1;padding-right:8px">
@@ -3443,9 +3483,9 @@
             </div>
           </div>
         </div>
-        <div class="pg"><div class="pf" style="width:${pct}%"></div></div>
+        <div class="pg"><div class="pf" style="width:${st.pct}%"></div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:4px">
-          <span class="sm" style="color:#d1d5db">${counts.total} entries (${counts.evidence} Ev · ${counts.appreciation} App · ${counts.realisation} Real) · Day ${days}${streak > 1 ? ' · ' + streak + '-day streak' : ''}</span>
+          <span class="sm" style="color:#d1d5db">${st.name} · Day ${days} · ${id.logs.length} proofs${streak > 1 ? ' · ' + streak + '-day streak' : ''}</span>
           ${logged ? '<span class="sm" style="color:#4ede80;font-weight:600">practiced today</span>' : '<span class="sm" style="color:#fbbf24;font-weight:600">practice today →</span>'}
         </div>
       </div>`;
@@ -3597,7 +3637,7 @@
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1f2436;gap:8px">'
               + '<div style="display:flex;gap:6px;align-items:baseline;flex:1;overflow:hidden">'
               + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">' + dateStr + '</span>'
-              + renderCategoryBadge(l.type)
+              + renderWeightBadge(l.weight)
               + '<span style="font-size:13px;color:#e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.note) + '</span>'
               + '</div>'
               + '<button class="ev-edit" style="font-size:10px;padding:2px 6px" onclick="openEvidenceModalTab(\'daily\')">view</button>'
@@ -3610,7 +3650,68 @@
       }
     };
 
-function renderInlineEvidenceSection(id) {
+    function renderInlineWeeklyContent(id) {
+      var reflections = id.reflections || [];
+      var q = (window.inlineFilterState?.weeklySearch || '').trim().toLowerCase();
+
+      var filtered = reflections.map(function (r, i) { return { r: r, realIdx: i }; });
+      if (q) {
+        filtered = filtered.filter(function (item) {
+          var r = item.r;
+          return (r.oldPatterns || '').toLowerCase().includes(q) ||
+                 (r.newMoments || '').toLowerCase().includes(q) ||
+                 (r.nextCrack || '').toLowerCase().includes(q);
+        });
+      }
+
+      if (reflections.length === 0) {
+        return '<div style="text-align:center;padding:20px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:10px;margin:10px 0">'
+          + '<p class="d" style="margin-bottom:8px;color:#d1d5db">No weekly reflections recorded yet.</p>'
+          + '<p class="h" style="margin-bottom:12px">Reflecting each week on what worked and what didn\'t locks in your identity growth!</p>'
+          + '<button class="b bp bs" onclick="go(\'reflect\')">Write First Weekly Reflection</button>'
+          + '</div>';
+      }
+
+      if (filtered.length === 0) {
+        return '<p class="h" style="font-style:italic;margin:12px 0;color:#9ca3af">No reflections match search criteria.</p>';
+      }
+
+      return filtered.slice().reverse().map(function (item) {
+        var r = item.r, ri = item.realIdx;
+        var dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        var weekNum = ri + 1;
+
+        return '<div class="c cd" style="margin-bottom:12px;padding:14px;background:rgba(20,26,44,0.7);border:1px solid #283046;border-radius:12px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08)">'
+          + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<span class="sm" style="font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.15);padding:2px 8px;border-radius:6px">Week ' + weekNum + '</span>'
+          + '<span class="sm" style="color:#9ca3af">' + dateStr + '</span>'
+          + '</div>'
+          + '<button class="ev-edit" style="font-size:11px;padding:3px 8px" onclick="openEvidenceModalTab(\'weekly\')">manage</button>'
+          + '</div>'
+
+          + (r.newMoments ?
+            '<div style="margin-bottom:8px;padding:8px 10px;background:rgba(34,197,94,0.08);border-left:3px solid #22c55e;border-radius:6px">'
+            + '<span style="font-size:11px;font-weight:700;color:#4ede80;display:block;margin-bottom:2px">WHAT WORKED (New Identity Moments)</span>'
+            + '<p style="font-size:13px;color:#e5e7eb;margin:0;line-height:1.4">' + esc(r.newMoments) + '</p>'
+            + '</div>' : '')
+
+          + (r.oldPatterns ?
+            '<div style="margin-bottom:8px;padding:8px 10px;background:rgba(239,68,68,0.08);border-left:3px solid #ef4444;border-radius:6px">'
+            + '<span style="font-size:11px;font-weight:700;color:#fca5a5;display:block;margin-bottom:2px">WHAT DIDN\'T WORK (Old Cage Patterns)</span>'
+            + '<p style="font-size:13px;color:#e5e7eb;margin:0;line-height:1.4">' + esc(r.oldPatterns) + '</p>'
+            + '</div>' : '')
+
+          + (r.nextCrack ?
+            '<div style="padding:8px 10px;background:rgba(245,158,11,0.08);border-left:3px solid #f59e0b;border-radius:6px">'
+            + '<span style="font-size:11px;font-weight:700;color:#fbbf24;display:block;margin-bottom:2px">NEXT LEVEL CRACK</span>'
+            + '<p style="font-size:13px;color:#e5e7eb;margin:0;line-height:1.4">' + esc(r.nextCrack) + '</p>'
+            + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    function renderInlineEvidenceSection(id) {
       var hs = (id && id.hiddenSections) || {};
       var logs = (id && id.logs) || [];
       var reflections = (id && id.reflections) || [];
@@ -3668,7 +3769,7 @@ function renderInlineEvidenceSection(id) {
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-bottom:1px solid #1f2436;gap:8px;background:rgba(255,255,255,0.02);margin-bottom:4px;border-radius:6px">'
               + '<div style="display:flex;gap:8px;align-items:center;flex:1;overflow:hidden;flex-wrap:wrap">'
               + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">' + dateStr + '</span>'
-              + renderCategoryBadge(l.type)
+              + renderWeightBadge(l.weight)
               + '<span style="font-size:13px;color:#e5e7eb;word-break:break-word">' + esc(l.note) + '</span>'
               + '</div>'
               + '<div style="display:flex;gap:4px;align-items:center">'
@@ -5032,7 +5133,7 @@ function renderInlineEvidenceSection(id) {
                 + '<div style="display:flex;align-items:flex-start;gap:4px;flex:1 1 140px;min-width:140px;background:' + stNextBg + ';padding:3px 6px;border-radius:6px;border:1px solid ' + stNextBorder + ';box-sizing:border-box">'
                 + '<span style="font-size:10.5px;font-weight:700;color:' + stNextLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:1px">Next:</span>'
                 + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="Next step..." onfocus="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'20px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.whatNext || '') + '</textarea>'
-                + renderTimeframeSelect('subtask', task.id, st.id, st.timeToResult, st.nextTargetTime)
+                + renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime)
                 + '</div>'
                 + '</div>'
               ) : ((st.doingNow || st.whatNext) ? (
@@ -5057,7 +5158,7 @@ function renderInlineEvidenceSection(id) {
                 + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
                 + '</button>'
                 + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
-                + (st.nextTargetTime && !isSubDone ? renderTimeframeSelect('subtask', task.id, st.id, st.timeToResult, st.nextTargetTime) : '')
+                + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
                 + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">DONE (+2 PTS)</span>' : '')
                 + '</div>'
                 + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
@@ -5112,7 +5213,7 @@ function renderInlineEvidenceSection(id) {
         + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:180px;background:' + mainNextBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box">'
         + '<span style="font-size:11.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0;margin-top:2px">Next:</span>'
         + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Next step..." onfocus="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}" oninput="this.style.height=\'22px\';if(this.value.trim()){this.style.height=this.scrollHeight+\'px\';}updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.whatNext || '') + '</textarea>'
-        + renderTimeframeSelect('task', task.id, null, task.timeToResult, task.nextTargetTime)
+        + (!task.nextTargetTime ? renderNextTimePill('task', task.id, null, null) : '')
         + '</div>'
         + '</div>'
       ) : ((task.doingNow || task.whatNext) ? (
@@ -5166,7 +5267,7 @@ function renderInlineEvidenceSection(id) {
         + '<div style="display:flex;flex-direction:column;gap:2px;cursor:pointer;flex:1" onclick="toggleTaskExpanded(\'' + task.id + '\')" title="' + (isExpanded ? 'Click to collapse subtasks' : 'Click to expand subtasks') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span class="task-title" style="font-size:15px;font-weight:600;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
-        + ((task.nextTargetTime || task.timeToResult) && !task.completed ? renderTimeframeSelect('task', task.id, null, task.timeToResult, task.nextTargetTime) : '')
+        + (task.nextTargetTime && !task.completed ? renderNextTimePill('task', task.id, null, task.nextTargetTime) : '')
         + (subtasks.length > 0 ? ('<span style="font-size:11px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:2px 7px;border-radius:6px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + '">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
         + (task.completed ? '<span style="font-size:10px;font-weight:800;background:rgba(74,222,128,0.15);color:#4ede80;padding:2px 6px;border-radius:4px;border:1px solid rgba(74,222,128,0.3)">✓ ACHIEVED</span>' : '')
         + '</div>'
@@ -5278,27 +5379,1819 @@ function renderInlineEvidenceSection(id) {
 
 
     function renderTugOfWar(id) {
-      var counts = getLogCounts(id);
+      if (!id) return '';
+      var oldId = (id.oldIdentity || 'The version of me that hesitated and stayed in the old pattern').trim();
+      var antiVis = (id.antiVisionText || id.antiVision || 'Living beneath my potential and repeating old excuses.').trim();
+      var newId = (id.newIdentity || 'Relentless Builder').trim();
+      var crack = (id.crackAction || 'Daily focused execution').trim();
+      var pts = getEvidencePoints(id);
+      var oldEvList = Array.isArray(id.oldEvidence) ? id.oldEvidence : [];
+      var actionsList = Array.isArray(id.actions) ? id.actions : [];
 
-      return '<div class="tow" style="padding:18px 14px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);margin-bottom:18px">'
-        + '<div style="display:flex;gap:10px;align-items:center;justify-content:space-around;flex-wrap:wrap;margin-bottom:12px">'
-        + '<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:12px;flex:1;min-width:110px">'
-        + '<div style="font-size:22px;font-weight:800;color:#4ede80">🛡️ ' + counts.evidence + '</div>'
-        + '<div style="font-size:11px;font-weight:700;color:#86efac;letter-spacing:0.5px;margin-top:2px">EVIDENCE</div>'
+      var oldEvHtml = oldEvList.length > 0
+        ? '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed rgba(239,68,68,0.2);font-size:11px;color:#fca5a5">'
+          + '<strong style="color:#ef4444">Old Cage Triggers:</strong> ' + oldEvList.map(e).join(' · ')
+          + '</div>'
+        : '';
+
+      var actionsHtml = actionsList.length > 0
+        ? '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed rgba(34,197,94,0.2);font-size:11px;color:#86efac">'
+          + '<strong style="color:#22c55e">Daily Standards:</strong> ' + actionsList.map(e).join(' · ')
+          + '</div>'
+        : '';
+
+      return '<div class="c" style="margin-bottom:18px;padding:18px 20px;background:linear-gradient(135deg,rgba(15,23,42,0.92),rgba(20,15,35,0.95));border:1px solid rgba(245,158,11,0.3);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,0.35)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+        + '<span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#fbbf24;text-transform:uppercase;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:6px;border:1px solid rgba(245,158,11,0.3)">⚔️ THE IDENTITY TUG-OF-WAR</span>'
+        + '<span style="font-size:12px;color:#94a3b8">Mindset Contrast</span>'
         + '</div>'
-        + '<div style="text-align:center;padding:12px;background:rgba(251,113,133,0.08);border:1px solid rgba(251,113,133,0.25);border-radius:12px;flex:1;min-width:110px">'
-        + '<div style="font-size:22px;font-weight:800;color:#fb7185">❤️ ' + counts.appreciation + '</div>'
-        + '<div style="font-size:11px;font-weight:700;color:#fca5a5;letter-spacing:0.5px;margin-top:2px">APPRECIATION</div>'
+        + '<span style="font-size:12px;color:#4ede80;font-weight:700">' + pts + ' Total Proof Points</span>'
         + '</div>'
-        + '<div style="text-align:center;padding:12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:12px;flex:1;min-width:110px">'
-        + '<div style="font-size:22px;font-weight:800;color:#c084fc">💡 ' + counts.realisation + '</div>'
-        + '<div style="font-size:11px;font-weight:700;color:#d8b4fe;letter-spacing:0.5px;margin-top:2px">REALISATION</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:12px">'
+        
+        // Left: Old Cage
+        + '<div style="padding:14px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.25);border-radius:10px">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+        + '<span style="font-size:10px;font-weight:800;color:#fca5a5;background:rgba(239,68,68,0.2);padding:2px 6px;border-radius:4px;text-transform:uppercase">🔴 THE OLD CAGE (REFUSED)</span>'
+        + '</div>'
+        + '<p style="font-size:13px;color:#fca5a5;font-weight:600;margin:0 0 6px 0;line-height:1.4">"' + e(oldId) + '"</p>'
+        + '<p style="font-size:12px;color:#cbd5e1;margin:0;font-style:italic;line-height:1.45">' + e(antiVis) + '</p>'
+        + oldEvHtml
+        + '</div>'
+
+        // Right: New Identity
+        + '<div style="padding:14px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.25);border-radius:10px">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+        + '<span style="font-size:10px;font-weight:800;color:#86efac;background:rgba(34,197,94,0.2);padding:2px 6px;border-radius:4px;text-transform:uppercase">🟢 THE NEW IDENTITY (CHOSEN)</span>'
+        + '</div>'
+        + '<p style="font-size:13px;color:#4ede80;font-weight:700;margin:0 0 6px 0;line-height:1.4">"' + e(newId) + '"</p>'
+        + '<p style="font-size:12px;color:#e2e8f0;margin:0;line-height:1.45"><strong>First Crack:</strong> ' + e(crack) + '</p>'
+        + actionsHtml
+        + '</div>'
+
+        + '</div>'
+        + '</div>';
+    }
+
+    window.setQuickTargetEventTime = function(idStr) {
+      var inp = document.getElementById('quick-target-datetime-' + idStr);
+      if (!inp || !inp.value) return;
+      var identity = (S.identities || []).find(function(item) { return item && item.id === idStr; });
+      if (!identity) return;
+      identity.targetEventTime = new Date(inp.value).toISOString();
+      identity.updatedAt = new Date().toISOString();
+      save(true);
+      render();
+    };
+
+    window.setQuickTargetEventTime = function(idStr) {
+      var inp = document.getElementById('quick-target-datetime-' + idStr);
+      if (!inp || !inp.value) return;
+      var identity = (S.identities || []).find(function(item) { return item && item.id === idStr; });
+      if (!identity) return;
+      identity.targetEventTime = new Date(inp.value).toISOString();
+      identity.updatedAt = new Date().toISOString();
+      save(true);
+      render();
+    };
+
+    function renderTargetEventCountdownDetail(id) {
+      if (!id || !id.targetEvent || !id.targetEvent.trim()) return '';
+      var name = id.targetEvent.trim();
+      var timeStr = id.targetEventTime;
+      var tagEventStr = (id.targetEventName || id.taggedEvent || '').trim();
+
+      var countdownBadge = '';
+      if (timeStr) {
+        var details = getCountdownDetails(timeStr, true);
+        if (details) {
+          countdownBadge = '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+            + '<span class="live-target-countdown" data-target-time="' + timeStr + '" data-is-detail="true" style="' + details.scaleStyle + '">' + (details.badgeLabel ? details.badgeLabel + ' · ' : '') + details.countdownText + '</span>'
+            + '</div>';
+        }
+      } else {
+        countdownBadge = '<div style="margin-top:10px;padding:10px 12px;background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.3);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
+          + '<div style="font-size:12px;color:#fbbf24;font-weight:600;display:flex;align-items:center;gap:6px">Set Target Date & Time to start Live Countdown Timer</div>'
+          + '<div style="display:flex;gap:6px;align-items:center">'
+          + '<input type="datetime-local" id="quick-target-datetime-' + id.id + '" style="background:#0f172a;border:1px solid #334155;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px" />'
+          + '<button class="b bp bs" onclick="setQuickTargetEventTime(\'' + id.id + '\')" style="font-size:11px;padding:4px 10px;background:#f59e0b;color:#000;font-weight:700">Start Timer ⏱️</button>'
+          + '</div>'
+          + '</div>';
+      }
+
+      return '<div style="margin-top:16px;padding:16px 18px;background:linear-gradient(135deg,rgba(40,28,10,0.8),rgba(20,16,8,0.95));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 15px rgba(245,158,11,0.12)">'
+        + '<div style="font-family:Georgia,serif;font-size:18px;color:#fef08a;font-weight:700;line-height:1.45;margin:2px 0;font-style:italic;letter-spacing:0.2px">"' + e(name) + '"</div>'
+        + countdownBadge
+        + '</div>';
+    }
+
+    function renderIdentityView(a, id) {
+      if (!id) return go('hub');
+      var pts = getEvidencePoints(id);
+      var st = getStage(pts);
+      var streak = getStreak(id);
+      var days = daysOld(id);
+      var logged = loggedToday(id);
+      var needsR = needsReflection(id);
+
+      var tagEventStr = (id.targetEventName || id.taggedEvent || id.targetActionLine || id.targetEvent || '').trim();
+
+      var motivationPrompts = [
+        "What is the single boldest move you can make today that proves this identity is real?",
+        "Take the action your old identity is trying to postpone until tomorrow.",
+        "Today's Biggest Crack: Do one thing so decisive that self-doubt loses all its power.",
+        "Small excuses keep old cages alive. Break one excuse right now with direct action.",
+        "Who would you be today if hesitation was impossible? Go deliver that proof.",
+        "Make today's evidence so undeniable that you don't even need motivation tomorrow.",
+        "Your future identity is forged by today's toughest choice. Make the bold call."
+      ];
+      var promptIndex = Math.abs(daysOld(id)) % motivationPrompts.length;
+      var dailyMotivation = motivationPrompts[promptIndex];
+
+      var hs = id.hiddenSections || {};
+
+      var headerNavHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap;background:rgba(18,24,38,0.7);backdrop-filter:blur(10px);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">'
+        + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+        + '<button class="b bp bs" onclick="startCreate()" style="font-size:12px;padding:8px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 3px 10px rgba(245,158,11,0.25);white-space:nowrap;display:inline-flex;align-items:center;gap:4px">➕ Create New Identity</button>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<button onclick="toggleAchievedIdentity(' + id.id + ')" style="background:' + (id.achieved ? 'rgba(59,130,246,0.15)' : 'rgba(234,179,8,0.15)') + ';border:1px solid ' + (id.achieved ? 'rgba(59,130,246,0.4)' : 'rgba(234,179,8,0.4)') + ';color:' + (id.achieved ? '#93c5fd' : '#fde047') + ';font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap">' + (id.achieved ? 'Re-open Identity' : '🏆 Mark Achieved') + '</button>'
+        + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:7px 12px;white-space:nowrap">Edit Details</button>'
+        + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:7px 12px;color:#fbbf24;font-weight:600;white-space:nowrap">All Cards →</button>'
+        + '</div>'
+        + '</div>';
+
+      // 🌟 1. UNIFIED TOP CARD: LEVEL PROGRESSION + TODAY'S MOTIVATION & PROOF LOGGER
+      var topLevelAndMotivationCardHtml = '<div class="c cy" style="padding:18px 20px;background:linear-gradient(135deg,rgba(16,24,44,0.94),rgba(10,14,26,0.98));border:1.5px solid rgba(245,158,11,0.45);border-left:4px solid #f59e0b;border-radius:14px;margin-bottom:18px;box-shadow:0 8px 25px rgba(0,0,0,0.35);display:flex;flex-direction:column;justify-content:space-between">'
+        // Top Part: Level 1-30 Progress
+        + '<div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+        + '<span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#4ede80;background:rgba(74,222,128,0.14);padding:3px 8px;border-radius:6px;border:1px solid rgba(74,222,128,0.35);text-transform:uppercase">🏆 ' + st.name + '</span>'
+        + '</div>'
+        + '<span style="font-size:11px;color:#9ca3af">' + pts + ' proof pts (' + (st.pts - st.minPts) + ' / ' + (st.nextPts - st.minPts) + ' in level)</span>'
+        + '</div>'
+        + '<div class="pg" style="height:6px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;margin-bottom:4px">'
+        + '<div class="pf" style="width:' + st.levelPct + '%;background:linear-gradient(90deg,#22c55e,#4ede80);box-shadow:0 0 10px rgba(74,222,128,0.5)"></div>'
+        + '</div>'
+        + renderLevelDots(st.level, 30)
+        + '</div>'
+
+        // Bottom Part: Today's Motivation & Proof Logger
+        + '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(245,158,11,0.22)">'
+        + renderWeightSelector('idlog')
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<input type="text" id="idlog" placeholder="What decisive action did you take today?" style="flex:1;min-width:200px;background:#0f172a;border:1px solid #334155;color:#fff;padding:9px 12px;border-radius:8px;font-size:13px" onkeydown="if(event.key===\'Enter\')logIdentityEvidence()" />'
+        + '<button class="b bp bs" onclick="logIdentityEvidence()" style="font-size:12px;padding:9px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;white-space:nowrap">Save Proof</button>'
         + '</div>'
         + '</div>'
-        + '<div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">'
-        + renderTypeSelector('idlog')
-        + '<textarea rows="2" id="idlog" placeholder="Log your entry (evidence, appreciation, or realisation)..." style="margin-bottom:10px;min-height:52px"></textarea>'
-        + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:12px">Save Entry</button>'
+        + '</div>';
+
+      // 🎯 2. HERO IDENTITY STANDARD CARD
+      var heroCardHtml = '<div class="c" style="padding:22px 24px;background:linear-gradient(135deg,rgba(16,24,44,0.94),rgba(10,14,26,0.98));border:1px solid rgba(74,222,128,0.35);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 25px rgba(74,222,128,0.08);display:flex;flex-direction:column;justify-content:space-between">'
+        + '<div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
+        + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' · ' + (id.logs ? id.logs.length : 0) + ' Proofs' + (streak > 1 ? ' · 🔥 ' + streak + '-day streak' : '') + '</span>'
+        + '</div>'
+        + '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>'
+        + (tagEventStr ? '<div style="margin-top:12px"><span style="font-size:13px;font-weight:800;padding:5px 12px;background:rgba(56,189,248,0.18);color:#38bdf8;border:1.5px solid rgba(56,189,248,0.45);border-radius:8px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(56,189,248,0.15)">Do it Before: "' + e(tagEventStr) + '"</span></div>' : '')
+        + '</div>'
+        
+        // ⏳ BOLD, MEMORABLE MISSION ANCHOR EVENT CARD (Collapsible/Hideable)
+        + (hs.anchor ? (
+          '<div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(245,158,11,0.04);border:1px dashed rgba(245,158,11,0.25);border-radius:10px;font-size:12px;color:#fbbf24">'
+          + '<span>Mission Target Event (Hidden)</span>'
+          + '<button class="bg" onclick="toggleSectionVisibility(\'anchor\')" style="font-size:11px;color:#fbbf24;font-weight:700">Show Event ▾</button>'
+          + '</div>'
+        ) : (id.targetEvent && id.targetEvent.trim() ? renderTargetEventCountdownDetail(id) : (
+          '<div style="margin-top:14px;padding-top:10px 14px;background:rgba(255,255,255,0.02);border:1px dashed rgba(245,158,11,0.25);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:8px">'
+          + '<span style="font-size:12px;color:#9ca3af">No target milestone event set yet.</span>'
+          + '<button class="bg" onclick="go(\'manage\')" style="font-size:11px;color:#fbbf24;font-weight:600">+ Set Anchor Event</button>'
+          + '</div>'
+        )))
+        + '</div>';
+
+      var reflectHtml = '';
+      if (needsR) {
+        reflectHtml = '<div class="rfc" style="margin-bottom:14px">'
+          + '<p class="d" style="margin-bottom:8px">It\'s been a week — time for a deeper check-in to solidify your identity growth.</p>'
+          + '<button class="b bp bs" onclick="go(\'reflect\')">Do weekly reflection</button>'
+          + '</div>';
+      }
+
+      var topCardsHtml = '<div class="identity-top-row-grid" style="margin-bottom:18px">'
+        + heroCardHtml
+        + topLevelAndMotivationCardHtml
+        + '</div>';
+
+      var incompleteWarningBannerHtml = '';
+      if (isIdentityIncomplete(id)) {
+        incompleteWarningBannerHtml = '<div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.18));border:1.5px solid rgba(245,158,11,0.55);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 4px 15px rgba(245,158,11,0.15)">'
+          + '<div style="display:flex;align-items:center;gap:10px">'
+          + '<span style="font-size:22px">⚠️</span>'
+          + '<div>'
+          + '<div style="font-size:13.5px;font-weight:800;color:#fbbf24">Incomplete Identity Format</div>'
+          + '<div style="font-size:12px;color:#cbd5e1">This identity is missing either the <strong>Who You Are</strong> statement or the <strong>Target Action Line</strong>.</div>'
+          + '</div>'
+          + '</div>'
+          + '<button class="b bp bs" onclick="openUpdateFormatModal(\'' + id.id + '\')" style="font-size:12px;padding:8px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-weight:800;white-space:nowrap;box-shadow:0 3px 10px rgba(245,158,11,0.3)">⚡ Update Format Now</button>'
+          + '</div>';
+      }
+
+      a.innerHTML = '<div class="' + getFadeClass() + '">'
+        + incompleteWarningBannerHtml
+        + headerNavHtml
+        + topCardsHtml
+        + renderTasksAndLoopsSection(id)
+        + renderInlineEvidenceSection(id)
+        + '<div style="margin-top:24px;margin-bottom:30px;text-align:center">'
+        + '<button class="b bb bw" onclick="go(\'manage\')" style="padding:12px 24px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.2)">⚙️ Manage & Edit Identity Details</button>'
+        + '</div>'
+        + '</div>';
+    }
+
+    function rIdentity(a) {
+      const id = cur();
+      renderIdentityView(a, id);
+    }
+
+    window.logIdentityEvidence = function () {
+      const v = $('#idlog')?.value?.trim(); if (!v) return;
+      const w = $('#idlog-weight')?.value || 'medium';
+      const id = cur(); if (!id) return;
+      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w });
+      save();
+      var ta = $('#idlog');
+      if (ta) ta.value = '';
+      var pts = getEvidencePoints(id);
+      var st = getStage(pts);
+      var isStrong = (w === 'strong');
+      var btn = ta?.parentElement?.querySelector('button.bp');
+      if (btn) {
+        btn.textContent = isStrong ? 'Significant Growth! +4 Points Added!' : (w === 'fine' ? 'Fine Step +1 Point Added!' : 'Proof Saved! +2 Points Added!');
+        btn.style.background = isStrong ? '#3a7e4a' : '#3a6e4a';
+        setTimeout(function () {
+          btn.textContent = 'Save Evidence & Level Up';
+          btn.style.background = '';
+          render();
+        }, 1200);
+      } else {
+        render();
+      }
+    };
+
+    // ═══════════════════════════════════════════════
+    // DAILY PRACTICE
+    // ═══════════════════════════════════════════════
+    function rPractice(a) {
+      const id = cur(); if (!id) return go('hub');
+      const logged = loggedToday(id);
+      const prompt = dailyPrompt(id);
+      const streak = getStreak(id);
+
+      a.innerHTML = `<div class="fade">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('identity')">← Back</button><button class="bg" onclick="go('hub')" style="color:#f59e0b">All Cards →</button></div>
+    <div class="sn">DAILY PRACTICE</div>
+    <h2>Remember why you started</h2>
+
+    <p class="d" style="margin-top:16px;margin-bottom:4px;color:#ff8f70;font-weight:700">The future you refused (Anti-Vision):</p>
+    <div class="c cr" style="margin-bottom:20px">
+      <p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#ffb399;line-height:1.6">${e(id.antiVisionText)}</p>
+    </div>
+
+    <p class="d" style="margin-bottom:4px;color:#4ede80;font-weight:700">The person you chose to become:</p>
+    <div class="dp-id" style="margin-top:0;margin-bottom:12px">
+      <p class="cq" style="color:#4ede80;font-size:19px">"${e(id.newIdentity)}"</p>
+    </div>
+    ${renderTugOfWar(id)}
+
+    <div class="c cd" style="padding:22px">
+      <h3 style="margin-bottom:4px;color:#f3f4f6">${logged ? "Add more evidence" : "Log today's evidence"}</h3>
+      <p class="d" style="font-style:italic;color:#d1d5db;margin-bottom:14px">${e(prompt)}</p>
+      ${renderWeightSelector('plog')}
+      <textarea rows="3" id="plog" placeholder="What did the new you do today?" style="margin-bottom:10px"></textarea>
+      <button class="b bp bs" onclick="logPractice()">Save evidence</button>
+    </div>
+
+    ${id.logs.length > 0 ? `<div style="margin-top:18px">
+      <p class="sm" style="margin-bottom:8px">${id.logs.length} proofs · ${streak > 0 ? streak + '-day streak' : 'start your streak today'}</p>
+      <div class="sb">${streakDots(id)}</div>
+    </div>`: ''}
+
+  </div>`;
+    }
+    window.logPractice = function () {
+      const v = $('#plog')?.value?.trim(); if (!v) return;
+      const w = $('#plog-weight')?.value || 'medium';
+      const id = cur(); if (!id) return;
+      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w });
+      save();
+      // Show success with options
+      const card = $('#plog')?.closest('.c');
+      if (card) {
+        const pts = getEvidencePoints(id);
+        const st = getStage(pts);
+        var isStrong = (w === 'strong');
+        var badgeTxt = isStrong ? 'SIGNIFICANT GROWTH! (+4 Proof Points)' : (w === 'fine' ? 'Fine Step (+1 Point)' : 'Medium Proof (+2 Points)');
+        card.innerHTML = '<div class="log-success">'
+          + '<h3 style="color:' + (isStrong ? '#6abf7b' : '#d4a04a') + '">' + badgeTxt + '</h3>'
+          + '<p class="d" style="margin-bottom:4px">Your new identity just got stronger! Total score: <strong style="color:#6abf7b">' + pts + ' proof points</strong> (' + id.logs.length + ' entries) — stage: <strong style="color:#d4a04a">' + st.name + '</strong>.</p>'
+          + '<p class="h" style="margin-bottom:16px">Every log weakens the old cage and strengthens the new you.</p>'
+          + '<button class="b bp bs" onclick="showMoreLog()" style="margin-right:8px">Add more evidence</button>'
+          + '<button class="b bb bs" onclick="goToHub()">Back to All Cards</button>'
+          + '</div>';
+      }
+    };
+    window.showMoreLog = function () { render() };
+    window.goToHub = function () { go('hub') };
+
+    // ═══════════════════════════════════════════════
+    // WEEKLY REFLECTION
+    // ═══════════════════════════════════════════════
+    function rReflect(a) {
+      const id = cur(); if (!id) return go('hub');
+      const week = id.reflections.length + 1;
+
+      a.innerHTML = `<div class="fade">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('identity')">← Back</button><button class="bg" onclick="go('hub')" style="color:#d4a04a">All Cards →</button></div>
+    <div class="sn">WEEKLY REFLECTION #${week}</div>
+    <h2>Zoom out and grow</h2>
+    <p class="d">You've been at this for ${daysOld(id)} days. Let's check in on a deeper level — this is how your identity gets stronger week over week.</p>
+
+    <div style="margin-top:20px">
+      <label class="lb">1. What patterns from the OLD identity showed up this week?</label>
+      <p class="h">Where did the cage try to pull you back? Be honest — noticing is progress.</p>
+      <textarea rows="3" id="rq1" placeholder="e.g., I caught myself scrolling for an hour on Wednesday instead of working on my project. On Thursday I almost skipped my 30-min session because I was 'too tired'."></textarea>
+    </div>
+
+    <div style="margin-top:20px">
+      <label class="lb">2. When did the NEW identity feel most natural?</label>
+      <p class="h">When did it stop feeling like effort and start feeling like you?</p>
+      <textarea rows="3" id="rq2" placeholder="e.g., Thursday morning I sat down to work and an hour passed before I noticed — no forcing, it just happened. I also said no to a party to finish my prototype."></textarea>
+    </div>
+
+    <div style="margin-top:20px">
+      <label class="lb">3. What's one BIGGER crack you'll try next week?</label>
+      <p class="h">Your first crack was: "${e(id.crackAction)}". Now push further — what's the next level?</p>
+      <textarea rows="3" id="rq3" placeholder="e.g., Next week I'll show my prototype to one real person and ask for brutally honest feedback — not just friends, someone who'll actually critique it."></textarea>
+    </div>
+
+    <div class="nav">
+      <button class="b bb" onclick="go('identity')">Cancel</button>
+      <button class="b bp" onclick="saveReflection()">Save reflection</button>
+    </div>
+  </div>`;
+    }
+    window.saveReflection = function () {
+      const q1 = $('#rq1')?.value?.trim();
+      const q2 = $('#rq2')?.value?.trim();
+      const q3 = $('#rq3')?.value?.trim();
+      if (!q1 && !q2 && !q3) return;
+      const id = cur(); if (!id) return;
+      id.reflections.push({ date: new Date().toISOString(), oldPatterns: q1 || '', newMoments: q2 || '', nextCrack: q3 || '' });
+      save(); go('identity');
+    };
+
+    // ═══════════════════════════════════════════════
+    // HISTORY
+    // ═══════════════════════════════════════════════
+    function rHistory(a) {
+      const id = cur(); if (!id) return go('hub');
+      const st = getStage(id.logs.length);
+
+      a.innerHTML = `<div class="fade">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><button class="bg" onclick="go('identity')">← Back</button><button class="bg" onclick="go('hub')" style="color:#d4a04a">All Cards →</button></div>
+    <h2 style="margin-bottom:4px">Evidence & Reflections</h2>
+    <p class="d">${id.logs.length} proofs · ${st.name} · Day ${daysOld(id)}</p>
+    <div class="sb" style="margin-bottom:20px">${streakDots(id)}</div>
+
+    ${id.reflections.length > 0 ? `
+      <h3 style="margin-bottom:12px">Weekly Reflections (${id.reflections.length})</h3>
+      ${id.reflections.slice().reverse().map((r, i) => `<div class="c cd" style="margin-bottom:10px">
+        <p class="sm" style="margin-bottom:8px">Week ${id.reflections.length - i} · ${new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+        ${r.oldPatterns ? `<p class="h" style="margin-bottom:2px"><strong style="color:#c9785a">Old patterns:</strong> ${e(r.oldPatterns)}</p>` : ''}
+        ${r.newMoments ? `<p class="h" style="margin-bottom:2px"><strong style="color:#6abf7b">New moments:</strong> ${e(r.newMoments)}</p>` : ''}
+        ${r.nextCrack ? `<p class="h" style="margin-bottom:0"><strong style="color:#d4a04a">Next crack:</strong> ${e(r.nextCrack)}</p>` : ''}
+      </div>`).join('')}
+    `: ''}
+
+    <h3 style="margin:20px 0 12px">All Evidence (${id.logs.length})</h3>
+    ${id.logs.length > 0 ? [...id.logs].map((l, i) => ({ l, i })).reverse().map(({ l, i }) => `<div class="li"><span class="ld">${new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span><span class="ln">${e(l.note)}</span><button class="ev-edit" onclick="editLog(${i}, this)">edit</button><button class="ev-del" onclick="delLog(${i})">delete</button></div>`).join('')
+          : '<p class="h" style="font-style:italic">No evidence yet.</p>'}
+
+    <div style="margin-top:40px;text-align:center" id="da">
+      <button class="bg" style="color:#c9785a;border:1px solid rgba(201,120,90,0.3);padding:8px 16px;border-radius:6px" onclick="showDel()">Delete this identity</button>
+    </div>
+  </div>`;
+    }
+    window.showDel = function () {
+      const da = $('#da'); if (!da) return;
+      da.innerHTML = `<div class="c cr" style="text-align:center;padding:14px">
+    <p style="font-size:13px;color:#c9785a;margin-bottom:10px">This permanently deletes this identity, all evidence, and all reflections.</p>
+    <button class="b br bs" onclick="delIdentity()" style="margin-right:8px">Delete forever</button>
+    <button class="bg" onclick="render()">Cancel</button>
+  </div>`;
+    };
+    window.delIdentity = function () {
+      if (!Array.isArray(S.deletedIds)) S.deletedIds = [];
+      if (S.currentId && !S.deletedIds.includes(S.currentId)) S.deletedIds.push(S.currentId);
+      S.identities = S.identities.filter(i => i.id !== S.currentId);
+      S.currentId = null; save(true);
+      go('hub');
+    };
+
+    // ═══════════════════════════════════════════════
+    // INIT & GLOBAL KEYDOWN HANDLER FOR ENTER KEY
+    // ═══════════════════════════════════════════════
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeEvidenceModal();
+        return;
+      }
+      if (e.key === 'Enter') {
+        const target = e.target;
+        if (!target) return;
+        const tag = target.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA') return;
+
+        // For multi-line textareas (rows >= 4 or paragraph fields), allow regular Enter for newlines unless Ctrl/Cmd+Enter is used
+        const isLongTextarea = tag === 'TEXTAREA' && (
+          target.rows >= 4 ||
+          ['avt', 'ni-dayvision', 'qh-vision', 'qh-anti', 'mg-gv', 'mg-av', 'rq1', 'rq2', 'rq3', 'gv'].includes(target.id)
+        );
+
+        if (isLongTextarea && !e.ctrlKey && !e.metaKey) return;
+        if (tag === 'TEXTAREA' && e.shiftKey) return;
+
+        // 1. Step 1 behavior inputs (#blist)
+        if (target.closest && target.closest('#blist')) {
+          e.preventDefault();
+          const inputs = Array.from(document.querySelectorAll('#blist input'));
+          const idx = inputs.indexOf(target);
+          if (idx >= 0 && idx < inputs.length - 1) {
+            inputs[idx + 1].focus();
+          } else {
+            const s1btn = document.getElementById('s1n');
+            if (s1btn && !s1btn.classList.contains('bx')) {
+              s1btn.click();
+            }
+          }
+          return;
+        }
+
+        // 2. Quick Habit header inputs navigation
+        if (target.id === 'qh-name') {
+          e.preventDefault();
+          document.getElementById('qh-old')?.focus();
+          return;
+        }
+        if (target.id === 'qh-old') {
+          e.preventDefault();
+          document.getElementById('qh-ev-input')?.focus();
+          return;
+        }
+
+        // 3. Direct row sibling button (e.g. Add / Save button next to input)
+        const parent = target.parentElement;
+        if (parent) {
+          const rowBtn = Array.from(parent.querySelectorAll('button')).find(
+            b => !b.classList.contains('ev-del') && b !== target
+          );
+          if (rowBtn) {
+            e.preventDefault();
+            rowBtn.click();
+            return;
+          }
+        }
+
+        // 4. Section / Card primary action button
+        const container = target.closest ? target.closest('.c, .mg-section, .mg-editable, .fade, body') : null;
+        if (container) {
+          const actionBtn = container.querySelector('button.mg-save, button.bp, button.bs, button.b');
+          if (actionBtn && !actionBtn.classList.contains('ev-del') && !actionBtn.classList.contains('bx') && actionBtn !== target) {
+            if (!actionBtn.classList.contains('bb') && !actionBtn.classList.contains('bg') && !actionBtn.classList.contains('bd') && !actionBtn.classList.contains('br')) {
+              e.preventDefault();
+              actionBtn.click();
+              return;
+            }
+          }
+        }
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Firebase Firestore Realtime engine
+      initFirebaseSync();
+
+      const urlScr = getScreenFromUrl();
+      if (urlScr) {
+        // Honor URL extension on reload (e.g. #identity, #manage, #history, #practice, #reflect, #quick)
+        S.screen = urlScr;
+        if (!S.currentId && S.identities && S.identities.length > 0) {
+          S.currentId = S.identities[0].id;
+        }
+      } else {
+        // Fresh link visit without extension: Always show 'hub' (All Cards home screen)!
+        S.screen = 'hub';
+        if (!S.currentId && S.identities && S.identities.length > 0) {
+          S.currentId = S.identities[0].id;
+        }
+        save();
+      }
+      render();
+
+      // ── Cross-device sync: Re-pull when tab becomes visible again ──
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          pullFromCloud();
+        }
+      });
+      // ── Cross-device sync: Also re-pull on window focus (covers alt-tab) ──
+      window.addEventListener('focus', function () {
+        // Avoid double-pull if visibilitychange already fired
+        if (Date.now() - _lastSyncTime > 5000) {
+          pullFromCloud();
+        }
+      });
+      // ── Cross-device sync: Periodic background poll every 45 seconds ──
+      setInterval(function () {
+        if (document.visibilityState === 'visible') {
+          pullFromCloud();
+        }
+      }, 45000);
+    });
+
+    // ═══════════════════════════════════════════════
+    // MANAGE IDENTITY
+    // ═══════════════════════════════════════════════
+    function rManage(a) {
+      const id = cur(); if (!id) return go('hub');
+
+      a.innerHTML = `<div class="fade" style="max-width:560px;margin:0 auto;padding-top:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <button class="bg" onclick="go('identity')">← Back</button>
+      <button class="bg" onclick="go('hub')" style="color:#fbbf24;font-weight:600">All Cards →</button>
+    </div>
+    <div class="sn" style="letter-spacing:1.5px;color:#fbbf24">EDIT IDENTITY</div>
+    <h2 style="margin-bottom:8px;font-size:24px">Edit Your Identity</h2>
+    <p class="d" style="margin-bottom:20px;color:#9ca3af;font-size:14px">Refine your identity statement, target milestone, and event tag.</p>
+
+    <!-- 1. Who You Are (Identity Statement) -->
+    <div style="margin-bottom:18px">
+      <label class="lb" style="font-size:13.5px;font-weight:700;color:#4ede80;margin-bottom:4px;display:block">1. Who You Are (Identity Statement)</label>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:6px">Who you are choosing to be in present tense.</p>
+      <textarea rows="2" id="mg-ni" placeholder='e.g., "I am a very busy person working on very important things only."' style="font-size:15px;line-height:1.5;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(74,222,128,0.35);color:#ffffff;box-sizing:border-box">${esc(id.newIdentity || '')}</textarea>
+    </div>
+
+    <!-- 2. Exact Action Line Aiming to Say When Achieved -->
+    <div style="margin-bottom:22px">
+      <label class="lb" style="font-size:13.5px;font-weight:700;color:#fbbf24;margin-bottom:4px;display:block">2. Exact Action Line Aiming to Say When Achieved</label>
+      <p class="h" style="font-size:12px;margin-bottom:6px;color:#9ca3af">What exact action line you are aiming to say when you achieve what you set out to do.</p>
+      <textarea rows="2" id="mg-te" placeholder='e.g., "Finally I woke up continuously for 5 days to work on the most important things."' style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.25);color:#fef3c7;box-sizing:border-box">${esc(id.targetActionLine || id.targetEvent || '')}</textarea>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(245,158,11,0.06);padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.2)">
+        <label style="font-size:12.5px;font-weight:700;color:#fbbf24">Target Date & Time (Optional):</label>
+        <input type="datetime-local" id="mg-tet" value="${formatDatetimeLocal(id.targetEventTime)}" style="background:#181824;border:1px solid rgba(245,158,11,0.4);color:#ffffff;padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit" />
+      </div>
+    </div>
+
+    <!-- 3. Target Event / Event Tag (Optional) -->
+    <div style="margin-bottom:22px">
+      <label class="lb" style="font-size:13.5px;font-weight:700;color:#38bdf8;margin-bottom:4px;display:block">3. Target Event Name (Event Tagged to Identity)</label>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:6px">The specific trip, event, or goal this identity is tagged to.</p>
+      <input type="text" id="mg-ten" value="${esc(id.targetEventName || id.taggedEvent || '')}" placeholder='e.g., "Wonderla Family Trip" or "Loan Clearance Event"' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(56,189,248,0.35);color:#f0f9ff;box-sizing:border-box" />
+    </div>
+
+    <!-- Save Button -->
+    <div style="margin-bottom:24px">
+      <button class="b bp bw" id="mg-save-all-btn" onclick="mgSaveAll()" style="font-size:15px;padding:14px;font-weight:700;background:linear-gradient(135deg, #2563eb, #1d4ed8);border-radius:10px;box-shadow:0 4px 14px rgba(37,99,235,0.3)">
+        Save Changes & Return to Identity
+      </button>
+    </div>
+
+    <!-- Delete Identity Area -->
+    <div style="text-align:center;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)" id="da">
+      <button class="bg" style="color:#ef4444;font-size:12px;border:1px solid rgba(239,68,68,0.3);padding:6px 14px;border-radius:6px" onclick="showDel()">Delete this identity</button>
+    </div>
+  </div>`;
+    }
+
+    window.mgSaveAll = function () {
+      const id = getCurRef() || cur();
+      if (!id) return;
+      const ni = $('#mg-ni')?.value?.trim();
+      const te = $('#mg-te')?.value?.trim();
+      const tet = $('#mg-tet')?.value?.trim();
+      const ten = $('#mg-ten')?.value?.trim();
+
+      if (ni) id.newIdentity = ni;
+      if (te !== undefined) {
+        id.targetActionLine = te;
+        id.targetEvent = te;
+      }
+      if (tet !== undefined) {
+        id.targetEventTime = tet ? new Date(tet).toISOString() : null;
+      }
+      if (ten !== undefined) {
+        id.targetEventName = ten;
+        id.taggedEvent = ten;
+      }
+
+      id.updatedAt = new Date().toISOString();
+      save(true);
+      go('identity');
+    };
+
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML }
+
+    function renderHabits(id) {
+      if (!id.habits || !id.habits.length) return '<p class="h" style="font-style:italic;margin-bottom:4px">No daily habits set yet. Add one below to start building consistency.</p>';
+      const t = today();
+      return id.habits.map((h, i) => {
+        const checked = h.checks && h.checks.some(c => c.split('T')[0] === t);
+        const streak = getHabitStreak(h);
+        const total = h.checks ? h.checks.length : 0;
+        return `<div class="habit-item">
+      <button class="habit-check ${checked ? 'checked' : ''}" onclick="toggleHabit(${i})"></button>
+      <div class="habit-text">
+        <div class="habit-name">${e(h.text)}</div>
+        <div class="habit-meta">${total} days done${streak > 1 ? ' · <span class="habit-streak">' + streak + '-day streak</span>' : ''}${checked ? ' · ✓ today' : ''}</div>
+      </div>
+      <div class="habit-actions">
+        <button class="bg" onclick="editHabit(${i})" title="Edit" style="font-size:11px">edit</button>
+        <button class="bg" onclick="removeHabit(${i})" title="Remove" style="font-size:11px;color:#6e4a4a">×</button>
+      </div>
+    </div>`}).join('');
+    }
+
+    function getHabitStreak(h) {
+      if (!h.checks || !h.checks.length) return 0;
+      const days = [...new Set(h.checks.map(c => c.split('T')[0]))].sort().reverse();
+      let s = 0, d = new Date();
+      for (let i = 0; i < 90; i++) {
+        const ds = d.toISOString().split('T')[0];
+        if (days.includes(ds)) { s++; d.setDate(d.getDate() - 1) }
+        else if (i === 0) { d.setDate(d.getDate() - 1) }
+        else break;
+      }
+      return s;
+    }
+
+    window.showAddHabit = function () {
+      const area = $('#habit-add-area');
+      area.innerHTML = `<div class="mg-add-row" style="margin-top:10px">
+    <input type="text" id="new-habit-input" placeholder="e.g., Work on my project for 30 min every evening at 9pm" style="flex:1"/>
+    <button class="b bp bs" onclick="addHabit()">Add</button>
+    <button class="bg" onclick="render()">Cancel</button>
+  </div>`;
+      $('#new-habit-input')?.focus();
+    };
+
+    window.addHabit = function () {
+      const v = $('#new-habit-input')?.value?.trim();
+      if (!v) return;
+      const id = cur(); if (!id) return;
+      if (!id.habits) id.habits = [];
+      id.habits.push({ text: v, createdDate: new Date().toISOString(), checks: [] });
+      save(); render();
+    };
+
+    window.toggleHabit = function (i) {
+      const id = cur(); if (!id || !id.habits[i]) return;
+      const h = id.habits[i];
+      if (!h.checks) h.checks = [];
+      const t = today();
+      const idx = h.checks.findIndex(c => c.split('T')[0] === t);
+      if (idx >= 0) { h.checks.splice(idx, 1) }
+      else { h.checks.push(new Date().toISOString()) }
+      save();
+      // Quick re-render just the habits list
+      const list = $('#habits-list');
+      if (list) list.innerHTML = renderHabits(id);
+    };
+
+    window.editHabit = function (i) {
+      const id = cur(); if (!id || !id.habits[i]) return;
+      const h = id.habits[i];
+      const list = $('#habits-list');
+      const items = list.querySelectorAll('.habit-item');
+      if (!items[i]) return;
+      items[i].innerHTML = `<div style="flex:1"><div class="mg-add-row">
+    <input type="text" id="edit-habit-input" value="${esc(h.text)}" style="flex:1"/>
+    <button class="b bp bs" onclick="saveEditHabit(${i})">Save</button>
+    <button class="bg" onclick="render()">Cancel</button>
+  </div></div>`;
+      $('#edit-habit-input')?.focus();
+    };
+
+    window.saveEditHabit = function (i) {
+      const v = $('#edit-habit-input')?.value?.trim();
+      if (!v) return;
+      const id = cur(); if (!id || !id.habits[i]) return;
+      id.habits[i].text = v;
+      save(); render();
+    };
+
+    window.removeHabit = function (i) {
+      const id = cur(); if (!id || !id.habits[i]) return;
+      const list = $('#habits-list');
+      const items = list.querySelectorAll('.habit-item');
+      if (!items[i]) return;
+      items[i].innerHTML = `<div style="flex:1;padding:4px 0">
+    <span class="h" style="margin-right:10px">Remove this habit?</span>
+    <button class="b br bs" onclick="confirmRemoveHabit(${i})" style="margin-right:6px">Remove</button>
+    <button class="bg" onclick="render()">Cancel</button>
+  </div>`;
+    };
+
+    window.confirmRemoveHabit = function (i) {
+      const id = getCurRef() || cur(); if (!id) return;
+      if (id.habits && id.habits[i]) {
+        var h = id.habits[i];
+        if (!Array.isArray(id.deletedHabitIds)) id.deletedHabitIds = [];
+        var hId = h.id || h.text;
+        if (hId && !id.deletedHabitIds.includes(hId)) id.deletedHabitIds.push(hId);
+        id.habits.splice(i, 1);
+        id.updatedAt = new Date().toISOString();
+        save(true); render();
+      }
+    };
+
+    window.editOldEv = function (i, btnEl) {
+      if (!S.creating?.oldEvidence?.[i]) return;
+      const item = btnEl ? btnEl.closest('.ev-item') : null;
+      if (!item) return;
+      const oldVal = S.creating.oldEvidence[i];
+      item.innerHTML = `
+    <div style="display:flex;gap:6px;width:100%;align-items:center">
+      <input type="text" id="edit-old-ev-inp-${i}" value="${esc(oldVal)}" style="flex:1;font-size:13px;padding:6px 10px"/>
+      <button class="b bp bs" style="padding:4px 10px;font-size:12px" onclick="saveOldEvEdit(${i})">Save</button>
+      <button class="bg" style="font-size:12px" onclick="render()">Cancel</button>
+    </div>
+  `;
+      $(`#edit-old-ev-inp-${i}`)?.focus();
+    };
+    window.saveOldEvEdit = function (i) {
+      const inp = $(`#edit-old-ev-inp-${i}`);
+      if (!inp || !S.creating?.oldEvidence) return;
+      const v = inp.value.trim();
+      if (!v) return;
+      S.creating.oldEvidence[i] = v;
+      save();
+      render();
+    };
+
+    window.editIdentityFromHub = function (id) {
+      S.currentId = id;
+      save();
+      go('manage');
+    };
+
+    window.mgSaveOI = function () {
+      const v = $('#mg-oi')?.value?.trim(); if (!v) return;
+      const id = cur(); if (!id) return;
+      id.oldIdentity = v; save();
+      const wrap = $('#ed-oi');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    function renderMgOldEvList(id) {
+      if (!id.oldEvidence || !id.oldEvidence.length) return '<p class="h" style="font-style:italic">No old proofs recorded yet.</p>';
+      return id.oldEvidence.map((ev, i) => `<div class="ev-item"><span class="ev-text">${e(ev)}</span><button class="ev-edit" onclick="mgEditOldEv(${i}, this)">edit</button><button class="ev-del" onclick="mgDelOldEv(${i})">delete</button></div>`).join('');
+    }
+
+    window.mgAddOldEv = function () {
+      const v = $('#mg-oldev-input')?.value?.trim(); if (!v) return;
+      const id = cur(); if (!id) return;
+      if (!id.oldEvidence) id.oldEvidence = [];
+      id.oldEvidence.push(v); save(); render();
+    };
+
+    window.mgDelOldEv = function (i) {
+      const id = cur(); if (!id || !id.oldEvidence) return;
+      id.oldEvidence.splice(i, 1); save(); render();
+    };
+
+    window.mgEditOldEv = function (i, btnEl) {
+      const id = cur(); if (!id || !id.oldEvidence?.[i]) return;
+      const item = btnEl ? btnEl.closest('.ev-item') : null;
+      if (!item) return;
+      const oldVal = id.oldEvidence[i];
+      item.innerHTML = `
+    <div style="display:flex;gap:6px;width:100%;align-items:center">
+      <input type="text" id="edit-mg-oldev-inp-${i}" value="${esc(oldVal)}" style="flex:1;font-size:13px;padding:6px 10px"/>
+      <button class="b bp bs" style="padding:4px 10px;font-size:12px" onclick="mgSaveOldEvEdit(${i})">Save</button>
+      <button class="bg" style="font-size:12px" onclick="render()">Cancel</button>
+    </div>
+  `;
+      $(`#edit-mg-oldev-inp-${i}`)?.focus();
+    };
+
+    window.mgSaveOldEvEdit = function (i) {
+      const inp = $(`#edit-mg-oldev-inp-${i}`);
+      const id = cur();
+      if (!inp || !id || !id.oldEvidence) return;
+      const v = inp.value.trim();
+      if (!v) return;
+      id.oldEvidence[i] = v;
+      save();
+      render();
+    };
+
+    // ═══════════════════════════════════════════════
+    // DELETE / EDIT LOGS
+    // ═══════════════════════════════════════════════
+    window.delLog = function (i) {
+      const id = getCurRef() || cur(); if (!id) return;
+      if (!Array.isArray(id.logs) || i < 0 || i >= id.logs.length) return;
+      const log = id.logs[i];
+
+      showCustomConfirm({
+        title: 'Delete Evidence Entry?',
+        message: 'Are you sure you want to delete this evidence entry? Points earned from it will be reduced.',
+        confirmText: 'Delete Entry',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (log) {
+            if (!Array.isArray(id.deletedLogIds)) id.deletedLogIds = [];
+            if (log.id && !id.deletedLogIds.includes(log.id)) {
+              id.deletedLogIds.push(log.id);
+            }
+            if (log.ideaId && Array.isArray(id.tasks)) {
+              id.tasks.forEach(function (t) {
+                if (Array.isArray(t.ideas)) {
+                  var idea = t.ideas.find(function (iObj) { return iObj.id === log.ideaId; });
+                  if (idea) { idea.completed = false; idea.completedAt = null; }
+                }
+                if (Array.isArray(t.subtasks)) {
+                  t.subtasks.forEach(function (st) {
+                    if (Array.isArray(st.ideas)) {
+                      var idea = st.ideas.find(function (iObj) { return iObj.id === log.ideaId; });
+                      if (idea) { idea.completed = false; idea.completedAt = null; }
+                    }
+                  });
+                }
+              });
+            } else if (log.subtaskId && Array.isArray(id.tasks)) {
+              id.tasks.forEach(function (t) {
+                if (Array.isArray(t.subtasks)) {
+                  var st = t.subtasks.find(function (stObj) { return stObj.id === log.subtaskId; });
+                  if (st) { st.completed = false; st.completedAt = null; }
+                }
+              });
+            } else if (log.taskId && Array.isArray(id.tasks)) {
+              var t = id.tasks.find(function (tObj) { return tObj.id === log.taskId; });
+              if (t) { t.completed = false; t.completedAt = null; }
+            }
+          }
+          id.logs.splice(i, 1);
+          save(true);
+          render();
+        }
+      });
+    };
+
+    window.editLog = function (i, btnEl) {
+      const id = cur(); if (!id || !id.logs[i]) return;
+      const l = id.logs[i];
+      const item = btnEl ? btnEl.closest('.li') : null;
+      if (!item) return;
+      const currentWeight = l.weight || 'medium';
+      item.style.flexDirection = 'column';
+      item.style.alignItems = 'stretch';
+      item.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;width:100%;padding:4px 0">
+      <div class="sm" style="color:#a09890;font-weight:600">Edit Proof / Evidence:</div>
+      <textarea id="inline-log-note-${i}" rows="2" style="width:100%;font-size:13px">${esc(l.note)}</textarea>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="sm" style="color:#8a8480">Impact:</span>
+        <select id="inline-log-weight-${i}" style="background:#1a1a26;color:#c8c2b8;border:1px solid #2a2a3a;padding:4px 8px;border-radius:6px;font-size:12px">
+          <option value="strong" ${currentWeight === 'strong' ? 'selected' : ''}>Strong (+4)</option>
+          <option value="medium" ${currentWeight === 'medium' ? 'selected' : ''}>Medium (+2)</option>
+          <option value="fine" ${currentWeight === 'fine' ? 'selected' : ''}>Fine (+1)</option>
+        </select>
+        <button class="b bp bs" style="padding:4px 12px;font-size:12px;margin-left:auto" onclick="saveLogEdit(${i})">Save</button>
+        <button class="bg" style="font-size:12px" onclick="render()">Cancel</button>
+      </div>
+    </div>
+  `;
+      $(`#inline-log-note-${i}`)?.focus();
+    };
+
+    window.saveLogEdit = function (i) {
+      const id = cur(); if (!id || !id.logs[i]) return;
+      const noteInp = $('#inline-log-note-' + i);
+      const weightInp = $('#inline-log-weight-' + i);
+      if (!noteInp) return;
+      const newNote = noteInp.value.trim();
+      if (!newNote) return;
+      id.logs[i].note = newNote;
+      if (weightInp) id.logs[i].weight = weightInp.value;
+      save();
+      render();
+    };
+
+    // ═══════════════════════════════════════════════
+    // EVIDENCE POP MODAL & DATE FILTER
+    // ═══════════════════════════════════════════════
+    window.modalFilterState = {
+      preset: 'all',
+      startDate: '',
+      endDate: '',
+      searchQuery: '',
+      tab: 'daily',
+      reflectionQuery: ''
+    };
+
+    // Stubbed for safe legacy compatibility
+    window.checkAndTriggerGreatestCrackModal = function () {};
+    window.closeGreatestCrackModal = function () {};
+    window.openGreatestCrackModal = function () {};
+
+    function getLocalYYYYMMDD(dObj) {
+      if (!dObj || isNaN(dObj.getTime())) return '';
+      var y = dObj.getFullYear();
+      var m = String(dObj.getMonth() + 1).padStart(2, '0');
+      var d = String(dObj.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
+    }
+
+    function filterModalLogs(logs) {
+      var state = window.modalFilterState;
+      if (!logs || !logs.length) return [];
+
+      var todayD = new Date();
+      var todayStr = getLocalYYYYMMDD(todayD);
+      var todayTime = new Date(todayStr + 'T00:00:00').getTime();
+
+      return logs.map(function (l, i) { return { l: l, realIdx: i }; }).filter(function (item) {
+        var l = item.l;
+        if (!l) return false;
+
+        // Search Text
+        if (state.searchQuery) {
+          var q = state.searchQuery.trim().toLowerCase();
+          var noteText = (l.note || '').toLowerCase();
+          if (!noteText.includes(q)) return false;
+        }
+
+        // Date Filter Preset
+        if (state.preset === 'all') return true;
+
+        if (!l.date) return false;
+        var logDateObj = new Date(l.date);
+        if (isNaN(logDateObj.getTime())) return false;
+        var logDateStr = getLocalYYYYMMDD(logDateObj);
+
+        if (state.preset === 'today') {
+          return logDateStr === todayStr;
+        }
+
+        if (state.preset === '7days') {
+          var logDateTime = new Date(logDateStr + 'T00:00:00').getTime();
+          var diffDays = (todayTime - logDateTime) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 7;
+        }
+
+        if (state.preset === '30days') {
+          var logDateTime = new Date(logDateStr + 'T00:00:00').getTime();
+          var diffDays = (todayTime - logDateTime) / (1000 * 60 * 60 * 24);
+          return diffDays >= 0 && diffDays <= 30;
+        }
+
+        if (state.preset === 'custom') {
+          if (state.startDate && logDateStr < state.startDate) return false;
+          if (state.endDate && logDateStr > state.endDate) return false;
+          return true;
+        }
+
+        return true;
+      });
+    }
+
+    window.setModalFilterPreset = function (preset) {
+      window.modalFilterState.preset = preset;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.setModalTab = function (tab) {
+      window.modalFilterState.tab = tab;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.setModalReflectionQuery = function (q) {
+      window.modalFilterState.reflectionQuery = q;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.openEvidenceModalTab = function (tab) {
+      window.modalFilterState = window.modalFilterState || { preset: 'all', startDate: '', endDate: '', searchQuery: '', tab: 'daily', reflectionQuery: '' };
+      if (tab) window.modalFilterState.tab = tab;
+      openEvidenceModal();
+    };
+
+    window.setModalCustomDate = function (field, value) {
+      if (field === 'start') window.modalFilterState.startDate = value;
+      if (field === 'end') window.modalFilterState.endDate = value;
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.setModalSearchQuery = function (value) {
+      window.modalFilterState.searchQuery = value;
+      var listEl = document.getElementById('modal-logs-list');
+      var id = cur();
+      if (listEl && id) {
+        var logs = id.logs || [];
+        var filteredItems = filterModalLogs(logs);
+        var logsHtml = '';
+        if (logs.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
+        } else if (filteredItems.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="h" style="margin-bottom:12px">No evidence logs found matching your filter criteria.</p>'
+            + '<button class="b bb bs" onclick="resetModalFilters()">Reset Filters</button>'
+            + '</div>';
+        } else {
+          logsHtml = filteredItems.reverse().map(function (item) {
+            var l = item.l, ri = item.realIdx;
+            var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            return '<div class="ev-card">'
+              + '<div class="ev-card-top">'
+              + '<div class="ev-card-meta">'
+              + '<span class="ev-card-date">' + dateStr + '</span>'
+              + renderWeightBadge(l.weight)
+              + '</div>'
+              + '<div class="ev-card-actions">'
+              + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
+              + '<button class="ev-btn-del" onclick="delModalLog(' + ri + ')">Delete</button>'
+              + '</div>'
+              + '</div>'
+              + '<div class="ev-card-note">' + esc(l.note) + '</div>'
+              + '</div>';
+          }).join('');
+        }
+        listEl.innerHTML = logsHtml;
+      } else {
+        var modal = document.getElementById('evidence-modal');
+        if (modal) renderEvidenceModalContent(modal, cur());
+      }
+    };
+
+    window.resetModalFilters = function () {
+      window.modalFilterState = {
+        preset: 'all',
+        startDate: '',
+        endDate: '',
+        searchQuery: '',
+        tab: 'daily',
+        reflectionQuery: ''
+      };
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, cur());
+    };
+
+    window.openEvidenceModal = function () {
+      var id = cur();
+      if (!id) return;
+      var modal = document.getElementById('evidence-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'evidence-modal';
+        document.body.appendChild(modal);
+      }
+      renderEvidenceModalContent(modal, id);
+    };
+
+    window.delModalReflection = function (i) {
+      var id = getCurRef() || cur();
+      if (!id || !id.reflections || i < 0 || i >= id.reflections.length) return;
+      var r = id.reflections[i];
+      showCustomConfirm({
+        title: 'Delete Reflection?',
+        message: 'Are you sure you want to delete this weekly reflection entry?',
+        confirmText: 'Delete Entry',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (!Array.isArray(id.deletedReflectionIds)) id.deletedReflectionIds = [];
+          var rId = r.id || r.date;
+          if (rId && !id.deletedReflectionIds.includes(rId)) id.deletedReflectionIds.push(rId);
+          id.reflections.splice(i, 1);
+          id.updatedAt = new Date().toISOString();
+          save(true);
+          var modal = document.getElementById('evidence-modal');
+          if (modal) renderEvidenceModalContent(modal, id);
+          render();
+        }
+      });
+    };
+
+    window.editModalReflection = function (i, btnEl) {
+      var id = cur();
+      if (!id || !id.reflections || !id.reflections[i]) return;
+      var r = id.reflections[i];
+      var card = btnEl ? btnEl.closest('.c.cd') || btnEl.closest('.ev-card') : null;
+      if (!card) return;
+
+      var dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      card.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:4px 0">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<span class="sm" style="color:#fbbf24;font-weight:700">Edit Week ' + (i + 1) + ' Reflection</span>'
+        + '<span class="ev-card-date">' + dateStr + '</span>'
+        + '</div>'
+        + '<div>'
+        + '<label class="lb" style="font-size:11px;color:#fca5a5">1. What patterns from OLD identity showed up? (What didn\'t work)</label>'
+        + '<textarea id="modal-refl-old-' + i + '" rows="2" style="width:100%;font-size:13px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:8px;color:#f9fafb;font-family:inherit;margin-top:4px">' + esc(r.oldPatterns || '') + '</textarea>'
+        + '</div>'
+        + '<div>'
+        + '<label class="lb" style="font-size:11px;color:#86efac">2. When did NEW identity feel natural? (What worked)</label>'
+        + '<textarea id="modal-refl-new-' + i + '" rows="2" style="width:100%;font-size:13px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:8px;color:#f9fafb;font-family:inherit;margin-top:4px">' + esc(r.newMoments || '') + '</textarea>'
+        + '</div>'
+        + '<div>'
+        + '<label class="lb" style="font-size:11px;color:#fbbf24">3. What\'s one BIGGER crack for next week?</label>'
+        + '<textarea id="modal-refl-next-' + i + '" rows="2" style="width:100%;font-size:13px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:8px;color:#f9fafb;font-family:inherit;margin-top:4px">' + esc(r.nextCrack || '') + '</textarea>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
+        + '<button class="b bp bs" style="padding:6px 14px;font-size:12px" onclick="saveModalReflectionEdit(' + i + ')">Save Reflection</button>'
+        + '<button class="bg" style="font-size:12px" onclick="renderEvidenceModalContent(document.getElementById(\'evidence-modal\'), cur())">Cancel</button>'
+        + '</div>'
+        + '</div>';
+    };
+
+    window.saveModalReflectionEdit = function (i) {
+      var id = cur();
+      if (!id || !id.reflections || !id.reflections[i]) return;
+      var oldVal = $('#modal-refl-old-' + i)?.value?.trim() || '';
+      var newVal = $('#modal-refl-new-' + i)?.value?.trim() || '';
+      var nextVal = $('#modal-refl-next-' + i)?.value?.trim() || '';
+
+      id.reflections[i].oldPatterns = oldVal;
+      id.reflections[i].newMoments = newVal;
+      id.reflections[i].nextCrack = nextVal;
+      save();
+
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, id);
+      render();
+    };
+
+    function renderEvidenceModalContent(modal, id) {
+      var logs = id.logs || [];
+      var reflections = id.reflections || [];
+      var st = getStage(id);
+      var streak = getStreak(id);
+      var state = window.modalFilterState || { tab: 'daily', preset: 'all', searchQuery: '', reflectionQuery: '' };
+      var activeTab = state.tab || 'daily';
+
+      modal.className = 'modal-overlay';
+      modal.onclick = function (e) {
+        if (e.target === modal) closeEvidenceModal();
+      };
+
+      var tabNavHtml = '<div style="display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap">'
+        + '<button class="ev-filter-pill ' + (activeTab === 'daily' ? 'active' : '') + '" onclick="setModalTab(\'daily\')">Daily Cracks & Proofs (' + logs.length + ')</button>'
+        + '<button class="ev-filter-pill ' + (activeTab === 'weekly' ? 'active' : '') + '" onclick="setModalTab(\'weekly\')">Weekly Journal (' + reflections.length + ')</button>'
+        + '<button class="b bp bs" style="font-size:12px;padding:4px 12px;margin-left:auto" onclick="closeEvidenceModal();go(\'reflect\')">✍️ Write Reflection</button>'
+        + '</div>';
+
+      var bodyContentHtml = '';
+
+      if (activeTab === 'daily') {
+        var filteredItems = filterModalLogs(logs);
+        var hasActiveFilter = state.preset !== 'all' || state.startDate || state.endDate || (state.searchQuery && state.searchQuery.trim().length > 0);
+
+        var filterHtml = '<div class="ev-filter-section">'
+          + '<div style="display:flex;gap:8px;align-items:center">'
+          + '<input type="text" class="ev-search-input" placeholder="Search proof notes..." value="' + esc(state.searchQuery) + '" oninput="setModalSearchQuery(this.value)" />'
+          + (state.searchQuery ? '<button class="bg" style="font-size:12px;white-space:nowrap;padding:4px 8px;color:#9ca3af" onclick="setModalSearchQuery(\'\')">Clear</button>' : '')
+          + '</div>'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+          + '<div class="ev-filter-pills">'
+          + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" onclick="setModalFilterPreset(\'all\')">All Time</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" onclick="setModalFilterPreset(\'today\')">Today</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'7days\')">Last 7 Days</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" onclick="setModalFilterPreset(\'30days\')">Last 30 Days</button>'
+          + '<button class="ev-filter-pill ' + (state.preset === 'custom' ? 'active' : '') + '" onclick="setModalFilterPreset(\'custom\')">Custom Date</button>'
+          + '</div>'
+          + (hasActiveFilter ? '<button class="bg" style="font-size:12px;color:#f59e0b;font-weight:600" onclick="resetModalFilters()">Reset Filters</button>' : '')
+          + '</div>'
+          + (state.preset === 'custom' ?
+            '<div class="ev-custom-date-row">'
+            + '<span class="sm" style="color:#9ca3af">From:</span>'
+            + '<input type="date" class="ev-date-input" value="' + state.startDate + '" onchange="setModalCustomDate(\'start\', this.value)" />'
+            + '<span class="sm" style="color:#9ca3af">To:</span>'
+            + '<input type="date" class="ev-date-input" value="' + state.endDate + '" onchange="setModalCustomDate(\'end\', this.value)" />'
+            + '</div>'
+            : '')
+          + '</div>';
+
+        var logsHtml = '';
+        if (logs.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:40px 10px"><p class="h" style="font-style:italic">No evidence logged yet. Add your first proof to start leveling up!</p></div>';
+        } else if (filteredItems.length === 0) {
+          logsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="h" style="margin-bottom:12px">No evidence logs found matching your filter criteria.</p>'
+            + '<button class="b bb bs" onclick="resetModalFilters()">Reset Filters</button>'
+            + '</div>';
+        } else {
+          logsHtml = filteredItems.reverse().map(function (item) {
+            var l = item.l, ri = item.realIdx;
+            var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            return '<div class="ev-card">'
+              + '<div class="ev-card-top">'
+              + '<div class="ev-card-meta">'
+              + '<span class="ev-card-date">' + dateStr + '</span>'
+              + renderWeightBadge(l.weight)
+              + '</div>'
+              + '<div class="ev-card-actions">'
+              + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
+              + '<button class="ev-btn-del" onclick="delModalLog(' + ri + ')">Delete</button>'
+              + '</div>'
+              + '</div>'
+              + '<div class="ev-card-note">' + esc(l.note) + '</div>'
+              + '</div>';
+          }).join('');
+        }
+
+        bodyContentHtml = filterHtml + '<div id="modal-logs-list">' + logsHtml + '</div>';
+
+      } else {
+        // Weekly Journal Tab in Modal
+        var q = (state.reflectionQuery || '').trim().toLowerCase();
+        var filteredReflections = reflections.map(function (r, i) { return { r: r, realIdx: i }; });
+        if (q) {
+          filteredReflections = filteredReflections.filter(function (item) {
+            var r = item.r;
+            return (r.oldPatterns || '').toLowerCase().includes(q) ||
+                   (r.newMoments || '').toLowerCase().includes(q) ||
+                   (r.nextCrack || '').toLowerCase().includes(q);
+          });
+        }
+
+        var reflFilterHtml = '<div class="ev-filter-section">'
+          + '<div style="display:flex;gap:8px;align-items:center">'
+          + '<input type="text" class="ev-search-input" placeholder="🔍 Search what worked & didn\'t work..." value="' + esc(state.reflectionQuery || '') + '" oninput="setModalReflectionQuery(this.value)" />'
+          + (state.reflectionQuery ? '<button class="bg" style="font-size:12px;white-space:nowrap;padding:4px 8px;color:#9ca3af" onclick="setModalReflectionQuery(\'\')">Clear</button>' : '')
+          + '</div>'
+          + '</div>';
+
+        var reflectionsHtml = '';
+        if (reflections.length === 0) {
+          reflectionsHtml = '<div style="text-align:center;padding:40px 10px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="d" style="margin-bottom:8px">No weekly reflections written yet.</p>'
+            + '<p class="h" style="margin-bottom:14px">Write a weekly reflection to review what worked, what didn\'t, and set your next crack.</p>'
+            + '<button class="b bp bs" onclick="closeEvidenceModal();go(\'reflect\')">Write First Weekly Reflection</button>'
+            + '</div>';
+        } else if (filteredReflections.length === 0) {
+          reflectionsHtml = '<div style="text-align:center;padding:36px 12px;background:rgba(255,255,255,0.02);border:1px dashed #2e364f;border-radius:12px">'
+            + '<p class="h" style="margin-bottom:12px">No reflections found matching your search query.</p>'
+            + '<button class="b bb bs" onclick="setModalReflectionQuery(\'\')">Clear Search</button>'
+            + '</div>';
+        } else {
+          reflectionsHtml = filteredReflections.slice().reverse().map(function (item) {
+            var r = item.r, ri = item.realIdx;
+            var dateStr = r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            var weekNum = ri + 1;
+
+            return '<div class="c cd" style="margin-bottom:14px;padding:16px;background:rgba(20,26,44,0.7);border:1px solid #283046;border-radius:12px">'
+              + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08)">'
+              + '<div style="display:flex;align-items:center;gap:8px">'
+              + '<span class="sm" style="font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.18);padding:3px 10px;border-radius:6px;font-size:12px">Week ' + weekNum + '</span>'
+              + '<span class="sm" style="color:#9ca3af">' + dateStr + '</span>'
+              + '</div>'
+              + '<div style="display:flex;gap:6px">'
+              + '<button class="ev-btn-edit" onclick="editModalReflection(' + ri + ', this)">Edit</button>'
+              + '<button class="ev-btn-del" onclick="delModalReflection(' + ri + ')">Delete</button>'
+              + '</div>'
+              + '</div>'
+
+              + (r.newMoments ?
+                '<div style="margin-bottom:10px;padding:10px 12px;background:rgba(34,197,94,0.08);border-left:3px solid #22c55e;border-radius:6px">'
+                + '<span style="font-size:11px;font-weight:700;color:#4ede80;display:block;margin-bottom:4px">WHAT WORKED (New Identity Moments)</span>'
+                + '<p style="font-size:14px;color:#e5e7eb;margin:0;line-height:1.5">' + esc(r.newMoments) + '</p>'
+                + '</div>' : '')
+
+              + (r.oldPatterns ?
+                '<div style="margin-bottom:10px;padding:10px 12px;background:rgba(239,68,68,0.08);border-left:3px solid #ef4444;border-radius:6px">'
+                + '<span style="font-size:11px;font-weight:700;color:#fca5a5;display:block;margin-bottom:4px">WHAT DIDN\'T WORK (Old Cage Patterns)</span>'
+                + '<p style="font-size:14px;color:#e5e7eb;margin:0;line-height:1.5">' + esc(r.oldPatterns) + '</p>'
+                + '</div>' : '')
+
+              + (r.nextCrack ?
+                '<div style="padding:10px 12px;background:rgba(245,158,11,0.08);border-left:3px solid #f59e0b;border-radius:6px">'
+                + '<span style="font-size:11px;font-weight:700;color:#fbbf24;display:block;margin-bottom:4px">NEXT LEVEL CRACK</span>'
+                + '<p style="font-size:14px;color:#e5e7eb;margin:0;line-height:1.5">' + esc(r.nextCrack) + '</p>'
+                + '</div>' : '')
+              + '</div>';
+          }).join('');
+        }
+
+        bodyContentHtml = reflFilterHtml + '<div id="modal-refl-list">' + reflectionsHtml + '</div>';
+      }
+
+      var statsSummary = activeTab === 'daily'
+        ? (logs.length + ' total proofs · ' + streak + '-day streak · ' + st.name)
+        : (reflections.length + ' total reflections · ' + daysOld(id) + ' days on journey');
+
+      modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
+        + '<div class="modal-header">'
+        + '<div>'
+        + '<h3 style="margin-bottom:2px">Journal & Evidence History</h3>'
+        + '<p class="sm" style="color:#9ca3af;margin:0">' + statsSummary + '</p>'
+        + tabNavHtml
+        + '</div>'
+        + '<button class="modal-close" onclick="closeEvidenceModal()" title="Close">×</button>'
+        + '</div>'
+        + '<div class="modal-body">'
+        + '<div class="sb" style="margin-bottom:14px;justify-content:flex-start">' + streakDots(id) + '</div>'
+        + bodyContentHtml
+        + '</div>'
+        + '<div style="padding:14px 22px;border-top:1px solid #1f2436;text-align:right;background:rgba(0,0,0,0.2);border-radius:0 0 16px 16px;display:flex;justify-content:space-between;align-items:center">'
+        + '<span class="sm" style="color:#9ca3af">' + (activeTab === 'daily' ? logs.length + ' daily proofs' : reflections.length + ' weekly reflections') + '</span>'
+        + '<button class="b bb bs" onclick="closeEvidenceModal()">Done / Close</button>'
+        + '</div>'
+        + '</div>';
+    }
+
+    window.closeEvidenceModal = function () {
+      var modal = document.getElementById('evidence-modal');
+      if (modal) {
+        modal.remove();
+      }
+    };
+
+    window.delModalLog = function (i) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.logs) || i < 0 || i >= id.logs.length) return;
+      var log = id.logs[i];
+
+      showCustomConfirm({
+        title: 'Delete Evidence Entry?',
+        message: 'Are you sure you want to delete this evidence entry?',
+        confirmText: 'Delete Entry',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (log) {
+            if (!Array.isArray(id.deletedLogIds)) id.deletedLogIds = [];
+            if (log.id && !id.deletedLogIds.includes(log.id)) {
+              id.deletedLogIds.push(log.id);
+            }
+            if (log.ideaId && Array.isArray(id.tasks)) {
+              id.tasks.forEach(function (t) {
+                if (Array.isArray(t.ideas)) {
+                  var idea = t.ideas.find(function (iObj) { return iObj.id === log.ideaId; });
+                  if (idea) { idea.completed = false; idea.completedAt = null; }
+                }
+                if (Array.isArray(t.subtasks)) {
+                  t.subtasks.forEach(function (st) {
+                    if (Array.isArray(st.ideas)) {
+                      var idea = st.ideas.find(function (iObj) { return iObj.id === log.ideaId; });
+                      if (idea) { idea.completed = false; idea.completedAt = null; }
+                    }
+                  });
+                }
+              });
+            } else if (log.subtaskId && Array.isArray(id.tasks)) {
+              id.tasks.forEach(function (t) {
+                if (Array.isArray(t.subtasks)) {
+                  var st = t.subtasks.find(function (stObj) { return stObj.id === log.subtaskId; });
+                  if (st) { st.completed = false; st.completedAt = null; }
+                }
+              });
+            } else if (log.taskId && Array.isArray(id.tasks)) {
+              var t = id.tasks.find(function (tObj) { return tObj.id === log.taskId; });
+              if (t) { t.completed = false; t.completedAt = null; }
+            }
+          }
+          id.logs.splice(i, 1);
+          save(true);
+          var modal = document.getElementById('evidence-modal');
+          if (modal) renderEvidenceModalContent(modal, id);
+          render();
+        }
+      });
+    };
+
+    window.editModalLog = function (i, btnEl) {
+      var id = cur();
+      if (!id || !id.logs[i]) return;
+      var l = id.logs[i];
+      var item = btnEl ? btnEl.closest('.ev-card') : null;
+      if (!item) return;
+      var currentWeight = l.weight || 'medium';
+      var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      item.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:2px 0">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<span class="sm" style="color:#e5e7eb;font-weight:600">Edit Evidence Entry</span>'
+        + '<span class="ev-card-date">' + dateStr + '</span>'
+        + '</div>'
+        + '<textarea id="modal-log-note-' + i + '" rows="3" style="width:100%;font-size:14px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:10px;color:#f9fafb;font-family:inherit">' + esc(l.note) + '</textarea>'
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<span class="sm" style="color:#9ca3af">Impact:</span>'
+        + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
+        + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>Strong (+4)</option>'
+        + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>Medium (+2)</option>'
+        + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>Fine (+1)</option>'
+        + '</select>'
+        + '<div style="margin-left:auto;display:flex;gap:8px">'
+        + '<button class="b bp bs" style="padding:6px 14px;font-size:12px" onclick="saveModalLogEdit(' + i + ')">Save</button>'
+        + '<button class="bg" style="font-size:12px" onclick="renderEvidenceModalContent(document.getElementById(\'evidence-modal\'), cur())">Cancel</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+      $('#modal-log-note-' + i)?.focus();
+    };
+
+    window.saveModalLogEdit = function (i) {
+      var id = cur();
+      if (!id || !id.logs[i]) return;
+      var noteInp = $('#modal-log-note-' + i);
+      var weightInp = $('#modal-log-weight-' + i);
+      if (!noteInp) return;
+      var newNote = noteInp.value.trim();
+      if (!newNote) return;
+      id.logs[i].note = newNote;
+      if (weightInp) id.logs[i].weight = weightInp.value;
+      save();
+      var modal = document.getElementById('evidence-modal');
+      if (modal) renderEvidenceModalContent(modal, id);
+      render();
+    };
+
+    // Editing indicators for identity fields
+    window.mgEditing = function (field) {
+      const wrap = $('#ed-' + field);
+      if (wrap) wrap.classList.add('editing');
+    };
+
+    window.mgSaveNI = function () {
+      const v = $('#mg-ni')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      id.newIdentity = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-ni');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveTE = function () {
+      const v = $('#mg-te')?.value?.trim() || '';
+      const id = getCurRef(); if (!id) return;
+      id.targetEvent = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-te');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveAV = function () {
+      const v = $('#mg-av')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      id.antiVisionText = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-av');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveAV14 = function () {
+      const v = $('#mg-av14')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      id.antiVision14Day = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-av14');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveCK = function () {
+      const v = $('#mg-ck')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      id.crackAction = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-ck');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveGV = function () {
+      const v = $('#mg-gv')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      id.goalVision = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-gv');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200) }
+      }
+    };
+
+    window.mgSaveOI = function () {
+      const v = $('#mg-oi')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      id.oldIdentity = v; id.updatedAt = new Date().toISOString(); save();
+      const wrap = $('#ed-oi');
+      if (wrap) {
+        wrap.classList.remove('editing');
+        const btn = wrap.querySelector('.mg-save');
+        if (btn) { btn.textContent = 'Saved'; btn.style.background = '#3a6e4a'; setTimeout(() => { btn.textContent = 'Save changes'; btn.style.background = ''; }, 1200); }
+      }
+    };
+
+    function renderMgOldEvList(id) {
+      if (!id || !id.oldEvidence || id.oldEvidence.length === 0) {
+        return '<p class="h" style="font-style:italic;margin-top:4px">No proofs added for old cage.</p>';
+      }
+      return id.oldEvidence.map((ev, i) => {
+        return '<div class="li" style="margin-bottom:6px"><span class="ln">' + e(ev) + '</span><button class="ev-del" onclick="mgDelOldEv(' + i + ')">delete</button></div>';
+      }).join('');
+    }
+
+    window.mgAddOldEv = function () {
+      const v = $('#mg-oldev-input')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      if (!id.oldEvidence) id.oldEvidence = [];
+      id.oldEvidence.push(v);
+      id.updatedAt = new Date().toISOString();
+      save();
+      const list = $('#mg-oldev-list');
+      if (list) list.innerHTML = renderMgOldEvList(id);
+      const inp = $('#mg-oldev-input');
+      if (inp) inp.value = '';
+    };
+
+    window.mgDelOldEv = function (i) {
+      const id = getCurRef(); if (!id || !id.oldEvidence) return;
+      if (i >= 0 && i < id.oldEvidence.length) {
+        id.oldEvidence.splice(i, 1);
+        id.updatedAt = new Date().toISOString();
+        save();
+        const list = $('#mg-oldev-list');
+        if (list) list.innerHTML = renderMgOldEvList(id);
+      }
+    };
+
+    function renderMgActionsList(id) {
+      if (!id || !id.actions || id.actions.length === 0) {
+        return '<p class="h" style="font-style:italic;margin-top:4px">No supporting habits added yet.</p>';
+      }
+      return id.actions.map((ac, i) => {
+        return '<div class="li" style="margin-bottom:6px"><span class="ln">' + e(ac) + '</span><button class="ev-del" onclick="mgDelAction(' + i + ')">delete</button></div>';
+      }).join('');
+    }
+
+    window.mgAddAction = function () {
+      const v = $('#mg-act-input')?.value?.trim(); if (!v) return;
+      const id = getCurRef(); if (!id) return;
+      if (!id.actions) id.actions = [];
+      id.actions.push(v);
+      id.updatedAt = new Date().toISOString();
+      save();
+      const list = $('#mg-act-list');
+      if (list) list.innerHTML = renderMgActionsList(id);
+      const inp = $('#mg-act-input');
+      if (inp) inp.value = '';
+    };
+
+    window.mgDelAction = function (i) {
+      const id = getCurRef(); if (!id || !id.actions) return;
+      if (i >= 0 && i < id.actions.length) {
+        id.actions.splice(i, 1);
+        id.updatedAt = new Date().toISOString();
+        save();
+        const list = $('#mg-act-list');
+        if (list) list.innerHTML = renderMgActionsList(id);
+      }
+    };
+
+    window.mgSaveAll = function () {
+      const id = getCurRef() || cur(); if (!id) return;
+
+      const ni = $('#mg-ni')?.value?.trim();
+      const te = $('#mg-te')?.value?.trim();
+      const tet = $('#mg-tet')?.value;
+      const ten = $('#mg-ten')?.value?.trim();
+      const av = $('#mg-av')?.value?.trim();
+      const oi = $('#mg-oi')?.value?.trim();
+
+      if (ni) id.newIdentity = ni;
+      if (te !== undefined) {
+        id.targetActionLine = te;
+        id.targetEvent = te;
+      }
+      if (tet !== undefined) id.targetEventTime = tet ? new Date(tet).toISOString() : null;
+      if (ten !== undefined) {
+        id.targetEventName = ten;
+        id.taggedEvent = ten;
+      }
+      if (av !== undefined) id.antiVisionText = av;
+      if (oi !== undefined) id.oldIdentity = oi;
+
+      id.updatedAt = new Date().toISOString();
+      save(true);
+
+      const btn = $('#mg-save-all-btn');
+      if (btn) {
+        btn.textContent = 'Changes Saved!';
+        btn.style.background = '#16a34a';
+        btn.style.borderColor = '#4ede80';
+        setTimeout(() => {
+          go('identity');
+        }, 400);
+      } else {
+        go('identity');
+      }
+    };
+
+
+    // ═══════════════════════════════════════════════
+    // OLD EVIDENCE (Step 2)
+    // ═══════════════════════════════════════════════
+    window.addOldEv = function () {
+      const v = $('#old-ev-input')?.value?.trim(); if (!v) return;
+      if (!S.creating.oldEvidence) S.creating.oldEvidence = [];
+      S.creating.oldEvidence.push(v); save(); render();
+    };
+    window.delOldEv = function (i) {
+      if (!S.creating?.oldEvidence) return;
+      S.creating.oldEvidence.splice(i, 1); save(); render();
+    };
+
+    // ═══════════════════════════════════════════════
+    // ACTIONS (Step 5)
+    // ═══════════════════════════════════════════════
+    window.addAction = function () {
+      const v = $('#act-input')?.value?.trim(); if (!v) return;
+      if (!S.creating.actions) S.creating.actions = [];
+      S.creating.actions.push(v); save(); render();
+    };
+    window.delAction = function (i) {
+      if (!S.creating?.actions) return;
+      S.creating.actions.splice(i, 1); save(); render();
+    };
+
+
+
+    // ═══════════════════════════════════════════════
+    // TUG OF WAR VISUAL
+    // ═══════════════════════════════════════════════
+    function renderTugOfWar(id) {
+      var logs = getEvidencePoints(id);
+      var entryCount = id.logs ? id.logs.length : 0;
+
+      var lvlNames = ['Seed', 'Sprout', 'Sapling', 'Young Tree', 'Strong Tree', 'Deep Roots', 'Mighty Oak', 'Ancient', 'Legendary', 'Mythic', 'Mastered'];
+      var oldNames = ['Freedom', 'Dust', 'Broken', 'Fading', 'Crumbling', 'Cracking', 'Shaking', 'Holding', 'Rooted', 'Dominant', 'Peak Control'];
+
+      // LEVEL 0 TO 10 PROGRESSION (Motivating progression curve capped at Level 10)
+      var levelReqs = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 25];
+
+      function getLevelInfo(total) {
+        var lvl = 0, used = 0;
+        while (lvl < levelReqs.length - 1) {
+          var req = levelReqs[lvl];
+          if (used + req > total) {
+            return {
+              level: lvl,
+              progress: total - used,
+              needed: req,
+              total: total
+            };
+          }
+          used += req;
+          lvl++;
+        }
+        var maxReq = levelReqs[levelReqs.length - 1];
+        return {
+          level: 10,
+          progress: Math.min(maxReq, total - used),
+          needed: maxReq,
+          total: total
+        };
+      }
+
+      var nLvl = getLevelInfo(logs);
+      var nPct = Math.min(100, Math.round((nLvl.progress / nLvl.needed) * 100));
+      var nName = lvlNames[Math.min(nLvl.level, lvlNames.length - 1)];
+
+      // Old identity: un-fills (drains) as new identity fills up (Level 10 down to Level 0)
+      var oLevelRaw = Math.max(0, 10 - nLvl.level);
+      var oPct = Math.max(0, 100 - nPct);
+      var oName = oldNames[Math.min(10, Math.max(0, oLevelRaw))];
+
+      // RESPONSIVE DYNAMIC CIRCLE SIZING (CLEAN & PERFECT PROPORTIONS ON ALL SCREENS)
+      // Level 0 = 80px | Level 5 = 130px | Level 10 = 180px
+      var nSize = Math.round(80 + (nLvl.level / 10) * 100);
+      var oSize = Math.round(80 + (oLevelRaw / 10) * 100);
+
+      // Build circular segmented progress indicator (donut ring format with dynamic level sizing and universal point scaling)
+      function makeCircleProgress(totalPts, filledPts, color, glowColor, bgTrackColor, size, mainLabel, isComplementary) {
+        var cx = size / 2;
+        var cy = size / 2;
+        var strokeW = Math.max(6, Math.round(size * 0.095));
+        var r = (size - strokeW - 10) / 2;
+
+        var total = Math.max(1, parseInt(totalPts) || 1);
+        var filled = Math.max(0, Math.min(total, parseInt(filledPts) || 0));
+
+        var degPerSeg = 360 / total;
+        // Dynamic gap degrees proportional to segment count (always clean, distinct & visible gaps for any N)
+        var gapDeg = total === 1 ? 0 : Math.max(1.5, Math.min(10, degPerSeg * 0.16));
+        var arcDeg = degPerSeg - gapDeg;
+
+        var paths = '';
+        for (var i = 0; i < total; i++) {
+          // If complementary (Red side): fill indices i >= (total - filled)
+          // That means filled Red segments occupy the EXACT positions where Green is blank!
+          var isFilled = isComplementary ? (i >= (total - filled)) : (i < filled);
+          var segColor = isFilled ? color : (bgTrackColor || '#1c2333');
+          var filterStyle = isFilled ? ('filter:drop-shadow(0 0 5px ' + glowColor + ');') : '';
+
+          if (total === 1) {
+            paths += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + segColor + '" stroke-width="' + strokeW + '" style="' + filterStyle + '"/>';
+          } else {
+            var startDeg = -90 + (i * degPerSeg) + (gapDeg / 2);
+            var endDeg = startDeg + arcDeg;
+            var startRad = (startDeg * Math.PI) / 180;
+            var endRad = (endDeg * Math.PI) / 180;
+            var x1 = cx + r * Math.cos(startRad);
+            var y1 = cy + r * Math.sin(startRad);
+            var x2 = cx + r * Math.cos(endRad);
+            var y2 = cy + r * Math.sin(endRad);
+
+            var largeArc = arcDeg > 180 ? 1 : 0;
+            var d = 'M ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' A ' + r.toFixed(2) + ' ' + r.toFixed(2) + ' 0 ' + largeArc + ' 1 ' + x2.toFixed(2) + ' ' + y2.toFixed(2);
+
+            paths += '<path d="' + d + '" fill="none" stroke="' + segColor + '" stroke-width="' + strokeW + '" stroke-linecap="butt" style="' + filterStyle + 'transition:stroke 0.3s ease;"/>';
+          }
+        }
+
+        var fontSize = Math.max(12, Math.round(size * 0.17));
+
+        return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" style="display:block;margin:0 auto;max-width:100%;height:auto;overflow:visible;transition:width 0.4s ease, height 0.4s ease">'
+          + paths
+          + '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + color + '" font-size="' + fontSize + '" font-weight="700" font-family="system-ui, -apple-system, sans-serif">' + mainLabel + '</text>'
+          + '</svg>';
+      }
+
+      function makePips(count, max, color, isRightAligned) {
+        var unfilled = max - count;
+        var h = '<div style="display:flex;gap:4px;justify-content:center;margin-top:10px">';
+        for (var p = 0; p < max; p++) {
+          var isFilled = isRightAligned ? (p >= unfilled) : (p < count);
+          h += '<div style="width:7px;height:7px;border-radius:50%;background:' + (isFilled ? color : '#27273a') + ';transition:background 0.3s"></div>';
+        }
+        h += '</div>';
+        return h;
+      }
+
+      var oPtsRemaining = nLvl.needed - nLvl.progress;
+
+      return '<div class="tow" style="padding:18px 14px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.4s ease;overflow:hidden">'
+        + '<div style="display:flex;gap:10px;align-items:center;justify-content:space-around;flex-wrap:nowrap;width:100%;box-sizing:border-box;transition:all 0.4s ease">'
+
+        // OLD IDENTITY
+        + '<div style="flex:1;min-width:0;max-width:50%;text-align:center;box-sizing:border-box;transition:all 0.4s ease">'
+        + '<p style="font-size:11px;color:#ff8f70;font-weight:700;letter-spacing:1px;margin-bottom:4px">OLD IDENTITY</p>'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+        + '<span style="font-size:18px;font-weight:700;color:#ff7a59;font-family:Georgia,serif">Lv.' + oLevelRaw + '</span>'
+        + '<span style="font-size:12px;color:#fca5a5;font-weight:600">' + oName + '</span>'
+        + '</div>'
+        + makeCircleProgress(nLvl.needed, oPtsRemaining, '#ff7a59', 'rgba(255, 122, 89, 0.5)', '#1c2333', oSize, oPct + '%', true)
+        + '</div>'
+
+        // NEW IDENTITY
+        + '<div style="flex:1;min-width:0;max-width:50%;text-align:center;box-sizing:border-box;transition:all 0.4s ease">'
+        + '<p style="font-size:11px;color:#4ede80;font-weight:700;letter-spacing:1px;margin-bottom:4px">NEW IDENTITY</p>'
+        + '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+        + '<span style="font-size:18px;font-weight:700;color:#4ede80;font-family:Georgia,serif">Lv.' + nLvl.level + '</span>'
+        + '<span style="font-size:12px;color:#86efac;font-weight:600">' + nName + '</span>'
+        + '</div>'
+        + makeCircleProgress(nLvl.needed, nLvl.progress, '#4ede80', 'rgba(74, 222, 128, 0.5)', '#1c2333', nSize, nPct + '%', false)
+        + '</div>'
+
+        + '</div>'
+
+        + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">'
+        + renderWeightSelector('idlog')
+        + '<textarea rows="2" id="idlog" placeholder="What did the new you do today? (e.g., Drank 2L water, washed face with cleanser, woke up early...)" style="margin-bottom:10px;min-height:52px"></textarea>'
+        + '<button class="b bp bw" onclick="logIdentityEvidence()" style="font-size:15px;padding:12px">Save Evidence & Level Up</button>'
         + '</div>'
         + '</div>';
     }
@@ -5465,23 +7358,24 @@ function renderInlineEvidenceSection(id) {
     window.quickLog = function () {
       var v = $('#qlog')?.value?.trim();
       if (!v) return;
-      var t = $('#qlog-type')?.value || 'evidence';
+      var w = $('#qlog-weight')?.value || 'medium';
       var id = cur(); if (!id) return;
-      pushLogEntry(id, { date: new Date().toISOString(), note: v, type: t });
+      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w });
       save();
+      var pts = getEvidencePoints(id);
+      var stage = getStage(pts);
       var ta = $('#qlog');
       var btn = ta?.parentElement?.querySelector('.b');
       if (ta) ta.value = '';
       if (btn) {
-        btn.textContent = 'Entry Saved!';
-        btn.style.background = '#22c55e';
+        var isStrong = (w === 'strong');
+        btn.textContent = isStrong ? 'Significant Growth! +4 Points Added!' : (w === 'fine' ? 'Fine Step +1 Point Added!' : 'Proof +2 Points Added!');
+        btn.style.background = isStrong ? '#3a7e4a' : '#3a6e4a';
         setTimeout(function () {
           btn.textContent = 'Add proof';
           btn.style.background = '';
           render();
-        }, 1200);
-      } else {
-        render();
+        }, 1500);
       }
     };
 
