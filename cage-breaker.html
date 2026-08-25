@@ -3907,6 +3907,26 @@
       }
     };
 
+    window.setInlineSearchQuery = function (q) {
+      window.inlineFilterState = window.inlineFilterState || { preset: 'today', searchQuery: '' };
+      window.inlineFilterState.searchQuery = q;
+
+      var searchInput = document.getElementById('inline-evidence-search-input');
+      if (searchInput && searchInput.value !== q) {
+        searchInput.value = q;
+      }
+      var clearBtn = document.getElementById('inline-evidence-clear-btn');
+      if (clearBtn) {
+        clearBtn.style.display = q ? 'inline-block' : 'none';
+      }
+
+      var container = document.getElementById('inline-evidence-entries');
+      var id = getCurRef() || cur();
+      if (container && id) {
+        container.innerHTML = renderInlineEvidenceEntries(id);
+      }
+    };
+
     function renderInlineEvidenceEntries(id) {
       if (!id) return '';
       var logs = (id && id.logs) || [];
@@ -3932,26 +3952,6 @@
         }).join('');
       }
     }
-
-    window.setInlineSearchQuery = function (q) {
-      window.inlineFilterState = window.inlineFilterState || { preset: 'today', searchQuery: '' };
-      window.inlineFilterState.searchQuery = q;
-
-      var searchInput = document.getElementById('inline-evidence-search-input');
-      if (searchInput && searchInput.value !== q) {
-        searchInput.value = q;
-      }
-      var clearBtn = document.getElementById('inline-evidence-clear-btn');
-      if (clearBtn) {
-        clearBtn.style.display = q ? 'inline-block' : 'none';
-      }
-
-      var container = document.getElementById('inline-evidence-entries');
-      var id = getCurRef() || cur();
-      if (container && id) {
-        container.innerHTML = renderInlineEvidenceEntries(id);
-      }
-    };
 
     function renderInlineEvidenceSection(id) {
       if (!id) return '';
@@ -4016,8 +4016,6 @@
         + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" style="font-size:11px;padding:5px 12px" onclick="setInlineFilterPreset(\'30days\')">Last 30 Days</button>'
         + '</div>'
         + '</div>';
-
-      var entriesContainerHtml = '<div id="inline-evidence-entries-container">' + renderInlineEvidenceEntries(id) + '</div>';
 
       window.delLog = function (logIdx) {
         var id = getCurRef() || cur();
@@ -7466,13 +7464,13 @@
         + '<div style="margin-top:14px">'
         + '<label class="lb" style="font-size:13.5px;font-weight:700;color:#4ede80;margin-bottom:4px;display:block">1. Who You Are (Identity Statement)</label>'
         + '<p style="font-size:12px;color:#9ca3af;margin-bottom:6px">Define who you are choosing to be in present tense.</p>'
-        + '<textarea id="one-identity-input" class="auto-expand-input" data-min-h="48px" rows="2" placeholder=\'e.g., "I am a very busy person working on very important things only."\' onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this)" style="font-size:15px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(74,222,128,0.4);color:#ffffff;box-sizing:border-box;resize:none;overflow:hidden;height:48px;min-height:48px" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); createOneLineIdentity(); }"></textarea>'
+        + '<textarea id="one-identity-input" class="auto-expand-input" data-min-h="48px" rows="2" placeholder=\'e.g., \"I am a very busy person working on very important things only.\"\' onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this)" style="font-size:15px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(74,222,128,0.4);color:#ffffff;box-sizing:border-box;resize:none;overflow:hidden;height:48px;min-height:48px" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); createOneLineIdentity(); }"></textarea>'
         + '</div>'
 
         + '<div style="margin-top:16px">'
         + '<label class="lb" style="font-size:13.5px;font-weight:700;color:#fbbf24;margin-bottom:4px;display:block">2. Exact Action Line You Aim to Say When Achieved</label>'
         + '<p style="font-size:12px;color:#9ca3af;margin-bottom:6px">What exact statement/outcome will you say when you achieve what you set out to do?</p>'
-        + '<textarea id="one-identity-event" class="auto-expand-input" data-min-h="48px" rows="2" placeholder=\'e.g., "Finally I woke up continuously for 5 days to work on the most important things."\' onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this)" style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.4);color:#fef3c7;box-sizing:border-box;resize:none;overflow:hidden;height:48px;min-height:48px" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); createOneLineIdentity(); }"></textarea>'
+        + '<textarea id="one-identity-event" class="auto-expand-input" data-min-h="48px" rows="2" placeholder=\'e.g., \"Finally I woke up continuously for 5 days to work on the most important things.\"\' onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this)" style="font-size:14px;line-height:1.45;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(245,158,11,0.4);color:#fef3c7;box-sizing:border-box;resize:none;overflow:hidden;height:48px;min-height:48px" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){ event.preventDefault(); createOneLineIdentity(); }"></textarea>'
         + '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(245,158,11,0.06);padding:10px 14px;border-radius:10px;border:1px solid rgba(245,158,11,0.2)">'
         + '<label style="font-size:12.5px;font-weight:700;color:#fbbf24">Target Date & Time (Optional):</label>'
         + '<input type="datetime-local" id="one-identity-event-time" style="background:#181824;border:1px solid rgba(245,158,11,0.4);color:#ffffff;padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit" />'
