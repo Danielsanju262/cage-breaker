@@ -1158,9 +1158,6 @@
     }
 
     function renderCategoryBadge(type) {
-      var t = (type || 'evidence').toLowerCase();
-      if (t === 'appreciation') return '<span class="meta-pill" style="background:rgba(236,72,153,0.18);border:1px solid rgba(236,72,153,0.4);color:#f472b6;font-size:10.5px">Appreciation</span>';
-      if (t === 'realisation') return '<span class="meta-pill" style="background:rgba(168,85,247,0.18);border:1px solid rgba(168,85,247,0.4);color:#c084fc;font-size:10.5px">Realisation</span>';
       return '';
     }
 
@@ -1202,7 +1199,20 @@
       try {
         localStorage.setItem('cage_type_selector_state', JSON.stringify(window.typeSelectorState));
       } catch (e) {}
+      
+      // Preserve any input value if already typed
+      var inputEl = document.getElementById(prefix);
+      var currentVal = inputEl ? inputEl.value : null;
+
       render();
+
+      if (currentVal !== null) {
+        var newInputEl = document.getElementById(prefix);
+        if (newInputEl) {
+          newInputEl.value = currentVal;
+          newInputEl.focus();
+        }
+      }
     };
 
     // ═══════════════════════════════════════════════
@@ -1397,6 +1407,9 @@
         if (!l.id) {
           l.id = 'log_' + (l.date ? new Date(l.date).getTime() : Date.now()) + '_' + Math.random().toString(36).substr(2, 6);
         }
+        var logType = (l.type || l.category || 'evidence').toLowerCase();
+        l.type = logType;
+        l.category = logType;
         if (seenLogIds.has(l.id)) return false;
         seenLogIds.add(l.id);
         return true;
@@ -1447,11 +1460,14 @@
     }
 
     function createLogEntry(data) {
+      var logType = (data.type || data.category || 'evidence').toLowerCase();
       return {
         id: data.id || ('log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)),
         date: data.date || new Date().toISOString(),
         note: data.note || '',
         weight: data.weight || 'medium',
+        type: logType,
+        category: logType,
         taskId: data.taskId || null,
         subtaskId: data.subtaskId || null,
         ideaId: data.ideaId || null
@@ -3926,7 +3942,6 @@
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-bottom:1px solid #1f2436;gap:8px;background:rgba(255,255,255,0.02);margin-bottom:4px;border-radius:6px">'
             + '<div style="display:flex;gap:8px;align-items:center;flex:1;overflow:hidden;flex-wrap:wrap">'
             + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">' + dateStr + '</span>'
-            + renderCategoryBadge(l.type || l.category)
             + '<span style="font-size:13px;color:#e5e7eb;word-break:break-word">' + esc(l.note) + '</span>'
             + '</div>'
             + '<div style="display:flex;gap:4px;align-items:center">'
@@ -5905,6 +5920,10 @@
       const selType = getTypeSelectorVal('idlog');
       const id = cur(); if (!id) return;
       pushLogEntry(id, { date: new Date().toISOString(), note: v, type: selType, category: selType });
+      if (id) {
+        id.lastEvidenceCategory = selType;
+      }
+      try { localStorage.setItem('cb_evidence_category', selType); } catch (e) {}
       save();
       var ta = $('#idlog');
       if (ta) ta.value = '';
@@ -5967,8 +5986,13 @@
     window.logPractice = function () {
       const v = $('#plog')?.value?.trim(); if (!v) return;
       const w = $('#plog-weight')?.value || 'medium';
+      const selType = getTypeSelectorVal('plog');
       const id = cur(); if (!id) return;
-      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w });
+      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w, type: selType, category: selType });
+      if (id) {
+        id.lastEvidenceCategory = selType;
+      }
+      try { localStorage.setItem('cb_evidence_category', selType); } catch (e) {}
       save();
       // Show success with options
       const card = $('#plog')?.closest('.c');
@@ -6607,7 +6631,6 @@
               + '<div class="ev-card-top">'
               + '<div class="ev-card-meta">'
               + '<span class="ev-card-date">' + dateStr + '</span>'
-              + renderCategoryBadge(l.type || l.category)
               + '</div>'
               + '<div class="ev-card-actions">'
               + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
@@ -6787,7 +6810,6 @@
               + '<div class="ev-card-top">'
               + '<div class="ev-card-meta">'
               + '<span class="ev-card-date">' + dateStr + '</span>'
-              + renderCategoryBadge(l.type || l.category)
               + '</div>'
               + '<div class="ev-card-actions">'
               + '<button class="ev-btn-edit" onclick="editModalLog(' + ri + ', this)">Edit</button>'
@@ -6965,6 +6987,7 @@
       var item = btnEl ? btnEl.closest('.ev-card') : null;
       if (!item) return;
       var currentWeight = l.weight || 'medium';
+      var currentCat = (l.type || l.category || 'evidence').toLowerCase();
       var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
       item.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:2px 0">'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
@@ -6972,7 +6995,13 @@
         + '<span class="ev-card-date">' + dateStr + '</span>'
         + '</div>'
         + '<textarea id="modal-log-note-' + i + '" rows="3" style="width:100%;font-size:14px;background:rgba(10,14,26,0.8);border:1px solid #374151;border-radius:8px;padding:10px;color:#f9fafb;font-family:inherit">' + esc(l.note) + '</textarea>'
-        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+        + '<span class="sm" style="color:#9ca3af">Category:</span>'
+        + '<select id="modal-log-category-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
+        + '<option value="evidence" ' + (currentCat === 'evidence' ? 'selected' : '') + '>Evidence</option>'
+        + '<option value="appreciation" ' + (currentCat === 'appreciation' ? 'selected' : '') + '>Appreciation</option>'
+        + '<option value="realisation" ' + (currentCat === 'realisation' || currentCat === 'realization' ? 'selected' : '') + '>Realisation</option>'
+        + '</select>'
         + '<span class="sm" style="color:#9ca3af">Impact:</span>'
         + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
         + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>Strong (+4)</option>'
@@ -6993,11 +7022,17 @@
       if (!id || !id.logs[i]) return;
       var noteInp = $('#modal-log-note-' + i);
       var weightInp = $('#modal-log-weight-' + i);
+      var catInp = $('#modal-log-category-' + i);
       if (!noteInp) return;
       var newNote = noteInp.value.trim();
       if (!newNote) return;
       id.logs[i].note = newNote;
       if (weightInp) id.logs[i].weight = weightInp.value;
+      if (catInp) {
+        var catVal = catInp.value || 'evidence';
+        id.logs[i].type = catVal;
+        id.logs[i].category = catVal;
+      }
       save();
       var modal = document.getElementById('evidence-modal');
       if (modal) renderEvidenceModalContent(modal, id);
@@ -7531,8 +7566,13 @@
       var v = $('#qlog')?.value?.trim();
       if (!v) return;
       var w = $('#qlog-weight')?.value || 'medium';
+      var selType = getTypeSelectorVal('qlog') || 'evidence';
       var id = cur(); if (!id) return;
-      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w });
+      pushLogEntry(id, { date: new Date().toISOString(), note: v, weight: w, type: selType, category: selType });
+      if (id) {
+        id.lastEvidenceCategory = selType;
+      }
+      try { localStorage.setItem('cb_evidence_category', selType); } catch (e) {}
       save();
       
       
