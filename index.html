@@ -1517,6 +1517,9 @@
       id.targetEventName = (id.targetEventName || id.taggedEvent || '').trim();
       id.taggedEvent = id.targetEventName;
       id.targetEventTime = id.targetEventTime || null;
+      id.identityLink = (id.identityLink || id.link || id.url || '').trim();
+      id.link = id.identityLink;
+      id.url = id.identityLink;
       id.lastEvidenceCategory = id.lastEvidenceCategory || 'evidence';
       id.achievedVaultExpanded = !!id.achievedVaultExpanded;
       id.hiddenSections = (id.hiddenSections && typeof id.hiddenSections === 'object') ? id.hiddenSections : {};
@@ -6872,29 +6875,38 @@
     }
 
     window.mgSaveAll = function () {
-      const id = getCurRef() || cur();
+      if (!S || !Array.isArray(S.identities)) return;
+      var id = S.identities.find(function (i) { return i && i.id === S.currentId; });
       if (!id) return;
-      const ni = $('#mg-ni')?.value?.trim();
-      const te = $('#mg-te')?.value?.trim();
-      const tet = $('#mg-tet')?.value?.trim();
-      const ten = $('#mg-ten')?.value?.trim();
-      const link = $('#mg-link')?.value?.trim();
+
+      var niEl = document.getElementById('mg-ni');
+      var teEl = document.getElementById('mg-te');
+      var tetEl = document.getElementById('mg-tet');
+      var tenEl = document.getElementById('mg-ten');
+      var linkEl = document.getElementById('mg-link');
+
+      var ni = niEl ? niEl.value.trim() : '';
+      var te = teEl ? teEl.value.trim() : '';
+      var tet = tetEl ? tetEl.value.trim() : '';
+      var ten = tenEl ? tenEl.value.trim() : '';
+      var link = linkEl ? linkEl.value.trim() : '';
 
       if (ni) id.newIdentity = ni;
-      if (te !== undefined) {
+      if (teEl) {
         id.targetActionLine = te;
         id.targetEvent = te;
       }
-      if (tet !== undefined) {
+      if (tetEl) {
         id.targetEventTime = tet ? new Date(tet).toISOString() : null;
       }
-      if (ten !== undefined) {
+      if (tenEl) {
         id.targetEventName = ten;
         id.taggedEvent = ten;
       }
-      if (link !== undefined) {
+      if (linkEl) {
         id.identityLink = link;
         id.link = link;
+        id.url = link;
       }
 
       id.updatedAt = new Date().toISOString();
