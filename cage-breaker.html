@@ -967,6 +967,14 @@
       border-color: #60a5fa !important;
     }
 
+    /* Modal Background Scroll & Touch Lock */
+    html.modal-locked, body.modal-locked {
+      overflow: hidden !important;
+      touch-action: none !important;
+      height: 100% !important;
+      overscroll-behavior: none !important;
+    }
+
     /* Clean Bounded Modals with Fluid Spring Animation */
     .modal-overlay {
       position: fixed;
@@ -982,6 +990,8 @@
       animation: modalOverlayIn 0.26s var(--ease-spring);
       box-sizing: border-box;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
     }
 
     @keyframes modalOverlayIn {
@@ -1004,6 +1014,8 @@
       margin: auto;
       animation: modalCardIn 0.32s var(--ease-spring);
       will-change: transform, opacity;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
     }
 
     @keyframes modalCardIn {
@@ -3080,6 +3092,56 @@
         showCustomAlert('Error restoring snapshot: ' + err.message, 'Restore Error', '⚠️');
       }
     };
+
+    // ═══════════════════════════════════════════════
+    // BACKGROUND SCROLL & TOUCH LOCK ENGINE
+    // ═══════════════════════════════════════════════
+    (function initModalScrollLockEngine() {
+      function updateScrollLock() {
+        var hasModal = !!document.querySelector('.modal-overlay');
+        if (hasModal) {
+          if (!document.body.classList.contains('modal-locked')) {
+            document.body.classList.add('modal-locked');
+            document.documentElement.classList.add('modal-locked');
+          }
+        } else {
+          document.body.classList.remove('modal-locked');
+          document.documentElement.classList.remove('modal-locked');
+        }
+      }
+
+      var observer = new MutationObserver(function () {
+        updateScrollLock();
+      });
+
+      if (document.body) {
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+      } else {
+        document.addEventListener('DOMContentLoaded', function () {
+          observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        });
+      }
+
+      // Prevent background touch scrolling on mobile while modal overlay is present
+      document.addEventListener('touchmove', function (e) {
+        if (document.querySelector('.modal-overlay')) {
+          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal');
+          if (!scrollable) {
+            e.preventDefault();
+          }
+        }
+      }, { passive: false });
+
+      // Prevent mouse wheel scrolling on background
+      document.addEventListener('wheel', function (e) {
+        if (document.querySelector('.modal-overlay')) {
+          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal');
+          if (!scrollable) {
+            e.preventDefault();
+          }
+        }
+      }, { passive: false });
+    })();
 
     // ═══════════════════════════════════════════════
     // CUSTOM UI DIALOG SYSTEM (NO SYSTEM ALERTS / CONFIRMS)
