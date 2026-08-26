@@ -118,7 +118,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    button:active, .b:active, .bg:active, .icard:active, .task-card:active, .routine-loop-card:active {
+    button:active, .b:active, .bg:active, .icard:active, .routine-loop-card:active {
       transform: scale(0.985);
       transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -670,6 +670,39 @@
 
     .tasks-container.section-card-frame {
       border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    }
+
+    /* Tasks section static on click - remove all bounce and scale effects */
+    .tasks-container,
+    .tasks-container *,
+    .tasks-container button,
+    .tasks-container .b,
+    .tasks-container .bg,
+    .tasks-container .task-card,
+    .tasks-container .task-check-btn,
+    .tasks-container .subtasks-badge-pill,
+    .tasks-container .task-title,
+    .tasks-container select,
+    .tasks-container input,
+    .tasks-container textarea {
+      transform: none !important;
+    }
+
+    .tasks-container:active,
+    .tasks-container *:active,
+    .tasks-container button:active,
+    .tasks-container .b:active,
+    .tasks-container .bg:active,
+    .tasks-container .task-card:active,
+    .tasks-container .task-check-btn:active,
+    .tasks-container .subtasks-badge-pill:active,
+    .tasks-container .task-title:active,
+    .tasks-container select:active,
+    .tasks-container input:active,
+    .tasks-container textarea:active {
+      transform: none !important;
+      transition: none !important;
+      animation: none !important;
     }
 
     .routine-loops-container.section-card-frame {
@@ -6489,13 +6522,22 @@
         + '</div>'
         + '</div>';
 
+      var rawLink = (id.identityLink || id.link || id.url || '').trim();
+      var safeLink = rawLink;
+      if (safeLink && !safeLink.match(/^https?:\/\//i)) {
+        safeLink = 'https://' + safeLink;
+      }
+      var identityHeadingHtml = safeLink
+        ? '<a href="' + esc(safeLink) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;max-width:100%" title="Open link: ' + esc(safeLink) + '"><h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:pointer;display:inline-block;transition:color 0.15s ease" onmouseenter="this.style.color=\'#93c5fd\'" onmouseleave="this.style.color=\'#ffffff\'">"' + e(id.newIdentity) + '"</h2></a>'
+        : '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>';
+
       // 🎯 2. HERO IDENTITY STANDARD CARD
       var heroCardHtml = '<div class="c" style="padding:22px 24px;background:linear-gradient(135deg,rgba(16,24,44,0.94),rgba(10,14,26,0.98));border:1px solid rgba(74,222,128,0.35);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 25px rgba(74,222,128,0.08);display:flex;flex-direction:column;justify-content:space-between">'
         + '<div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
         + '<span class="sm" style="color:#d1d5db;font-weight:600">Day ' + days + ' · ' + (id.logs ? id.logs.length : 0) + ' Proofs' + (streak > 1 ? ' · 🔥 ' + streak + '-day streak' : '') + '</span>'
         + '</div>'
-        + '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>'
+        + identityHeadingHtml
         + (tagEventStr ? '<div style="margin-top:12px"><span style="font-size:13px;font-weight:800;padding:5px 12px;background:rgba(56,189,248,0.18);color:#38bdf8;border:1.5px solid rgba(56,189,248,0.45);border-radius:8px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(56,189,248,0.15)">Do it Before: "' + e(tagEventStr) + '"</span></div>' : '')
         + '</div>'
         
@@ -6804,6 +6846,13 @@
       <input type="text" id="mg-ten" value="${esc(id.targetEventName || id.taggedEvent || '')}" placeholder='e.g., "Wonderla Family Trip" or "Loan Clearance Event"' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(56,189,248,0.35);color:#f0f9ff;box-sizing:border-box" />
     </div>
 
+    <!-- 4. Inspiration Link / Video Link (Optional) -->
+    <div style="margin-bottom:22px">
+      <label class="lb" style="font-size:13.5px;font-weight:700;color:#60a5fa;margin-bottom:4px;display:block">4. Inspiration Link / Video Link (Optional)</label>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:6px">Paste a YouTube or web link of someone who achieved this identity. Clicking your identity statement will open this link in a new tab.</p>
+      <input type="url" id="mg-link" value="${esc(id.identityLink || id.link || id.url || '')}" placeholder='e.g. https://www.youtube.com/watch?v=...' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(96,165,250,0.35);color:#f0f9ff;box-sizing:border-box" />
+    </div>
+
     <!-- Save Button -->
     <div style="margin-bottom:24px">
       <button class="b bp bw" id="mg-save-all-btn" onclick="mgSaveAll()" style="font-size:15px;padding:14px;font-weight:700;background:linear-gradient(135deg, #2563eb, #1d4ed8);border-radius:10px;box-shadow:0 4px 14px rgba(37,99,235,0.3)">
@@ -6825,6 +6874,7 @@
       const te = $('#mg-te')?.value?.trim();
       const tet = $('#mg-tet')?.value?.trim();
       const ten = $('#mg-ten')?.value?.trim();
+      const link = $('#mg-link')?.value?.trim();
 
       if (ni) id.newIdentity = ni;
       if (te !== undefined) {
@@ -6837,6 +6887,10 @@
       if (ten !== undefined) {
         id.targetEventName = ten;
         id.taggedEvent = ten;
+      }
+      if (link !== undefined) {
+        id.identityLink = link;
+        id.link = link;
       }
 
       id.updatedAt = new Date().toISOString();
@@ -8121,6 +8175,12 @@
         + '<input type="text" id="one-identity-tagged-event" placeholder=\'e.g., "Wonderla Family Trip" or "Loan Clearance Event"\' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(56,189,248,0.4);color:#f0f9ff;box-sizing:border-box" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); createOneLineIdentity(); }" />'
         + '</div>'
 
+        + '<div style="margin-top:16px">'
+        + '<label class="lb" style="font-size:13.5px;font-weight:700;color:#60a5fa;margin-bottom:4px;display:block">4. Inspiration Link / Video Link (Optional)</label>'
+        + '<p style="font-size:12px;color:#9ca3af;margin-bottom:6px">Paste a YouTube or web link of someone who achieved this identity. Clicking your identity statement will open this link in a new tab.</p>'
+        + '<input type="url" id="one-identity-link" placeholder=\'e.g., "https://www.youtube.com/watch?v=..."\' style="font-size:14px;padding:12px 14px;width:100%;border-radius:10px;background:#181824;border:1px solid rgba(96,165,250,0.4);color:#f0f9ff;box-sizing:border-box" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); createOneLineIdentity(); }" />'
+        + '</div>'
+
         + '<div style="margin-top:22px">'
         + '<button type="button" class="b bp bw" id="create-id-btn" onclick="createOneLineIdentity()" style="font-size:15px;padding:16px;width:100%;font-weight:700;box-shadow:0 4px 16px rgba(245,158,11,0.3);border-radius:10px">'
         + 'Create Identity & Start Adding Evidence →'
@@ -8139,6 +8199,7 @@
       var rawEvent = $('#one-identity-event')?.value?.trim();
       var rawEventTime = $('#one-identity-event-time')?.value || null;
       var rawTaggedEvent = $('#one-identity-tagged-event')?.value?.trim() || '';
+      var rawLink = $('#one-identity-link')?.value?.trim() || '';
       if (!raw || !rawEvent) {
         showCustomAlert('Every identity line must include both:\n1. Who You Are (Identity Statement)\n2. Exact Action Line Aiming to Say When Achieved', 'Complete 2-Part Identity Required', '⚠️');
         var inp = !raw ? document.getElementById('one-identity-input') : document.getElementById('one-identity-event');
@@ -8162,6 +8223,8 @@
         targetEventName: rawTaggedEvent,
         taggedEvent: rawTaggedEvent,
         targetEventTime: rawEventTime ? new Date(rawEventTime).toISOString() : null,
+        identityLink: rawLink,
+        link: rawLink,
         achieved: false,
         achievedAt: null,
         crackAction: name,
