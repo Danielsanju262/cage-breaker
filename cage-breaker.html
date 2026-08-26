@@ -1930,7 +1930,9 @@
         if (!_initialSyncDone) {
           return;
         }
-        if (immediate) {
+        // Default to immediate push for instant cross-device updates unless explicitly delayed
+        var shouldPushImmediately = (immediate !== false);
+        if (shouldPushImmediately) {
           clearTimeout(syncTimeout);
           pushToCloud();
         } else {
@@ -3488,6 +3490,15 @@
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) {
         updateLiveCountdowns();
+        if (typeof window.pullFromCloud === 'function') {
+          window.pullFromCloud();
+        }
+      }
+    });
+
+    window.addEventListener('focus', function () {
+      if (typeof window.pullFromCloud === 'function') {
+        window.pullFromCloud();
       }
     });
 
