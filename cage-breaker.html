@@ -271,27 +271,27 @@
       background: var(--bg-elevated);
       color: var(--text-primary);
       cursor: pointer;
-      transition: transform 0.18s var(--ease-spring),
-                  background 0.2s ease,
-                  border-color 0.2s ease,
-                  box-shadow 0.2s ease,
-                  color 0.2s ease,
-                  filter 0.2s ease;
+      transition: background 0.15s ease,
+                  border-color 0.15s ease,
+                  box-shadow 0.15s ease,
+                  color 0.15s ease,
+                  filter 0.15s ease;
       outline: none;
       box-shadow: var(--shadow-sm);
       white-space: nowrap;
       max-width: 100%;
       flex-shrink: 0;
+      transform: none !important;
     }
 
     button:hover, .btn:hover {
       background: var(--bg-card-hover);
       border-color: var(--border-strong);
-      transform: translateY(-1px);
+      transform: none !important;
     }
 
     button:active, .btn:active, .b:active, .bg:active {
-      transform: translateY(0) scale(0.97) !important;
+      transform: none !important;
     }
 
     .btn-p, button.primary {
@@ -615,7 +615,7 @@
       border-color: rgba(59, 130, 246, 0.6) !important;
       background: rgba(59, 130, 246, 0.25) !important;
       color: #93c5fd !important;
-      transform: scale(1.04);
+      transform: none !important;
     }
 
     /* Streak Dots Bar */
@@ -744,24 +744,23 @@
       display: grid;
       grid-template-rows: 0fr;
       opacity: 0;
-      transform: translateY(-8px) scale(0.98);
-      transition: grid-template-rows 0.55s cubic-bezier(0.25, 1, 0.35, 1),
-                  opacity 0.45s cubic-bezier(0.25, 1, 0.35, 1),
-                  transform 0.55s cubic-bezier(0.25, 1, 0.35, 1);
+      transform: none !important;
+      transition: grid-template-rows 0.35s cubic-bezier(0.25, 1, 0.35, 1),
+                  opacity 0.3s cubic-bezier(0.25, 1, 0.35, 1);
       pointer-events: none;
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-details {
       grid-template-rows: 1fr;
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: none !important;
       pointer-events: auto;
     }
 
     .task-card-has-timer .task-card-details-inner {
       overflow: hidden;
       min-height: 0;
-      transition: opacity 0.45s ease;
+      transition: opacity 0.3s ease;
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-details-inner {
@@ -772,16 +771,15 @@
       display: grid;
       grid-template-rows: 1fr;
       opacity: 1;
-      transform: scale(1);
-      transition: grid-template-rows 0.55s cubic-bezier(0.25, 1, 0.35, 1),
-                  opacity 0.4s cubic-bezier(0.25, 1, 0.35, 1),
-                  transform 0.55s cubic-bezier(0.25, 1, 0.35, 1);
+      transform: none !important;
+      transition: grid-template-rows 0.35s cubic-bezier(0.25, 1, 0.35, 1),
+                  opacity 0.3s cubic-bezier(0.25, 1, 0.35, 1);
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer {
       grid-template-rows: 0fr;
       opacity: 0;
-      transform: scale(0.95);
+      transform: none !important;
       pointer-events: none;
     }
 
@@ -1126,8 +1124,8 @@
     }
 
     @keyframes dropdownSlideIn {
-      from { opacity: 0; transform: scale(0.93) translateY(-6px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .task-check-btn {
@@ -1144,17 +1142,18 @@
       flex-shrink: 0;
       font-size: 12px;
       font-weight: 800;
-      transition: all 0.2s var(--ease-spring);
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      transform: none !important;
     }
 
     .task-check-btn:hover {
       border-color: #3b82f6;
       background: rgba(59, 130, 246, 0.15);
-      transform: scale(1.08);
+      transform: none !important;
     }
 
     .task-check-btn:active {
-      transform: scale(0.9);
+      transform: none !important;
     }
 
     .task-check-btn.checked {
@@ -1162,13 +1161,13 @@
       border-color: #10b981;
       color: #ffffff;
       box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-      animation: checkPop 0.3s var(--ease-bounce);
+      animation: none !important;
+      transform: none !important;
     }
 
     @keyframes checkPop {
-      0% { transform: scale(0.8); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
     }
 
     .mg-add-row {
@@ -4360,16 +4359,16 @@
       var isRealActive = activeCategory === 'realisation';
 
       var evPillStyle = isEvActive
-        ? 'background:#2563eb !important;color:#ffffff !important;border:2px solid #93c5fd !important;box-shadow:0 0 16px rgba(59,130,246,0.6), inset 0 0 8px rgba(255,255,255,0.2) !important;font-weight:800 !important;transform:scale(1.03);'
-        : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;';
+        ? 'background:#2563eb !important;color:#ffffff !important;border:2px solid #93c5fd !important;box-shadow:0 0 16px rgba(59,130,246,0.6), inset 0 0 8px rgba(255,255,255,0.2) !important;font-weight:800 !important;transform:none !important;'
+        : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;transform:none !important;';
 
       var appPillStyle = isAppActive
-        ? 'background:#db2777 !important;color:#ffffff !important;border:2px solid #f9a8d4 !important;box-shadow:0 0 16px rgba(236,72,153,0.6), inset 0 0 8px rgba(255,255,255,0.2) !important;font-weight:800 !important;transform:scale(1.03);'
-        : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;';
+        ? 'background:#db2777 !important;color:#ffffff !important;border:2px solid #f9a8d4 !important;box-shadow:0 0 16px rgba(236,72,153,0.6), inset 0 0 8px rgba(255,255,255,0.2) !important;font-weight:800 !important;transform:none !important;'
+        : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;transform:none !important;';
 
       var realPillStyle = isRealActive
-        ? 'background:#9333ea !important;color:#ffffff !important;border:2px solid #d8b4fe !important;box-shadow:0 0 16px rgba(168,85,247,0.6), inset 0 0 8px rgba(255,255,255,0.2) !important;font-weight:800 !important;transform:scale(1.03);'
-        : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;';
+        ? 'background:#9333ea !important;color:#ffffff !important;border:2px solid #d8b4fe !important;box-shadow:0 0 16px rgba(168,85,247,0.6), inset 0 0 8px rgba(255,255,255,0.2) !important;font-weight:800 !important;transform:none !important;'
+        : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;transform:none !important;';
 
       var categoryPillsHtml = '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'
         + '<button type="button" class="ev-filter-pill ' + (isEvActive ? 'active' : '') + '" style="font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;' + evPillStyle + '" onclick="setInlineCategory(\'evidence\')">Efforts (' + counts.evidence + ')</button>'
@@ -8965,14 +8964,12 @@
         if (onComplete) onComplete();
         return;
       }
-      card.style.transition = 'box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-      card.style.boxShadow = '0 0 30px rgba(245, 158, 11, 0.6)';
-      card.style.transform = 'scale(1.02)';
+      card.style.transition = 'box-shadow 0.35s ease';
+      card.style.boxShadow = '0 0 24px rgba(245, 158, 11, 0.6)';
       setTimeout(function () {
         card.style.boxShadow = '';
-        card.style.transform = '';
         if (onComplete) onComplete();
-      }, 400);
+      }, 300);
     };
 
     window.openLogRunModal = function (loopId, skipAnimation) {
