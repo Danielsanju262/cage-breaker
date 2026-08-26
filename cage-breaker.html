@@ -11,10 +11,12 @@
   <meta name="theme-color" content="#0a0e1a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Cage Breaker">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛓️</text></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%230a0e1a'/><text x='256' y='320' font-size='240' text-anchor='middle'>⛓️</text></svg>">
+  <meta name="apple-mobile-web-app-title" content="Break Your Cage">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <link rel="shortcut icon" href="favicon.ico">
   <title>Break Your Cage</title>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -3622,10 +3624,7 @@
           + '</div>';
       }
       a.innerHTML = '<div class="center fade">'
-        + '<svg width="64" height="64" viewBox="0 0 72 72" fill="none" style="margin-bottom:22px">'
-        + '<circle cx="36" cy="36" r="34" stroke="#c9964a" stroke-width="1.5" opacity=".2"/>'
-        + '<path d="M36 8L34 26L40 30L33 46L39 50L32 64" stroke="#c9964a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-        + '</svg>'
+        + '<div style="margin-bottom:18px"><img src="icons/icon-192.png" width="76" height="76" style="border-radius:18px;box-shadow:0 8px 24px rgba(245,158,11,0.25),0 0 20px rgba(0,0,0,0.7);border:1px solid rgba(245,158,11,0.3)" alt="Break Your Cage Logo" /></div>'
         + '<h1>Break Your Cage</h1>'
         + '<p class="d" style="max-width:440px;margin:14px auto 18px">You are not lazy. You are not broken. You are living inside a familiar identity that keeps you stuck — and today, you crack it open.</p>'
         + '<p class="h" style="max-width:420px;margin:0 auto 20px">Break old patterns and build powerful new identities with daily proof. Everything is saved locally on your device — no server, no account, completely private and offline.</p>'
