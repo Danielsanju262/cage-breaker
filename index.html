@@ -4009,20 +4009,113 @@
       }
     };
 
+    // ═══════════════════════════════════════════════
+    // BULK DELETE ENGINE (LOGS & EVIDENCE)
+    // ═══════════════════════════════════════════════
+    window.bulkLogState = window.bulkLogState || { active: false, selectedIdxs: [] };
+
+    window.toggleLogBulkMode = function () {
+      window.bulkLogState.active = !window.bulkLogState.active;
+      if (!window.bulkLogState.active) {
+        window.bulkLogState.selectedIdxs = [];
+      }
+      render(true);
+    };
+
+    window.toggleLogSelect = function (realIdx, isChecked) {
+      if (!Array.isArray(window.bulkLogState.selectedIdxs)) window.bulkLogState.selectedIdxs = [];
+      if (isChecked) {
+        if (!window.bulkLogState.selectedIdxs.includes(realIdx)) {
+          window.bulkLogState.selectedIdxs.push(realIdx);
+        }
+      } else {
+        window.bulkLogState.selectedIdxs = window.bulkLogState.selectedIdxs.filter(function (i) { return i !== realIdx; });
+      }
+      render(true);
+    };
+
+    window.selectAllLogsFiltered = function (select) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.logs)) return;
+      var filteredItems = filterInlineLogs(id.logs);
+      if (!Array.isArray(window.bulkLogState.selectedIdxs)) window.bulkLogState.selectedIdxs = [];
+      if (select) {
+        filteredItems.forEach(function (item) {
+          if (!window.bulkLogState.selectedIdxs.includes(item.realIdx)) {
+            window.bulkLogState.selectedIdxs.push(item.realIdx);
+          }
+        });
+      } else {
+        window.bulkLogState.selectedIdxs = [];
+      }
+      render(true);
+    };
+
+    window.executeBulkDeleteLogs = function () {
+      var id = getCurRef() || cur();
+      var sel = window.bulkLogState.selectedIdxs || [];
+      if (!id || !Array.isArray(id.logs) || sel.length === 0) return;
+
+      var count = sel.length;
+      showCustomConfirm({
+        title: 'Bulk Delete Evidence Entries?',
+        message: 'Are you sure you want to delete ' + count + ' selected entry/entries from your Evidence Vault?',
+        confirmText: 'Delete ' + count + ' Entries',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (!Array.isArray(id.deletedLogIds)) id.deletedLogIds = [];
+          var sortedIdxs = sel.slice().sort(function (a, b) { return b - a; });
+          sortedIdxs.forEach(function (idx) {
+            if (idx >= 0 && idx < id.logs.length) {
+              var targetLog = id.logs[idx];
+              if (targetLog && targetLog.id) {
+                id.deletedLogIds.push(targetLog.id);
+              }
+              id.logs.splice(idx, 1);
+            }
+          });
+          id.updatedAt = new Date().toISOString();
+          window.bulkLogState = { active: false, selectedIdxs: [] };
+          save(true);
+          render(true);
+        }
+      });
+    };
+
     function renderInlineEvidenceEntries(id) {
       if (!id) return '';
       var logs = (id && id.logs) || [];
       var filteredItems = filterInlineLogs(logs);
+      var isBulkActive = window.bulkLogState && window.bulkLogState.active;
+      var selectedIdxs = (window.bulkLogState && window.bulkLogState.selectedIdxs) || [];
+
       if (logs.length === 0) {
         return '<p class="h" style="font-style:italic;margin:8px 0">No evidence logged yet. Add your first proof above!</p>';
       } else if (filteredItems.length === 0) {
         return '<p class="h" style="font-style:italic;margin:8px 0;color:#9ca3af">No entries match this filter.</p>';
       } else {
-        return filteredItems.slice().reverse().map(function (item) {
+        var bulkActionBarHtml = '';
+        if (isBulkActive) {
+          var selCount = selectedIdxs.length;
+          bulkActionBarHtml = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;margin-bottom:8px;flex-wrap:wrap">'
+            + '<span style="font-size:12px;font-weight:700;color:#fca5a5">Selected ' + selCount + ' / ' + filteredItems.length + ' entries</span>'
+            + '<div style="display:flex;gap:6px;align-items:center">'
+            + '<button class="bg" onclick="selectAllLogsFiltered(true)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#e2e8f0;border-radius:4px">Select All</button>'
+            + '<button class="bg" onclick="selectAllLogsFiltered(false)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:4px">Clear</button>'
+            + '<button class="b bp bs" onclick="executeBulkDeleteLogs()" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:700;border:none;border-radius:6px" ' + (selCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '') + '>🗑️ Delete Selected (' + selCount + ')</button>'
+            + '</div>'
+            + '</div>';
+        }
+
+        return bulkActionBarHtml + filteredItems.slice().reverse().map(function (item) {
           var l = item.l;
           var dateStr = l.date ? new Date(l.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-bottom:1px solid #1f2436;gap:8px;background:rgba(255,255,255,0.02);margin-bottom:4px;border-radius:6px">'
+          var isSelected = selectedIdxs.includes(item.realIdx);
+          var checkHtml = isBulkActive ? ('<input type="checkbox" ' + (isSelected ? 'checked' : '') + ' onchange="toggleLogSelect(' + item.realIdx + ', this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" />') : '';
+
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-bottom:1px solid #1f2436;gap:8px;background:' + (isSelected ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.02)') + ';margin-bottom:4px;border-radius:6px;border:1px solid ' + (isSelected ? 'rgba(239,68,68,0.35)' : 'transparent') + '">'
             + '<div style="display:flex;gap:8px;align-items:center;flex:1;overflow:hidden;flex-wrap:wrap">'
+            + checkHtml
             + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">' + dateStr + '</span>'
             + '<span style="font-size:13px;color:#e5e7eb;word-break:break-word">' + esc(l.note) + '</span>'
             + '</div>'
@@ -4052,11 +4145,13 @@
       var activeCategory = getSavedEvidenceCategory();
       var state = window.inlineFilterState || { preset: 'today', searchQuery: '' };
 
+      var isBulkActive = window.bulkLogState && window.bulkLogState.active;
       var headerHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
         + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#4ade80;margin:0;display:inline-flex;align-items:center;gap:6px">🏆 EVIDENCE VAULT</h3>'
         + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + logs.length + ' proofs · ' + streak + '-day streak</span>'
         + '</div>'
+        + '<button onclick="toggleLogBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid ' + (isBulkActive ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)') + ';color:' + (isBulkActive ? '#fca5a5' : '#cbd5e1') + ';background:' + (isBulkActive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">' + (isBulkActive ? 'Cancel Bulk Select' : '🗑️ Bulk Delete Logs') + '</button>'
         + '</div>'
         + '<div class="sb" style="display:flex;flex-direction:row;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:14px">' + streakDots(id) + '</div>';
 
@@ -5445,6 +5540,135 @@
       });
     };
 
+    // ═══════════════════════════════════════════════
+    // BULK DELETE ENGINE (TASKS & SUBTASKS)
+    // ═══════════════════════════════════════════════
+    window.bulkTaskState = window.bulkTaskState || { active: false, selectedTasks: [], selectedSubtasks: [] };
+
+    window.toggleTaskBulkMode = function () {
+      window.bulkTaskState.active = !window.bulkTaskState.active;
+      if (!window.bulkTaskState.active) {
+        window.bulkTaskState.selectedTasks = [];
+        window.bulkTaskState.selectedSubtasks = [];
+      }
+      render(true);
+    };
+
+    window.toggleTaskBulkSelect = function (taskId, isChecked) {
+      if (!Array.isArray(window.bulkTaskState.selectedTasks)) window.bulkTaskState.selectedTasks = [];
+      if (isChecked) {
+        if (!window.bulkTaskState.selectedTasks.includes(taskId)) window.bulkTaskState.selectedTasks.push(taskId);
+      } else {
+        window.bulkTaskState.selectedTasks = window.bulkTaskState.selectedTasks.filter(function (id) { return id !== taskId; });
+      }
+      render(true);
+    };
+
+    window.toggleSubtaskBulkSelect = function (taskId, subtaskId, isChecked) {
+      var key = taskId + '_' + subtaskId;
+      if (!Array.isArray(window.bulkTaskState.selectedSubtasks)) window.bulkTaskState.selectedSubtasks = [];
+      if (isChecked) {
+        if (!window.bulkTaskState.selectedSubtasks.includes(key)) window.bulkTaskState.selectedSubtasks.push(key);
+      } else {
+        window.bulkTaskState.selectedSubtasks = window.bulkTaskState.selectedSubtasks.filter(function (k) { return k !== key; });
+      }
+      render(true);
+    };
+
+    window.selectAllTasksInId = function (select) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+      window.bulkTaskState.selectedTasks = [];
+      window.bulkTaskState.selectedSubtasks = [];
+      if (select) {
+        id.tasks.forEach(function (t) {
+          window.bulkTaskState.selectedTasks.push(t.id);
+          if (Array.isArray(t.subtasks)) {
+            t.subtasks.forEach(function (st) {
+              window.bulkTaskState.selectedSubtasks.push(t.id + '_' + st.id);
+            });
+          }
+        });
+      }
+      render(true);
+    };
+
+    window.executeBulkDeleteTasks = function () {
+      var id = getCurRef() || cur();
+      if (!id) return;
+      var selTasks = window.bulkTaskState.selectedTasks || [];
+      var selSubtasks = window.bulkTaskState.selectedSubtasks || [];
+      var totalCount = selTasks.length + selSubtasks.length;
+      if (totalCount === 0) return;
+
+      showCustomConfirm({
+        title: 'Bulk Delete Tasks & Subtasks?',
+        message: 'Are you sure you want to delete ' + selTasks.length + ' task(s) and ' + selSubtasks.length + ' subtask(s)?',
+        confirmText: 'Delete Selected (' + totalCount + ')',
+        confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        onConfirm: function () {
+          if (!Array.isArray(id.deletedTaskIds)) id.deletedTaskIds = [];
+          if (!Array.isArray(id.deletedSubtaskIds)) id.deletedSubtaskIds = [];
+          if (!Array.isArray(id.deletedIdeaIds)) id.deletedIdeaIds = [];
+
+          selSubtasks.forEach(function (key) {
+            var parts = key.split('_');
+            var taskId = parts[0];
+            var subtaskId = parts[1];
+            var task = Array.isArray(id.tasks) ? id.tasks.find(function (t) { return t.id === taskId; }) : null;
+            if (task && Array.isArray(task.subtasks)) {
+              var sub = task.subtasks.find(function (s) { return s.id === subtaskId; });
+              if (sub) {
+                if (!id.deletedSubtaskIds.includes(subtaskId)) id.deletedSubtaskIds.push(subtaskId);
+                if (Array.isArray(sub.ideas)) {
+                  sub.ideas.forEach(function (i) {
+                    if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+                  });
+                }
+                removeAndTombstoneLogs(id, function (l) {
+                  return (l.subtaskId === subtaskId) || (l.note && l.note.indexOf('Subtask: ' + sub.text) !== -1);
+                });
+                task.subtasks = task.subtasks.filter(function (s) { return s.id !== subtaskId; });
+              }
+            }
+          });
+
+          selTasks.forEach(function (taskId) {
+            var task = Array.isArray(id.tasks) ? id.tasks.find(function (t) { return t.id === taskId; }) : null;
+            if (task) {
+              if (!id.deletedTaskIds.includes(taskId)) id.deletedTaskIds.push(taskId);
+              if (Array.isArray(task.ideas)) {
+                task.ideas.forEach(function (i) {
+                  if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+                });
+              }
+              if (Array.isArray(task.subtasks)) {
+                task.subtasks.forEach(function (st) {
+                  if (st && st.id && !id.deletedSubtaskIds.includes(st.id)) id.deletedSubtaskIds.push(st.id);
+                  if (st && Array.isArray(st.ideas)) {
+                    st.ideas.forEach(function (i) {
+                      if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+                    });
+                  }
+                });
+              }
+              removeAndTombstoneLogs(id, function (l) {
+                if (l.taskId === taskId) return true;
+                if (l.subtaskId && Array.isArray(task.subtasks) && task.subtasks.some(function (st) { return st.id === l.subtaskId; })) return true;
+                return false;
+              });
+              id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
+            }
+          });
+
+          id.updatedAt = new Date().toISOString();
+          window.bulkTaskState = { active: false, selectedTasks: [], selectedSubtasks: [] };
+          save(true);
+          render(true);
+        }
+      });
+    };
+
     function renderTaskCard(task, tIdx) {
       var mainIdeas = Array.isArray(task.ideas) ? task.ideas : [];
       var mainActiveIdeas = mainIdeas.filter(function (i) { return !i.completed; }).length;
@@ -5544,10 +5768,15 @@
               var subBorder = stTimerCd ? ('1px solid ' + stTimerCd.border) : '1px solid rgba(255,255,255,0.06)';
               var subShadow = stTimerCd ? ('box-shadow:0 0 14px ' + stTimerCd.glow + ';') : '';
 
-              return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:' + subBg + ';border:' + subBorder + ';border-radius:8px;gap:6px;' + subShadow + '">'
+              var isSubBulkSelected = Array.isArray(window.bulkTaskState && window.bulkTaskState.selectedSubtasks) && window.bulkTaskState.selectedSubtasks.includes(task.id + '_' + st.id);
+              var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
+              var subtaskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isSubBulkSelected ? 'checked' : '') + ' onchange="toggleSubtaskBulkSelect(\'' + task.id + '\', \'' + st.id + '\', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select subtask for bulk delete" />') : '';
+
+              return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:6px;' + subShadow + '">'
                 + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
                 + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;flex-wrap:wrap">'
-                + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed (+2 Evidence Points)') + '">'
+                + subtaskBulkCheckHtml
+                + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed') + '">'
                 + (isSubDone ? '✓' : '')
                 + '</button>'
                 + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
@@ -5555,7 +5784,7 @@
                 + '</button>'
                 + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
                 + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
-                + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">DONE (+2 PTS)</span>' : '')
+                + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">DONE</span>' : '')
                 + '</div>'
                 + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
                 + renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Immediately', 'font-size:10.5px;font-weight:600;padding:3px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark')
@@ -5615,8 +5844,14 @@
         + '</div>'
       ) : '';
 
+      var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
+      var isTaskBulkSelected = Array.isArray(window.bulkTaskState && window.bulkTaskState.selectedTasks) && window.bulkTaskState.selectedTasks.includes(task.id);
+      var taskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isTaskBulkSelected ? 'checked' : '') + ' onchange="toggleTaskBulkSelect(\'' + task.id + '\', this.checked)" style="width:17px;height:17px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select task for bulk delete" />') : '';
+
       var taskCardStyle = 'margin-bottom:12px;transition:box-shadow 0.25s, border-color 0.25s;';
-      if (taskHighestCd) {
+      if (isTaskBulkSelected) {
+        taskCardStyle += 'border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);';
+      } else if (taskHighestCd) {
         taskCardStyle += 'border-color:' + taskHighestCd.border + ';box-shadow:0 0 20px ' + taskHighestCd.glow + ';';
         if (taskHighestCd.status === 'overdue') {
           taskCardStyle += 'background:rgba(239,68,68,0.08);';
@@ -5650,6 +5885,7 @@
         + '<div class="task-card-details-inner">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
         + '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">'
+        + taskBulkCheckHtml
         + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:4px 8px;line-height:1;touch-action:none;display:inline-flex;align-items:center" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
         + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
         + (task.completed ? '✓' : '')
@@ -5723,14 +5959,33 @@
           + '<button class="b bp bs" onclick="addTask()" style="font-size:12px;padding:9px 16px;background:#2563eb;color:#fff;font-weight:700">+ Add Task</button>'
           + '</div>';
 
+        var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
+        var selTaskCount = (window.bulkTaskState && window.bulkTaskState.selectedTasks) ? window.bulkTaskState.selectedTasks.length : 0;
+        var selSubCount = (window.bulkTaskState && window.bulkTaskState.selectedSubtasks) ? window.bulkTaskState.selectedSubtasks.length : 0;
+        var totalTaskSelCount = selTaskCount + selSubCount;
+
+        var bulkTaskActionBarHtml = '';
+        if (isTaskBulkActive) {
+          bulkTaskActionBarHtml = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;margin-bottom:12px;flex-wrap:wrap">'
+            + '<span style="font-size:12px;font-weight:700;color:#fca5a5">Selected ' + selTaskCount + ' task(s), ' + selSubCount + ' subtask(s)</span>'
+            + '<div style="display:flex;gap:6px;align-items:center">'
+            + '<button class="bg" onclick="selectAllTasksInId(true)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#e2e8f0;border-radius:4px">Select All</button>'
+            + '<button class="bg" onclick="selectAllTasksInId(false)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:4px">Clear</button>'
+            + '<button class="b bp bs" onclick="executeBulkDeleteTasks()" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:700;border:none;border-radius:6px" ' + (totalTaskSelCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '') + '>🗑️ Delete Selected (' + totalTaskSelCount + ')</button>'
+            + '</div>'
+            + '</div>';
+        }
+
         tasksSectionHtml = '<div class="tasks-container section-card-frame">'
           + '<div class="tasks-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">'
           + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
           + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#60a5fa;margin:0;display:inline-flex;align-items:center;gap:6px">📌 TASKS & ACTION IDEAS</h3>'
           + '<span style="font-size:12px;color:#94a3b8;font-weight:600">(' + completedCount + ' / ' + tasks.length + ' achieved)</span>'
           + '</div>'
+          + '<button onclick="toggleTaskBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid ' + (isTaskBulkActive ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)') + ';color:' + (isTaskBulkActive ? '#fca5a5' : '#cbd5e1') + ';background:' + (isTaskBulkActive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">' + (isTaskBulkActive ? 'Cancel Bulk Select' : '🗑️ Bulk Delete Tasks') + '</button>'
           + '</div>'
           + addTaskBarHtml
+          + bulkTaskActionBarHtml
           + tasksListHtml
           + '</div>';
       }
@@ -5799,7 +6054,7 @@
         + '<span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#fbbf24;text-transform:uppercase;background:rgba(245,158,11,0.12);padding:3px 8px;border-radius:6px;border:1px solid rgba(245,158,11,0.3)">⚔️ THE IDENTITY TUG-OF-WAR</span>'
         + '<span style="font-size:12px;color:#94a3b8">Mindset Contrast</span>'
         + '</div>'
-        + '<span style="font-size:12px;color:#4ede80;font-weight:700">' + pts + ' Total Proof Points</span>'
+        + '<span style="font-size:12px;color:#86efac;font-weight:600">' + logs.length + ' Total Logged Entries</span>'
         + '</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:12px">'
         
