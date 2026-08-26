@@ -261,6 +261,10 @@
     .cly { background: var(--accent-amber-glow) !important; color: var(--accent-amber) !important; }
     .cq { background: rgba(255, 255, 255, 0.04) !important; color: var(--text-secondary) !important; }
 
+    .identity-link-wrap, .identity-link-wrap *, .identity-link-wrap h2 {
+      cursor: pointer !important;
+    }
+
     /* Button Hierarchy & Proportional Sizing with Active Micro-Interactions */
     button, .btn {
       display: inline-flex;
@@ -6528,8 +6532,8 @@
         safeLink = 'https://' + safeLink;
       }
       var identityHeadingHtml = safeLink
-        ? '<a href="' + esc(safeLink) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;max-width:100%" title="Open link: ' + esc(safeLink) + '"><h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:pointer;display:inline-block;transition:color 0.15s ease" onmouseenter="this.style.color=\'#93c5fd\'" onmouseleave="this.style.color=\'#ffffff\'">"' + e(id.newIdentity) + '"</h2></a>'
-        : '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0">"' + e(id.newIdentity) + '"</h2>';
+        ? '<a href="' + esc(safeLink) + '" target="_blank" rel="noopener noreferrer" class="identity-link-wrap" style="text-decoration:none;display:inline-block;max-width:100%;cursor:pointer !important" title="Open inspiration link: ' + esc(safeLink) + '"><h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:pointer !important;display:inline-block;transition:color 0.15s ease" onmouseenter="this.style.color=\'#93c5fd\'" onmouseleave="this.style.color=\'#ffffff\'">"' + e(id.newIdentity) + '"</h2></a>'
+        : '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:default">"' + e(id.newIdentity) + '"</h2>';
 
       // 🎯 2. HERO IDENTITY STANDARD CARD
       var heroCardHtml = '<div class="c" style="padding:22px 24px;background:linear-gradient(135deg,rgba(16,24,44,0.94),rgba(10,14,26,0.98));border:1px solid rgba(74,222,128,0.35);border-radius:16px;margin-bottom:18px;box-shadow:0 8px 30px rgba(0,0,0,0.4),0 0 25px rgba(74,222,128,0.08);display:flex;flex-direction:column;justify-content:space-between">'
