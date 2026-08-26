@@ -6535,7 +6535,7 @@
         safeLink = 'https://' + safeLink;
       }
       var identityHeadingHtml = safeLink
-        ? '<a href="' + esc(safeLink) + '" target="_blank" rel="noopener noreferrer" class="identity-link-wrap" style="text-decoration:none;display:inline-block;max-width:100%;cursor:pointer !important" title="Open inspiration link: ' + esc(safeLink) + '"><h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:pointer !important;display:inline-block;transition:color 0.15s ease" onmouseenter="this.style.color=\'#93c5fd\'" onmouseleave="this.style.color=\'#ffffff\'">"' + e(id.newIdentity) + '"</h2></a>'
+        ? '<a href="' + esc(safeLink) + '" target="_blank" rel="noopener noreferrer" class="identity-link-wrap" onclick="window.open(this.href, \'_blank\'); return false;" style="text-decoration:none;display:inline-block;max-width:100%;cursor:pointer !important" title="Open inspiration link: ' + esc(safeLink) + '"><h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:pointer !important;display:inline-flex;align-items:center;gap:6px;transition:color 0.15s ease" onmouseenter="this.style.color=\'#93c5fd\'" onmouseleave="this.style.color=\'#ffffff\'">"' + e(id.newIdentity) + '" <span style="font-size:13px;color:#60a5fa;font-style:normal;text-decoration:none;opacity:0.9" title="Open link">↗</span></h2></a>'
         : '<h2 style="font-family:Georgia,serif;font-size:22px;color:#ffffff;line-height:1.45;font-style:italic;margin:0;cursor:default">"' + e(id.newIdentity) + '"</h2>';
 
       // 🎯 2. HERO IDENTITY STANDARD CARD
@@ -6875,8 +6875,10 @@
     }
 
     window.mgSaveAll = function () {
-      if (!S || !Array.isArray(S.identities)) return;
-      var id = S.identities.find(function (i) { return i && i.id === S.currentId; });
+      var id = (typeof getCurRef === 'function' ? getCurRef() : null) || (typeof cur === 'function' ? cur() : null);
+      if (!id && S && Array.isArray(S.identities)) {
+        id = S.identities.find(function (i) { return i && i.id === S.currentId; });
+      }
       if (!id) return;
 
       var niEl = document.getElementById('mg-ni');
@@ -6884,12 +6886,16 @@
       var tetEl = document.getElementById('mg-tet');
       var tenEl = document.getElementById('mg-ten');
       var linkEl = document.getElementById('mg-link');
+      var avEl = document.getElementById('mg-av');
+      var oiEl = document.getElementById('mg-oi');
 
       var ni = niEl ? niEl.value.trim() : '';
       var te = teEl ? teEl.value.trim() : '';
       var tet = tetEl ? tetEl.value.trim() : '';
       var ten = tenEl ? tenEl.value.trim() : '';
       var link = linkEl ? linkEl.value.trim() : '';
+      var av = avEl ? avEl.value.trim() : '';
+      var oi = oiEl ? oiEl.value.trim() : '';
 
       if (ni) id.newIdentity = ni;
       if (teEl) {
@@ -6908,10 +6914,23 @@
         id.link = link;
         id.url = link;
       }
+      if (avEl) id.antiVisionText = av;
+      if (oiEl) id.oldIdentity = oi;
 
       id.updatedAt = new Date().toISOString();
       save(true);
-      go('identity');
+
+      var btn = document.getElementById('mg-save-all-btn');
+      if (btn) {
+        btn.textContent = 'Changes Saved!';
+        btn.style.background = '#16a34a';
+        btn.style.borderColor = '#4ede80';
+        setTimeout(function () {
+          go('identity');
+        }, 350);
+      } else {
+        go('identity');
+      }
     };
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML }
@@ -7903,44 +7922,7 @@
       }
     };
 
-    window.mgSaveAll = function () {
-      const id = getCurRef() || cur(); if (!id) return;
 
-      const ni = $('#mg-ni')?.value?.trim();
-      const te = $('#mg-te')?.value?.trim();
-      const tet = $('#mg-tet')?.value;
-      const ten = $('#mg-ten')?.value?.trim();
-      const av = $('#mg-av')?.value?.trim();
-      const oi = $('#mg-oi')?.value?.trim();
-
-      if (ni) id.newIdentity = ni;
-      if (te !== undefined) {
-        id.targetActionLine = te;
-        id.targetEvent = te;
-      }
-      if (tet !== undefined) id.targetEventTime = tet ? new Date(tet).toISOString() : null;
-      if (ten !== undefined) {
-        id.targetEventName = ten;
-        id.taggedEvent = ten;
-      }
-      if (av !== undefined) id.antiVisionText = av;
-      if (oi !== undefined) id.oldIdentity = oi;
-
-      id.updatedAt = new Date().toISOString();
-      save(true);
-
-      const btn = $('#mg-save-all-btn');
-      if (btn) {
-        btn.textContent = 'Changes Saved!';
-        btn.style.background = '#16a34a';
-        btn.style.borderColor = '#4ede80';
-        setTimeout(() => {
-          go('identity');
-        }, 400);
-      } else {
-        go('identity');
-      }
-    };
 
     // ═══════════════════════════════════════════════
     // OLD EVIDENCE (Step 2)

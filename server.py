@@ -3,7 +3,12 @@ import socketserver
 import os
 import sys
 
-class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
+class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Pragma', 'no-cache')
@@ -11,18 +16,15 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 def run_server(port=8080):
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     socketserver.TCPServer.allow_reuse_address = True
-    try:
-        with http.server.ThreadingHTTPServer(('127.0.0.1', port), NoCacheHTTPRequestHandler) as httpd:
-            print(f"Server running at http://localhost:{port} (http://127.0.0.1:{port})", flush=True)
-            httpd.serve_forever()
-    except OSError as e:
-        alt_port = 8081 if port == 8080 else 8080
-        print(f"Port {port} in use, trying port {alt_port}...", flush=True)
-        with http.server.ThreadingHTTPServer(('127.0.0.1', alt_port), NoCacheHTTPRequestHandler) as httpd:
-            print(f"Server running at http://localhost:{alt_port} (http://127.0.0.1:{alt_port})", flush=True)
-            httpd.serve_forever()
+    for p in [port, 8081, 8082, 3000, 5000]:
+        try:
+            with socketserver.TCPServer(("", p), NoCacheHandler) as httpd:
+                print(f"Server running at http://localhost:{p} (http://127.0.0.1:{p})", flush=True)
+                httpd.serve_forever()
+                break
+        except OSError:
+            print(f"Port {p} is in use, trying next port...", flush=True)
 
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
@@ -30,4 +32,3 @@ if __name__ == '__main__':
         run_server(port)
     except KeyboardInterrupt:
         print("\nServer stopped.")
-
