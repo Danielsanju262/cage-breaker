@@ -1849,14 +1849,44 @@
       });
     };
 
+    var DEVICE_ID = (function () {
+      try {
+        var id = localStorage.getItem('cb_device_id');
+        if (!id) {
+          id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+          localStorage.setItem('cb_device_id', id);
+        }
+        return id;
+      } catch (e) {
+        return 'dev_' + Date.now();
+      }
+    })();
+
+    function markUserAction(desc) {
+      if (!S) return;
+      S.lastActionTime = Date.now();
+      S.lastActionDevice = DEVICE_ID;
+      S.lastActionDesc = desc || 'user_action';
+      const id = getCurRef();
+      if (id) {
+        id.updatedAt = new Date().toISOString();
+      }
+    }
+
     let S = load();
 
-    function save(immediate) {
+    function save(immediate, isUserAction) {
       try {
         S._updatedAt = Date.now();
         const id = getCurRef();
         if (id) {
           id.updatedAt = new Date().toISOString();
+        }
+
+        // If this is a real user mutation (not simple screen navigation), record action
+        if (isUserAction !== false) {
+          S.lastActionTime = Date.now();
+          S.lastActionDevice = DEVICE_ID;
         }
 
         // GUARD 1: Localhost runs purely in-memory for testing.
@@ -1890,7 +1920,12 @@
           }
         } catch (histErr) { /* localStorage quota — silently skip */ }
 
-        // GUARD 2: Don't push to cloud until initial sync is done.
+        // GUARD 2: Don't push to cloud if this was just a UI navigation / screen switch
+        if (isUserAction === false) {
+          return;
+        }
+
+        // GUARD 3: Don't push to cloud until initial sync is done.
         // This prevents empty state from overwriting real Firebase data.
         if (!_initialSyncDone) {
           return;
@@ -1913,7 +1948,7 @@
       clearTimers();
       S.screen = scr;
       window.isScreenChanging = true;
-      save();
+      save(false, false); // Navigation only: save locally, DO NOT push to cloud!
       try {
         if (window.location.hash !== '#' + scr) {
           history.pushState(null, '', '#' + scr);
@@ -2533,52 +2568,70 @@
         return false;
       }
 
+      // GUARD: Only push if this device has taken an actual user action
+      if (!S.lastActionTime) {
+        console.log('[CageBreaker Sync] No user action taken on this device yet. Skipping cloud push.');
+        return false;
+      }
+
       _syncStatus = 'syncing'; updateSyncStatusUI();
       try {
-        // ── SAFEGUARD 2: DATA INTEGRITY CHECK ──
-        // Compare local item count vs cloud. Block if local has <50% of cloud items.
+        // ── SAFEGUARD 2: LAST-ACTION-WINS & INTEGRITY CHECK ──
         try {
           var preCheckDoc = await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).get();
-          if (preCheckDoc.exists && preCheckDoc.data() && preCheckDoc.data().payload) {
-            var cloudParsed = typeof preCheckDoc.data().payload === 'string' ? JSON.parse(preCheckDoc.data().payload) : preCheckDoc.data().payload;
-            var cloudCount = countAllItems(cloudParsed);
-            var localCount = countAllItems(S);
-            if (cloudCount > 5 && localCount < cloudCount * 0.5) {
-              console.error('[CageBreaker SAFEGUARD] Push BLOCKED: local has ' + localCount + ' items vs cloud ' + cloudCount + '. This looks like data loss.');
+          if (preCheckDoc.exists && preCheckDoc.data()) {
+            var cloudData = preCheckDoc.data();
+            var cloudLastActionTime = cloudData.lastActionTime || (cloudData.updatedAt && cloudData.updatedAt.toMillis ? cloudData.updatedAt.toMillis() : 0);
+            var cloudDevice = cloudData.lastActionDevice;
+
+            // ── LAST-ACTION-WINS CHECK ──
+            // If another device performed a newer action more recently than our local last action,
+            // DO NOT OVERWRITE! Pull and adopt the newer cloud state instead!
+            if (cloudDevice && cloudDevice !== DEVICE_ID && cloudLastActionTime > S.lastActionTime) {
+              console.log('[CageBreaker Sync] Cloud has newer action from another device (' + cloudLastActionTime + ' vs local ' + S.lastActionTime + '). Pulling instead of pushing.');
+              await window.pullFromCloud();
               _syncStatus = 'synced'; updateSyncStatusUI();
-              return false;
+              return true;
             }
 
-            // ── CLOUD BACKUP BEFORE PUSH ──
-            // Save the CURRENT cloud state as a timestamped backup before overwriting
-            try {
-              var backupId = 'backup_' + Date.now();
-              await fbDb.collection('cage_sync_backups').doc(backupId).set({
-                payload: preCheckDoc.data().payload,
-                backedUpAt: firebase.firestore.FieldValue.serverTimestamp(),
-                itemCount: cloudCount,
-                reason: 'pre-push-snapshot'
-              });
-            } catch (backupErr) {
-              console.warn('[CageBreaker] Cloud backup failed (non-blocking):', backupErr);
-            }
-
-            // ── CLEANUP OLD BACKUPS (keep only MAX_CLOUD_BACKUPS) ──
-            try {
-              var allBackups = await fbDb.collection('cage_sync_backups').orderBy('backedUpAt', 'desc').get();
-              if (allBackups.size > MAX_CLOUD_BACKUPS) {
-                var toDelete = [];
-                var idx = 0;
-                allBackups.forEach(function (bDoc) {
-                  idx++;
-                  if (idx > MAX_CLOUD_BACKUPS) toDelete.push(bDoc.ref);
-                });
-                for (var d = 0; d < toDelete.length; d++) {
-                  await toDelete[d].delete();
-                }
+            if (cloudData.payload) {
+              var cloudParsed = typeof cloudData.payload === 'string' ? JSON.parse(cloudData.payload) : cloudData.payload;
+              var cloudCount = countAllItems(cloudParsed);
+              var localCount = countAllItems(S);
+              if (cloudCount > 5 && localCount < cloudCount * 0.5) {
+                console.error('[CageBreaker SAFEGUARD] Push BLOCKED: local has ' + localCount + ' items vs cloud ' + cloudCount + '. This looks like data loss.');
+                _syncStatus = 'synced'; updateSyncStatusUI();
+                return false;
               }
-            } catch (cleanupErr) {
-              // Cleanup failure is non-critical
+
+              // ── CLOUD BACKUP BEFORE PUSH ──
+              try {
+                var backupId = 'backup_' + Date.now();
+                await fbDb.collection('cage_sync_backups').doc(backupId).set({
+                  payload: cloudData.payload,
+                  backedUpAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  itemCount: cloudCount,
+                  reason: 'pre-push-snapshot',
+                  lastActionTime: cloudLastActionTime,
+                  lastActionDevice: cloudDevice || 'unknown'
+                });
+              } catch (backupErr) { }
+
+              // ── CLEANUP OLD BACKUPS (keep only MAX_CLOUD_BACKUPS) ──
+              try {
+                var allBackups = await fbDb.collection('cage_sync_backups').orderBy('backedUpAt', 'desc').get();
+                if (allBackups.size > MAX_CLOUD_BACKUPS) {
+                  var toDelete = [];
+                  var idx = 0;
+                  allBackups.forEach(function (bDoc) {
+                    idx++;
+                    if (idx > MAX_CLOUD_BACKUPS) toDelete.push(bDoc.ref);
+                  });
+                  for (var d = 0; d < toDelete.length; d++) {
+                    await toDelete[d].delete();
+                  }
+                }
+              } catch (cleanupErr) { }
             }
           }
         } catch (integrityErr) {
@@ -2589,6 +2642,9 @@
         _lastPushedPayload = payloadStr;
         await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).set({
           payload: payloadStr,
+          lastActionTime: S.lastActionTime || Date.now(),
+          lastActionDevice: DEVICE_ID,
+          lastActionDesc: S.lastActionDesc || 'user_action',
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
@@ -2623,6 +2679,10 @@
 
               if (shouldAdoptCloud) {
                 S = mergeStates(S, parsed);
+                if (data.lastActionTime) S.lastActionTime = data.lastActionTime;
+                if (data.lastActionDevice) S.lastActionDevice = data.lastActionDevice;
+                if (data.lastActionDesc) S.lastActionDesc = data.lastActionDesc;
+
                 if (!isLocalhost()) {
                   var dataStr = JSON.stringify(S);
                   localStorage.setItem(SK, dataStr);
@@ -2674,10 +2734,14 @@
 
     window.syncNow = async function () {
       _syncStatus = 'syncing'; updateSyncStatusUI();
-      if (typeof isLocalhost === 'function' && !isLocalhost()) {
-        await pushToCloud();
-      }
+      // ALWAYS pull from cloud FIRST
       await pullFromCloud();
+      // Only push if this device has pending local actions newer than cloud
+      if (typeof isLocalhost === 'function' && !isLocalhost()) {
+        if (S.lastActionDevice === DEVICE_ID && S.lastActionTime) {
+          await pushToCloud();
+        }
+      }
     };
 
     // Auto-start Firebase Realtime Listener & Initial Sync on App Load
