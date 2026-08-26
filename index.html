@@ -28,8 +28,7 @@
       --bg-card-hover: #1f2937;
       --bg-elevated: #1f2937;
       --bg-glass: rgba(17, 24, 39, 0.88);
-      
-      --accent-amber: #f59e0b;
+        --accent-amber: #f59e0b;
       --accent-amber-glow: rgba(245, 158, 11, 0.14);
       --accent-emerald: #10b981;
       --accent-emerald-glow: rgba(16, 185, 129, 0.14);
@@ -690,14 +689,12 @@
     }
 
     .task-card {
-      background: rgba(17, 24, 39, 0.55);
-      border: 1px solid var(--border-subtle);
+      position: relative;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: var(--radius-md);
       padding: 12px 14px;
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      will-change: transform, opacity;
-      transform: translateZ(0);
-      backface-visibility: hidden;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       width: 100%;
       box-sizing: border-box;
       display: flex;
@@ -705,15 +702,18 @@
       justify-content: space-between;
     }
 
+    .task-card.task-done {
+      background: #0b101e;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
     .routine-loop-card {
-      background: rgba(17, 24, 39, 0.55);
-      border: 1px solid var(--border-subtle);
+      position: relative;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: var(--radius-md);
       padding: 12px 14px;
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      will-change: transform, opacity;
-      transform: translateZ(0);
-      backface-visibility: hidden;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       width: 100%;
       box-sizing: border-box;
       display: flex;
@@ -723,10 +723,9 @@
     }
 
     .task-card:hover, .routine-loop-card:hover {
-      background: rgba(31, 41, 55, 0.7);
-      border-color: var(--border-strong);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      background: #141e33;
+      border-color: rgba(255, 255, 255, 0.16);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 
     /* Collapsed timer task card: smooth grid-based morph transition */
@@ -735,6 +734,10 @@
       transition: border-color 0.5s cubic-bezier(0.25, 1, 0.35, 1),
                   box-shadow 0.5s cubic-bezier(0.25, 1, 0.35, 1),
                   background 0.5s cubic-bezier(0.25, 1, 0.35, 1);
+    }
+
+    .task-card-has-timer.task-card-timer-expanded {
+      overflow: visible;
     }
 
     .task-card-has-timer .task-card-details {
@@ -1029,9 +1032,73 @@
     }
 
     .task-dropdown-menu {
-      animation: dropdownSlideIn 0.22s var(--ease-spring);
-      transform-origin: top right;
-      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.55), 0 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+      animation: dropdownSlideIn 0.18s ease-out;
+      transform-origin: top center;
+      background: #0f172a !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+      z-index: 500 !important;
+    }
+
+    /* Evidence Vault filter section & pills */
+    .ev-filter-section {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+    }
+
+    .ev-search-input {
+      background: #0b101e;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+    }
+
+    .ev-search-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .ev-filter-pills {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .ev-filter-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 5px 13px;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .ev-filter-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .ev-filter-pill.active {
+      background: rgba(59, 130, 246, 0.22) !important;
+      border: 1px solid #3b82f6 !important;
+      color: #93c5fd !important;
+      font-weight: 700 !important;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.25) !important;
     }
 
     @keyframes dropdownSlideIn {
@@ -1180,7 +1247,7 @@
 
       return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">'
         + '<span style="font-size:11px;font-weight:700;color:#94a3b8">CATEGORY:</span>'
-        + '<button type="button" onclick="setTypeSel(\'' + prefix + '\', \'evidence\')" style="font-size:11.5px;padding:4px 10px;border-radius:6px;font-weight:700;cursor:pointer;' + evStyle + '">Evidence</button>'
+        + '<button type="button" onclick="setTypeSel(\'' + prefix + '\', \'evidence\')" style="font-size:11.5px;padding:4px 10px;border-radius:6px;font-weight:700;cursor:pointer;' + evStyle + '">Efforts</button>'
         + '<button type="button" onclick="setTypeSel(\'' + prefix + '\', \'appreciation\')" style="font-size:11.5px;padding:4px 10px;border-radius:6px;font-weight:700;cursor:pointer;' + appStyle + '">Appreciation</button>'
         + '<button type="button" onclick="setTypeSel(\'' + prefix + '\', \'realisation\')" style="font-size:11.5px;padding:4px 10px;border-radius:6px;font-weight:700;cursor:pointer;' + realStyle + '">Realisation</button>'
         + '</div>';
@@ -2084,17 +2151,34 @@
 
     window.closeAllTaskMenus = function () {
       var allMenus = document.querySelectorAll('.task-dropdown-menu');
-      allMenus.forEach(function (m) { m.style.display = 'none'; });
+      allMenus.forEach(function (m) {
+        m.style.display = 'none';
+        var parentCard = m.closest('.task-card, .routine-loop-card, .section-card-frame, [data-task-card], .tasks-container');
+        if (parentCard) {
+          parentCard.style.zIndex = '';
+        }
+      });
     };
 
     window.toggleTaskMenu = function (taskIdOrMenuId, event) {
-      if (event) event.stopPropagation();
+      if (event) {
+        event.stopPropagation();
+        if (event.preventDefault) event.preventDefault();
+      }
       var menuId = (typeof taskIdOrMenuId === 'string' && taskIdOrMenuId.indexOf('menu-') !== -1) ? taskIdOrMenuId : ('task-menu-' + taskIdOrMenuId);
       var menu = document.getElementById(menuId);
-      var isOpen = menu && menu.style.display !== 'none';
+      var wasOpen = menu && (menu.style.display !== 'none' && menu.style.display !== '');
+      
+      // Close all menus first
       window.closeAllTaskMenus();
-      if (menu && !isOpen) {
+      
+      if (menu && !wasOpen) {
         menu.style.display = 'block';
+        var parentCard = menu.closest('.task-card, .routine-loop-card, .section-card-frame, [data-task-card], .tasks-container');
+        if (parentCard) {
+          parentCard.style.zIndex = '600';
+          parentCard.style.position = 'relative';
+        }
       }
     };
 
@@ -3821,14 +3905,14 @@
           </div>
           <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
-            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:120px;overflow:hidden">
-              <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#fde047'};font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.08)'" onmouseleave="this.style.background='none'">
+            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
+              <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#4ade80'};font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">
                 ${id.achieved ? 'Re-open' : 'Achieve'}
               </button>
-              <button onclick="event.stopPropagation();closeAllTaskMenus();editIdentityFromHub('${id.id}')" style="width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:#f1f5f9;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.08)'" onmouseleave="this.style.background='none'">
+              <button onclick="event.stopPropagation();closeAllTaskMenus();editIdentityFromHub('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(251,191,36,0.15)'" onmouseleave="this.style.background='none'">
                 Edit
               </button>
-              <button onclick="event.stopPropagation();closeAllTaskMenus();delFromHub('${id.id}')" style="width:100%;text-align:left;padding:7px 12px;background:none;border:none;color:#fca5a5;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(239,68,68,0.15)'" onmouseleave="this.style.background='none'">
+              <button onclick="event.stopPropagation();closeAllTaskMenus();delFromHub('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(239,68,68,0.2)'" onmouseleave="this.style.background='none'">
                 Delete
               </button>
             </div>
@@ -3853,7 +3937,6 @@
       </div>
     </div>
     <p class="d">${ids.length === 0 ? 'You haven\'t created any cards yet. Start by creating one below.' : ids.length + ' total identity cards (' + sortedLive.length + ' live, ' + achievedIds.length + ' achieved)'}</p>
-    ${sortedLive.length > 0 ? '<div style="margin-bottom:20px"><button class="b bp bw" onclick="quickPick()" style="font-size:15px;padding:16px">Quick add evidence</button></div>' : ''}
     
     ${sortedLive.length > 0 ? '<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#4ede80;text-transform:uppercase;margin:12px 0 10px 0">LIVE IDENTITIES (' + sortedLive.length + ')</div>' : ''}
     ${sortedLive.length === 0 && achievedIds.length === 0 ? '<p class="d">No active identities.</p>' : sortedLive.map(renderCard).join('')}
@@ -3977,7 +4060,7 @@
       if (container && id) {
         var pills = document.querySelectorAll('.ev-filter-section .ev-filter-pills .ev-filter-pill');
         pills.forEach(function (p) {
-          if (p.getAttribute('onclick') && p.getAttribute('onclick').includes("'" + preset + "'")) {
+          if (p.getAttribute('data-preset') === preset || (p.getAttribute('onclick') && p.getAttribute('onclick').includes("'" + preset + "'"))) {
             p.classList.add('active');
           } else {
             p.classList.remove('active');
@@ -4101,8 +4184,8 @@
             + '<span style="font-size:12px;font-weight:700;color:#fca5a5">Selected ' + selCount + ' / ' + filteredItems.length + ' entries</span>'
             + '<div style="display:flex;gap:6px;align-items:center">'
             + '<button class="bg" onclick="selectAllLogsFiltered(true)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#e2e8f0;border-radius:4px">Select All</button>'
-            + '<button class="bg" onclick="selectAllLogsFiltered(false)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:4px">Clear</button>'
             + '<button class="b bp bs" onclick="executeBulkDeleteLogs()" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:700;border:none;border-radius:6px" ' + (selCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '') + '>🗑️ Delete Selected (' + selCount + ')</button>'
+            + '<button class="bg" onclick="toggleLogBulkMode()" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;border-radius:4px">Cancel</button>'
             + '</div>'
             + '</div>';
         }
@@ -4119,9 +4202,13 @@
             + '<span style="font-size:11px;color:#9ca3af;white-space:nowrap">' + dateStr + '</span>'
             + '<span style="font-size:13px;color:#e5e7eb;word-break:break-word">' + esc(l.note) + '</span>'
             + '</div>'
-            + '<div style="display:flex;gap:4px;align-items:center">'
-            + '<button class="ev-edit" style="font-size:10px;padding:3px 7px;color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);border-radius:4px" onclick="editLog(' + item.realIdx + ')">✏️</button>'
-            + '<button class="ev-edit" style="font-size:10px;padding:3px 7px;color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:4px" onclick="delLog(' + item.realIdx + ')">✕</button>'
+            + '<div style="position:relative;display:inline-block;flex-shrink:0">'
+            + '<button class="bg" onclick="toggleTaskMenu(\'log-menu-' + item.realIdx + '\', event)" style="font-size:14px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
+            + '<div id="log-menu-' + item.realIdx + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+            + '<button onclick="event.stopPropagation();closeAllTaskMenus();startLogBulkSelect(' + item.realIdx + ')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
+            + '<button onclick="event.stopPropagation();closeAllTaskMenus();editLog(' + item.realIdx + ')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
+            + '<button onclick="event.stopPropagation();closeAllTaskMenus();delLog(' + item.realIdx + ')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
+            + '</div>'
             + '</div>'
             + '</div>';
         }).join('');
@@ -4151,7 +4238,7 @@
         + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#4ade80;margin:0;display:inline-flex;align-items:center;gap:6px">🏆 EVIDENCE VAULT</h3>'
         + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + logs.length + ' proofs · ' + streak + '-day streak</span>'
         + '</div>'
-        + '<button onclick="toggleLogBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid ' + (isBulkActive ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)') + ';color:' + (isBulkActive ? '#fca5a5' : '#cbd5e1') + ';background:' + (isBulkActive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">' + (isBulkActive ? 'Cancel Bulk Select' : '🗑️ Bulk Delete Logs') + '</button>'
+        + (isBulkActive ? '<button onclick="toggleLogBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid rgba(239,68,68,0.5);color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">Cancel Selection</button>' : '')
         + '</div>'
         + '<div class="sb" style="display:flex;flex-direction:row;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:14px">' + streakDots(id) + '</div>';
 
@@ -4172,12 +4259,12 @@
         : 'background:rgba(15,23,42,0.6) !important;color:#64748b !important;border:1px solid rgba(255,255,255,0.08) !important;font-weight:600 !important;opacity:0.75;';
 
       var categoryPillsHtml = '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'
-        + '<button type="button" class="ev-filter-pill ' + (isEvActive ? 'active' : '') + '" style="font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;' + evPillStyle + '" onclick="setInlineCategory(\'evidence\')">Evidence (' + counts.evidence + ')</button>'
+        + '<button type="button" class="ev-filter-pill ' + (isEvActive ? 'active' : '') + '" style="font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;' + evPillStyle + '" onclick="setInlineCategory(\'evidence\')">Efforts (' + counts.evidence + ')</button>'
         + '<button type="button" class="ev-filter-pill ' + (isAppActive ? 'active' : '') + '" style="font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;' + appPillStyle + '" onclick="setInlineCategory(\'appreciation\')">Appreciation (' + counts.appreciation + ')</button>'
         + '<button type="button" class="ev-filter-pill ' + (isRealActive ? 'active' : '') + '" style="font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;' + realPillStyle + '" onclick="setInlineCategory(\'realisation\')">Realisation (' + counts.realisation + ')</button>'
         + '</div>';
 
-      var searchPlaceholder = activeCategory === 'evidence' ? 'Search evidence proofs...'
+      var searchPlaceholder = activeCategory === 'evidence' ? 'Search efforts...'
         : (activeCategory === 'appreciation' ? 'Search appreciation entries...'
         : 'Search realisation insights...');
 
@@ -4187,10 +4274,10 @@
         + '<button id="inline-evidence-clear-btn" class="bg" style="font-size:11px;padding:2px 6px;color:#9ca3af;display:' + (state.searchQuery ? 'inline-block' : 'none') + '" onclick="setInlineSearchQuery(\'\')">Clear</button>'
         + '</div>'
         + '<div class="ev-filter-pills" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">'
-        + '<button class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" style="font-size:11px;padding:5px 12px" onclick="setInlineFilterPreset(\'all\')">All Time</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" style="font-size:11px;padding:5px 12px" onclick="setInlineFilterPreset(\'today\')">Today</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" style="font-size:11px;padding:5px 12px" onclick="setInlineFilterPreset(\'7days\')">Last 7 Days</button>'
-        + '<button class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" style="font-size:11px;padding:5px 12px" onclick="setInlineFilterPreset(\'30days\')">Last 30 Days</button>'
+        + '<button type="button" class="ev-filter-pill ' + (state.preset === 'all' ? 'active' : '') + '" data-preset="all" onclick="setInlineFilterPreset(\'all\')">All Time</button>'
+        + '<button type="button" class="ev-filter-pill ' + (state.preset === 'today' ? 'active' : '') + '" data-preset="today" onclick="setInlineFilterPreset(\'today\')">Today</button>'
+        + '<button type="button" class="ev-filter-pill ' + (state.preset === '7days' ? 'active' : '') + '" data-preset="7days" onclick="setInlineFilterPreset(\'7days\')">Last 7 Days</button>'
+        + '<button type="button" class="ev-filter-pill ' + (state.preset === '30days' ? 'active' : '') + '" data-preset="30days" onclick="setInlineFilterPreset(\'30days\')">Last 30 Days</button>'
         + '</div>'
         + '</div>';
 
@@ -4675,12 +4762,12 @@
         + '<div style="padding:14px 16px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:10px;margin-bottom:14px">'
         + '<div style="font-size:15px;font-weight:700;color:#ffffff;line-height:1.4">"' + e(task.text) + '"</div>'
         + '</div>'
-        + '<div style="font-size:12px;color:#fbbf24;margin-bottom:16px;background:rgba(245,158,11,0.1);padding:9px 12px;border-radius:8px;border:1px solid rgba(245,158,11,0.3)">'
-        + '<strong>+4 Evidence Points</strong> will be logged into your Evidence Vault!'
+        + '<div style="font-size:12px;color:#4ade80;margin-bottom:16px;background:rgba(74,222,128,0.08);padding:9px 12px;border-radius:8px;border:1px solid rgba(74,222,128,0.25)">'
+        + 'An effort record will be automatically logged into your Evidence Vault.'
         + '</div>'
         + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #1f2436;padding-top:14px">'
         + '<button type="button" class="b bb" onclick="closeTaskCompletionModal()">Cancel</button>'
-        + '<button type="button" class="b bp" onclick="executeTaskCompletion(\'' + task.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;font-weight:700;padding:9px 18px">✅ Yes, Complete Task (+4 Evidence)</button>'
+        + '<button type="button" class="b bp" onclick="executeTaskCompletion(\'' + task.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;font-weight:700;padding:9px 18px">✅ Yes, Complete Task</button>'
         + '</div>'
         + '</div>'
         + '</div>';
@@ -4831,20 +4918,20 @@
       var defaultStyle = 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:' + (isCustom ? '#93c5fd' : '#cbd5e1') + ';cursor:pointer;width:auto;max-width:140px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;gap:4px;line-height:1.2;';
       var styleStr = customStyle ? (customStyle + ';max-width:140px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;') : defaultStyle;
 
-      var html = '<div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">';
+      var html = '<div style="position:relative;display:inline-block;flex-shrink:0">';
       html += '<button type="button" class="bg" onclick="toggleTaskMenu(\'' + menuId + '\', event)" style="' + styleStr + '" title="Time to result: ' + esc(currentVal) + '">';
       html += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px">' + esc(displayLabel) + '</span>';
       html += '<span style="font-size:9px;opacity:0.7;margin-left:2px">▾</span>';
       html += '</button>';
-      html += '<div id="' + menuId + '" class="task-dropdown-menu" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.6);z-index:150;width:100%;min-width:100%;box-sizing:border-box;overflow:hidden">';
+      html += '<div id="' + menuId + '" class="task-dropdown-menu" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.85);z-index:150;width:100%;min-width:100%;box-sizing:border-box;overflow:hidden;padding:3px">';
       
       // Option 1: Immediately
-      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();setTimeToResultDirect(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\', \'Immediately\')" style="width:100%;text-align:center;padding:6px 8px;background:' + (!isCustom ? 'rgba(59,130,246,0.15)' : 'none') + ';border:none;color:' + (!isCustom ? '#93c5fd' : '#f1f5f9') + ';font-size:11px;font-weight:600;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'' + (!isCustom ? 'rgba(59,130,246,0.15)' : 'none') + '\'">';
+      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();setTimeToResultDirect(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\', \'Immediately\')" style="width:100%;text-align:center;padding:7px 8px;background:' + (!isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (!isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
       html += 'Immediately';
       html += '</button>';
 
       // Option 2: Custom
-      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();openCustomTimeToResultPrompt(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\')" style="width:100%;text-align:center;padding:6px 8px;background:' + (isCustom ? 'rgba(59,130,246,0.15)' : 'none') + ';border:none;color:' + (isCustom ? '#93c5fd' : '#f1f5f9') + ';font-size:11px;font-weight:600;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'' + (isCustom ? 'rgba(59,130,246,0.15)' : 'none') + '\'">';
+      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();openCustomTimeToResultPrompt(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\')" style="width:100%;text-align:center;padding:7px 8px;background:' + (isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
       html += 'Custom';
       html += '</button>';
 
@@ -5545,6 +5632,24 @@
     // ═══════════════════════════════════════════════
     window.bulkTaskState = window.bulkTaskState || { active: false, selectedTasks: [], selectedSubtasks: [] };
 
+    window.startTaskBulkSelect = function (type, taskId, subtaskId) {
+      window.bulkTaskState = window.bulkTaskState || { active: false, selectedTasks: [], selectedSubtasks: [] };
+      window.bulkTaskState.active = true;
+      if (type === 'subtask' && subtaskId) {
+        var key = taskId + '_' + subtaskId;
+        if (!Array.isArray(window.bulkTaskState.selectedSubtasks)) window.bulkTaskState.selectedSubtasks = [];
+        if (!window.bulkTaskState.selectedSubtasks.includes(key)) {
+          window.bulkTaskState.selectedSubtasks.push(key);
+        }
+      } else {
+        if (!Array.isArray(window.bulkTaskState.selectedTasks)) window.bulkTaskState.selectedTasks = [];
+        if (!window.bulkTaskState.selectedTasks.includes(taskId)) {
+          window.bulkTaskState.selectedTasks.push(taskId);
+        }
+      }
+      render(true);
+    };
+
     window.toggleTaskBulkMode = function () {
       window.bulkTaskState.active = !window.bulkTaskState.active;
       if (!window.bulkTaskState.active) {
@@ -5736,6 +5841,7 @@
               }
 
               var curSubStatus = st.status || (isSubDone ? 'completed' : 'yet_to_start');
+              var isSubCompleted = !!(isSubDone || curSubStatus === 'completed');
               var subStatusColor = curSubStatus === 'completed' ? '#4ede80' : (curSubStatus === 'in_process' ? '#60a5fa' : '#94a3b8');
               var subStatusBg = curSubStatus === 'completed' ? 'rgba(74,222,128,0.15)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.15)' : 'rgba(148,163,184,0.1)');
               var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
@@ -5772,6 +5878,12 @@
               var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
               var subtaskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isSubBulkSelected ? 'checked' : '') + ' onchange="toggleSubtaskBulkSelect(\'' + task.id + '\', \'' + st.id + '\', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select subtask for bulk delete" />') : '';
 
+              var subIdeasButtonHtml = (isSubCompleted && stTotalIdeas === 0) ? '' : (
+                '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
+                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
+                + '</button>'
+              );
+
               return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:6px;' + subShadow + '">'
                 + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
                 + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;flex-wrap:wrap">'
@@ -5779,15 +5891,13 @@
                 + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed') + '">'
                 + (isSubDone ? '✓' : '')
                 + '</button>'
-                + '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
-                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
-                + '</button>'
+                + subIdeasButtonHtml
                 + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
                 + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
                 + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">DONE</span>' : '')
                 + '</div>'
                 + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
-                + renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Immediately', 'font-size:10.5px;font-weight:600;padding:3px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark')
+                + (!isSubDone && curSubStatus !== 'completed' ? renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Immediately', 'font-size:10.5px;font-weight:600;padding:3px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark') : '')
                 + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeSubtaskStatus(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="font-size:10.5px;font-weight:700;padding:3px 6px;border-radius:6px;border:1px solid ' + subStatusBorder + ';background:' + subStatusBg + ';color:' + subStatusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
                 + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curSubStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
                 + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curSubStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
@@ -5795,9 +5905,10 @@
                 + '</select>'
                 + '<div style="position:relative;display:inline-block">'
                 + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:14px;line-height:1;padding:3px 7px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:100px;overflow:hidden">'
-                + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:6px 10px;background:none;border:none;color:#f1f5f9;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
-                + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:6px 10px;background:none;border:none;color:#fca5a5;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
+                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+                + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
+                + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
+                + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
                 + '</div>'
                 + '</div>'
                 + '</div>'
@@ -5826,8 +5937,6 @@
         + '</div>'
         + '</div>'
         + '</div>';
-
-      var ideasCounterBadge = '';
 
       var mainTaskInputsHtml = (!task.completed && curStatus === 'in_process') ? (
         '<div style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap">'
@@ -5860,7 +5969,7 @@
         taskCardStyle += 'border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1);';
       }
 
-      // Build collapsed timer overlay for tasks with active timers
+      var isTaskCompleted = !!(task.completed || curStatus === 'completed');
       var hasActiveTimer = taskHighestCd && !task.completed;
       var isTimerExpanded = !!task.timerExpanded;
       var collapsedTimerHtml = '';
@@ -5879,6 +5988,12 @@
 
       var timerCardClass = hasActiveTimer ? (' task-card-has-timer' + (isTimerExpanded ? ' task-card-timer-expanded' : '')) : '';
 
+      var mainIdeasButtonHtml = (isTaskCompleted && mainTotalIdeas === 0) ? '' : (
+        '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
+        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? mainTotalIdeas : (mainActiveIdeas + '/' + mainTotalIdeas)) : '+')
+        + '</button>'
+      );
+
       return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card ' + (task.completed ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + collapsedTimerHtml
         + '<div class="task-card-details">'
@@ -5890,20 +6005,17 @@
         + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
         + (task.completed ? '✓' : '')
         + '</button>'
-        + '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
-        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? mainTotalIdeas : (mainActiveIdeas + '/' + mainTotalIdeas)) : '+')
-        + '</button>'
+        + mainIdeasButtonHtml
         + '<div style="display:flex;flex-direction:column;gap:2px;flex:1">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:15px;font-weight:600;cursor:pointer;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
         + (task.nextTargetTime && !task.completed ? renderNextTimePill('task', task.id, null, task.nextTargetTime) : '')
         + (subtasks.length > 0 ? ('<span class="subtasks-badge-pill" style="font-size:11px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:2px 7px;border-radius:6px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
         + '</div>'
-        + ideasCounterBadge
         + '</div>'
         + '</div>'
         + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
-        + renderTimeToResultSelect('task', task.id, null, task.timeToResult || 'Immediately', 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:140px;text-overflow:ellipsis;flex-shrink:0;color-scheme:dark')
+        + (!task.completed && curStatus !== 'completed' ? renderTimeToResultSelect('task', task.id, null, task.timeToResult || 'Immediately', 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:140px;text-overflow:ellipsis;flex-shrink:0;color-scheme:dark') : '')
         + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeTaskStatus(\'' + task.id + '\', this.value)" style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid ' + statusBorder + ';background:' + statusBg + ';color:' + statusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
         + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
         + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
@@ -5911,9 +6023,10 @@
         + '</select>'
         + '<div style="position:relative;display:inline-block">'
         + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:15px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-        + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:110px;overflow:hidden">'
-        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:#f1f5f9;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
-        + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:#fca5a5;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
+        + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
         + '</div>'
         + '</div>'
         + '</div>'
@@ -5970,8 +6083,8 @@
             + '<span style="font-size:12px;font-weight:700;color:#fca5a5">Selected ' + selTaskCount + ' task(s), ' + selSubCount + ' subtask(s)</span>'
             + '<div style="display:flex;gap:6px;align-items:center">'
             + '<button class="bg" onclick="selectAllTasksInId(true)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#e2e8f0;border-radius:4px">Select All</button>'
-            + '<button class="bg" onclick="selectAllTasksInId(false)" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#94a3b8;border-radius:4px">Clear</button>'
             + '<button class="b bp bs" onclick="executeBulkDeleteTasks()" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:700;border:none;border-radius:6px" ' + (totalTaskSelCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '') + '>🗑️ Delete Selected (' + totalTaskSelCount + ')</button>'
+            + '<button class="bg" onclick="toggleTaskBulkMode()" style="font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;border-radius:4px">Cancel</button>'
             + '</div>'
             + '</div>';
         }
@@ -5982,7 +6095,7 @@
           + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#60a5fa;margin:0;display:inline-flex;align-items:center;gap:6px">📌 TASKS & ACTION IDEAS</h3>'
           + '<span style="font-size:12px;color:#94a3b8;font-weight:600">(' + completedCount + ' / ' + tasks.length + ' achieved)</span>'
           + '</div>'
-          + '<button onclick="toggleTaskBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid ' + (isTaskBulkActive ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)') + ';color:' + (isTaskBulkActive ? '#fca5a5' : '#cbd5e1') + ';background:' + (isTaskBulkActive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">' + (isTaskBulkActive ? 'Cancel Bulk Select' : '🗑️ Bulk Delete Tasks') + '</button>'
+          + (isTaskBulkActive ? '<button onclick="toggleTaskBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid rgba(239,68,68,0.5);color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">Cancel Selection</button>' : '')
           + '</div>'
           + addTaskBarHtml
           + bulkTaskActionBarHtml
@@ -6241,9 +6354,6 @@
         + topCardsHtml
         + renderTasksAndLoopsSection(id)
         + renderInlineEvidenceSection(id)
-        + '<div style="margin-top:24px;margin-bottom:30px;text-align:center">'
-        + '<button class="b bb bw" onclick="go(\'manage\')" style="padding:12px 24px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.2)">⚙️ Manage & Edit Identity Details</button>'
-        + '</div>'
         + '</div>';
     }
 
@@ -6336,11 +6446,10 @@
       if (card) {
         
         
-        var isStrong = (w === 'strong');
-        var badgeTxt = isStrong ? 'SIGNIFICANT GROWTH! (+4 Proof Points)' : (w === 'fine' ? 'Fine Step (+1 Point)' : 'Medium Proof (+2 Points)');
+        var badgeTxt = 'EVIDENCE LOGGED!';
         card.innerHTML = '<div class="log-success">'
-          + '<h3 style="color:' + (isStrong ? '#6abf7b' : '#d4a04a') + '">' + badgeTxt + '</h3>'
-          + '<p class="d" style="margin-bottom:4px">Your new identity just got stronger! Total score: <strong style="color:#6abf7b">' + pts + ' proof points</strong> (' + id.logs.length + ' entries) — stage: <strong style="color:#d4a04a"></strong>.</p>'
+          + '<h3 style="color:#4ede80">' + badgeTxt + '</h3>'
+          + '<p class="d" style="margin-bottom:4px">Your new identity just got stronger! (' + id.logs.length + ' entries logged).</p>'
           + '<p class="h" style="margin-bottom:16px">Every log weakens the old cage and strengthens the new you.</p>'
           + '<button class="b bp bs" onclick="showMoreLog()" style="margin-right:8px">Add more evidence</button>'
           + '<button class="b bb bs" onclick="goToHub()">Back to All Cards</button>'
@@ -6753,7 +6862,7 @@
 
       showCustomConfirm({
         title: 'Delete Evidence Entry?',
-        message: 'Are you sure you want to delete this evidence entry? Points earned from it will be reduced.',
+        message: 'Are you sure you want to delete this evidence entry?',
         confirmText: 'Delete Entry',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
@@ -6811,9 +6920,9 @@
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <span class="sm" style="color:#8a8480">Impact:</span>
         <select id="inline-log-weight-${i}" style="background:#1a1a26;color:#c8c2b8;border:1px solid #2a2a3a;padding:4px 8px;border-radius:6px;font-size:12px">
-          <option value="strong" ${currentWeight === 'strong' ? 'selected' : ''}>Strong (+4)</option>
-          <option value="medium" ${currentWeight === 'medium' ? 'selected' : ''}>Medium (+2)</option>
-          <option value="fine" ${currentWeight === 'fine' ? 'selected' : ''}>Fine (+1)</option>
+          <option value="strong" ${currentWeight === 'strong' ? 'selected' : ''}>Strong Impact</option>
+          <option value="medium" ${currentWeight === 'medium' ? 'selected' : ''}>Medium Impact</option>
+          <option value="fine" ${currentWeight === 'fine' ? 'selected' : ''}>Fine Step</option>
         </select>
         <button class="b bp bs" style="padding:4px 12px;font-size:12px;margin-left:auto" onclick="saveLogEdit(${i})">Save</button>
         <button class="bg" style="font-size:12px" onclick="render()">Cancel</button>
@@ -7335,15 +7444,15 @@
         + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
         + '<span class="sm" style="color:#9ca3af">Category:</span>'
         + '<select id="modal-log-category-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
-        + '<option value="evidence" ' + (currentCat === 'evidence' ? 'selected' : '') + '>Evidence</option>'
+        + '<option value="evidence" ' + (currentCat === 'evidence' ? 'selected' : '') + '>Efforts</option>'
         + '<option value="appreciation" ' + (currentCat === 'appreciation' ? 'selected' : '') + '>Appreciation</option>'
         + '<option value="realisation" ' + (currentCat === 'realisation' || currentCat === 'realization' ? 'selected' : '') + '>Realisation</option>'
         + '</select>'
         + '<span class="sm" style="color:#9ca3af">Impact:</span>'
         + '<select id="modal-log-weight-' + i + '" style="background:#181824;color:#f9fafb;border:1px solid #374151;padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">'
-        + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>Strong (+4)</option>'
-        + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>Medium (+2)</option>'
-        + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>Fine (+1)</option>'
+        + '<option value="strong" ' + (currentWeight === 'strong' ? 'selected' : '') + '>Strong Impact</option>'
+        + '<option value="medium" ' + (currentWeight === 'medium' ? 'selected' : '') + '>Medium Impact</option>'
+        + '<option value="fine" ' + (currentWeight === 'fine' ? 'selected' : '') + '>Fine Step</option>'
         + '</select>'
         + '<div style="margin-left:auto;display:flex;gap:8px">'
         + '<button class="b bp bs" style="padding:6px 14px;font-size:12px" onclick="saveModalLogEdit(' + i + ')">Save</button>'
@@ -7917,9 +8026,8 @@
       var btn = ta?.parentElement?.querySelector('.b');
       if (ta) ta.value = '';
       if (btn) {
-        var isStrong = (w === 'strong');
-        btn.textContent = isStrong ? 'Significant Growth! +4 Points Added!' : (w === 'fine' ? 'Fine Step +1 Point Added!' : 'Proof +2 Points Added!');
-        btn.style.background = isStrong ? '#3a7e4a' : '#3a6e4a';
+        btn.textContent = 'Evidence Logged!';
+        btn.style.background = '#16a34a';
         setTimeout(function () {
           btn.textContent = 'Add proof';
           btn.style.background = '';
@@ -8384,9 +8492,9 @@
         + runLogsButtonHtml
         + '<div style="position:relative;display:inline-block">'
         + '<button class="bg" onclick="toggleTaskMenu(\'loop-menu-' + rl.id + '\', event)" style="font-size:15px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-        + '<div id="loop-menu-' + rl.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);z-index:100;min-width:110px;overflow:hidden">'
-        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startInlineEditLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:#f1f5f9;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
-        + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteRoutineLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:#fca5a5;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
+        + '<div id="loop-menu-' + rl.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startInlineEditLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteRoutineLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
         + '</div>'
         + '</div>'
         + '</div>'
@@ -8786,14 +8894,14 @@
         // 3. Optional Evidence Note
         + '<div style="margin-bottom:16px">'
         + '<label class="lb">3. Additional Reflection / Proof Note (Optional)</label>'
-        + '<p class="h">Will be added with +2 Medium Proof Points to your Evidence Vault.</p>'
+        + '<p class="h">Will be logged into your Evidence Vault.</p>'
         + '<textarea id="logrun-note" rows="2" placeholder="e.g. Executed smoothly, observed great performance..." style="width:100%;font-size:13px;padding:8px 12px;margin-top:4px"></textarea>'
         + '</div>'
 
         // Buttons
         + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #1f2436;padding-top:14px">'
         + '<button type="button" class="b bb" onclick="closeLogRunModal()">Cancel</button>'
-        + '<button type="button" class="b bp" onclick="saveLogRunModal(\'' + rl.id + '\')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;padding:9px 18px">Save Run (+2 Proof Points)</button>'
+        + '<button type="button" class="b bp" onclick="saveLogRunModal(\'' + rl.id + '\')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;padding:9px 18px">Save Run</button>'
         + '</div>'
 
         + '</div>'

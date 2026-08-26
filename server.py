@@ -1,5 +1,7 @@
 import http.server
 import socketserver
+import os
+import sys
 
 class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -8,15 +10,24 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Expires', '0')
         super().end_headers()
 
-class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-    daemon_threads = True
-    allow_reuse_address = True
+def run_server(port=8080):
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    socketserver.TCPServer.allow_reuse_address = True
+    try:
+        with http.server.ThreadingHTTPServer(('127.0.0.1', port), NoCacheHTTPRequestHandler) as httpd:
+            print(f"Server running at http://localhost:{port} (http://127.0.0.1:{port})", flush=True)
+            httpd.serve_forever()
+    except OSError as e:
+        alt_port = 8081 if port == 8080 else 8080
+        print(f"Port {port} in use, trying port {alt_port}...", flush=True)
+        with http.server.ThreadingHTTPServer(('127.0.0.1', alt_port), NoCacheHTTPRequestHandler) as httpd:
+            print(f"Server running at http://localhost:{alt_port} (http://127.0.0.1:{alt_port})", flush=True)
+            httpd.serve_forever()
 
 if __name__ == '__main__':
-    PORT = 8080
-    print(f"Server starting at http://localhost:{PORT}", flush=True)
-    server = ThreadingHTTPServer(("", PORT), NoCacheHTTPRequestHandler)
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
     try:
-        server.serve_forever()
+        run_server(port)
     except KeyboardInterrupt:
-        pass
+        print("\nServer stopped.")
+
