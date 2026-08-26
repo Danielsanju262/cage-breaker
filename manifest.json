@@ -1,6 +1,6 @@
 {
-  "name": "Break Your Cage - One-Line Identity",
-  "short_name": "CageBreaker",
+  "name": "Break Your Cage",
+  "short_name": "Break Your Cage",
   "description": "Break old patterns and build powerful new identities with daily proof and actionable routine loops.",
   "start_url": "./index.html",
   "display": "standalone",
