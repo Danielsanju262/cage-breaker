@@ -953,6 +953,16 @@
       gap: 4px;
       white-space: nowrap;
       flex-shrink: 0;
+    /* Enhanced Keyboard Focus Ring for Dialogs and Option Buttons */
+    button:focus-visible, .b:focus-visible, .bg:focus-visible,
+    #dialog-confirm-btn:focus, #dialog-cancel-btn:focus, #dialog-ok-btn:focus,
+    #dialog-prompt-confirm-btn:focus, #dialog-prompt-cancel-btn:focus,
+    #confirm-task-complete-btn:focus, #cancel-task-complete-btn:focus,
+    #save-routine-loop-btn:focus {
+      outline: 2.5px solid #60a5fa !important;
+      outline-offset: 2px !important;
+      box-shadow: 0 0 16px rgba(96, 165, 250, 0.8) !important;
+      border-color: #60a5fa !important;
     }
 
     /* Clean Bounded Modals with Fluid Spring Animation */
@@ -3094,21 +3104,42 @@
         + '<div style="font-size:16px;font-weight:800;color:#fbbf24;margin-bottom:8px;letter-spacing:0.5px">' + esc(title) + '</div>'
         + '<p style="font-size:13px;color:#e2e8f0;margin-bottom:22px;line-height:1.5;margin-top:0">' + esc(message) + '</p>'
         + '<div style="display:flex;justify-content:center;gap:12px;width:100%">'
-        + '<button class="bg" id="dialog-cancel-btn" style="flex:1;padding:9px 16px;font-size:13px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer">Cancel</button>'
-        + '<button class="b bp bs" id="dialog-confirm-btn" style="flex:1;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:' + confirmBg + ';color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(239,68,68,0.3)">' + esc(confirmText) + '</button>'
+        + '<button class="b bp bs" id="dialog-confirm-btn" tabindex="1" style="flex:1;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:' + confirmBg + ';color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(239,68,68,0.3);outline:none">' + esc(confirmText) + '</button>'
+        + '<button class="bg" id="dialog-cancel-btn" tabindex="2" style="flex:1;padding:9px 16px;font-size:13px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer;outline:none">Cancel</button>'
         + '</div>'
         + '</div>';
 
       document.body.appendChild(overlay);
 
-      document.getElementById('dialog-cancel-btn').onclick = function () {
+      var confirmBtn = document.getElementById('dialog-confirm-btn');
+      var cancelBtn = document.getElementById('dialog-cancel-btn');
+
+      setTimeout(function () {
+        if (confirmBtn) confirmBtn.focus();
+      }, 30);
+
+      confirmBtn.onclick = function () {
+        overlay.remove();
+        if (onConfirm) onConfirm();
+      };
+
+      cancelBtn.onclick = function () {
         overlay.remove();
         if (onCancel) onCancel();
       };
 
-      document.getElementById('dialog-confirm-btn').onclick = function () {
-        overlay.remove();
-        if (onConfirm) onConfirm();
+      overlay.onkeydown = function (e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelBtn.click();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (document.activeElement && typeof document.activeElement.click === 'function') {
+            document.activeElement.click();
+          } else {
+            confirmBtn.click();
+          }
+        }
       };
 
       overlay.onclick = function (e) {
@@ -3133,14 +3164,27 @@
         + '<div style="font-size:16px;font-weight:800;color:#93c5fd;margin-bottom:8px;letter-spacing:0.5px">' + esc(title || 'Notice') + '</div>'
         + '<p style="font-size:13px;color:#e2e8f0;margin-bottom:22px;line-height:1.5;margin-top:0">' + esc(message) + '</p>'
         + '<div style="display:flex;justify-content:center;width:100%">'
-        + '<button class="b bp bs" id="dialog-ok-btn" style="width:100%;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(59,130,246,0.3)">Got it</button>'
+        + '<button class="b bp bs" id="dialog-ok-btn" tabindex="1" style="width:100%;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(59,130,246,0.3);outline:none">Got it</button>'
         + '</div>'
         + '</div>';
 
       document.body.appendChild(overlay);
 
-      document.getElementById('dialog-ok-btn').onclick = function () {
+      var okBtn = document.getElementById('dialog-ok-btn');
+
+      setTimeout(function () {
+        if (okBtn) okBtn.focus();
+      }, 30);
+
+      okBtn.onclick = function () {
         overlay.remove();
+      };
+
+      overlay.onkeydown = function (e) {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          e.preventDefault();
+          okBtn.click();
+        }
       };
 
       overlay.onclick = function (e) {
@@ -3174,36 +3218,41 @@
         + '<div style="font-size:15px;font-weight:800;color:#93c5fd;letter-spacing:0.5px">' + esc(title) + '</div>'
         + '</div>'
         + (message ? '<p style="font-size:13px;color:#cbd5e1;margin-bottom:12px;line-height:1.4;margin-top:0">' + esc(message) + '</p>' : '')
-        + '<input type="text" id="dialog-prompt-input" value="' + esc(defaultValue) + '" placeholder="' + esc(placeholder) + '" style="width:100%;padding:9px 12px;font-size:13.5px;background:#0f172a;border:1.5px solid #3b82f6;border-radius:8px;color:#ffffff;box-sizing:border-box;margin-bottom:18px;outline:none;" />'
+        + '<input type="text" id="dialog-prompt-input" tabindex="1" value="' + esc(defaultValue) + '" placeholder="' + esc(placeholder) + '" style="width:100%;padding:9px 12px;font-size:13.5px;background:#0f172a;border:1.5px solid #3b82f6;border-radius:8px;color:#ffffff;box-sizing:border-box;margin-bottom:18px;outline:none;" />'
         + '<div style="display:flex;justify-content:flex-end;gap:10px;width:100%">'
-        + '<button class="bg" id="dialog-prompt-cancel-btn" style="padding:8px 16px;font-size:12.5px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer">Cancel</button>'
-        + '<button class="b bp bs" id="dialog-prompt-confirm-btn" style="padding:8px 18px;font-size:12.5px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(59,130,246,0.3)">' + esc(confirmText) + '</button>'
+        + '<button class="b bp bs" id="dialog-prompt-confirm-btn" tabindex="2" style="padding:8px 18px;font-size:12.5px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(59,130,246,0.3)">' + esc(confirmText) + '</button>'
+        + '<button class="bg" id="dialog-prompt-cancel-btn" tabindex="3" style="padding:8px 16px;font-size:12.5px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer">Cancel</button>'
         + '</div>'
         + '</div>';
 
       document.body.appendChild(overlay);
 
       var input = document.getElementById('dialog-prompt-input');
+      var confirmBtn = document.getElementById('dialog-prompt-confirm-btn');
+      var cancelBtn = document.getElementById('dialog-prompt-cancel-btn');
+
       if (input) {
-        input.focus();
-        input.select();
+        setTimeout(function () {
+          input.focus();
+          input.select();
+        }, 30);
         input.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') {
             e.preventDefault();
-            document.getElementById('dialog-prompt-confirm-btn').click();
+            confirmBtn.click();
           } else if (e.key === 'Escape') {
             e.preventDefault();
-            document.getElementById('dialog-prompt-cancel-btn').click();
+            cancelBtn.click();
           }
         });
       }
 
-      document.getElementById('dialog-prompt-cancel-btn').onclick = function () {
+      cancelBtn.onclick = function () {
         overlay.remove();
         if (onCancel) onCancel();
       };
 
-      document.getElementById('dialog-prompt-confirm-btn').onclick = function () {
+      confirmBtn.onclick = function () {
         var val = input ? input.value : '';
         overlay.remove();
         if (onConfirm) onConfirm(val);
@@ -4766,11 +4815,32 @@
         + 'An effort record will be automatically logged into your Evidence Vault.'
         + '</div>'
         + '<div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #1f2436;padding-top:14px">'
-        + '<button type="button" class="b bb" onclick="closeTaskCompletionModal()">Cancel</button>'
-        + '<button type="button" class="b bp" onclick="executeTaskCompletion(\'' + task.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;font-weight:700;padding:9px 18px">✅ Yes, Complete Task</button>'
+        + '<button type="button" class="b bp" id="confirm-task-complete-btn" tabindex="1" onclick="executeTaskCompletion(\'' + task.id + '\')" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;font-weight:700;padding:9px 18px">✅ Yes, Complete Task</button>'
+        + '<button type="button" class="b bb" id="cancel-task-complete-btn" tabindex="2" onclick="closeTaskCompletionModal()">Cancel</button>'
         + '</div>'
         + '</div>'
         + '</div>';
+
+      var confirmBtn = document.getElementById('confirm-task-complete-btn');
+      var cancelBtn = document.getElementById('cancel-task-complete-btn');
+
+      setTimeout(function () {
+        if (confirmBtn) confirmBtn.focus();
+      }, 30);
+
+      modal.onkeydown = function (e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeTaskCompletionModal();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (document.activeElement && typeof document.activeElement.click === 'function') {
+            document.activeElement.click();
+          } else if (confirmBtn) {
+            confirmBtn.click();
+          }
+        }
+      };
     };
 
     window.closeTaskCompletionModal = function () {
@@ -8723,7 +8793,7 @@
         + '<div style="margin-bottom:16px">'
         + '<label class="lb">1. Routine Loop Title</label>'
         + '<p class="h">Name your feedback loop (or leave blank to auto-name).</p>'
-        + '<input type="text" id="modal-loop-title" placeholder="e.g. Daily Bug Hunter & Prompt Cycle" value="' + esc(draft.title) + '" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveRoutineLoopModal(); }" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
+        + '<input type="text" id="modal-loop-title" placeholder="e.g. Daily Bug Hunter & Prompt Cycle" value="' + esc(draft.title) + '" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveRoutineLoopModal(\'' + draft.id + '\'); }" style="width:100%;font-size:14px;padding:9px 12px;margin-top:4px" />'
         + '</div>'
 
         // Steps Builder (Optional)
@@ -8744,8 +8814,8 @@
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;border-top:1px solid #1f2436;padding-top:16px">'
         + (isEdit ? '<button type="button" class="bg" style="color:#fca5a5;font-size:13px" onclick="deleteRoutineLoop(\'' + draft.id + '\')">Delete Loop</button>' : '<div></div>')
         + '<div style="display:flex;gap:8px">'
-        + '<button type="button" class="b bb" onclick="closeRoutineLoopModal()">Cancel</button>'
-        + '<button type="button" class="b bp" onclick="saveRoutineLoopModal(\'' + draft.id + '\')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">Save Routine Loop</button>'
+        + '<button type="button" class="b bp" id="save-routine-loop-btn" tabindex="1" onclick="saveRoutineLoopModal(\'' + draft.id + '\')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">Save Routine Loop</button>'
+        + '<button type="button" class="b bb" tabindex="2" onclick="closeRoutineLoopModal()">Cancel</button>'
         + '</div>'
         + '</div>'
 
@@ -8754,6 +8824,21 @@
 
       renderModalStepsList();
       renderModalLoopPreview();
+
+      setTimeout(function () {
+        var titleInp = document.getElementById('modal-loop-title');
+        if (titleInp) {
+          titleInp.focus();
+          if (titleInp.value) titleInp.select();
+        }
+      }, 40);
+
+      modal.onkeydown = function (e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeRoutineLoopModal();
+        }
+      };
     }
 
     window.toggleCustomTimeInput = function (val) {
