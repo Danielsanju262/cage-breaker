@@ -8665,10 +8665,9 @@
       var steps = window.modalLoopDraft.steps || [];
 
       container.innerHTML = steps.map(function (step, i) {
-        return '<div class="step-builder-row">'
-          + '<span class="step-builder-badge">' + (i + 1) + '</span>'
-          + '<input type="text" class="step-builder-input" placeholder="Step ' + (i + 1) + ' action..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveRoutineLoopModal(); }" />'
-          + '<button type="button" class="step-del-btn" onclick="removeModalLoopStep(' + i + ')" title="Remove step">✕</button>'
+        return '<div style="position:relative;display:flex;align-items:center;margin-bottom:8px;width:100%">'
+          + '<input type="text" class="step-builder-input" placeholder="Action step ' + (i + 1) + '..." value="' + esc(step) + '" oninput="updateModalLoopStep(' + i + ', this.value)" onkeydown="if(event.key===\'Enter\'){ event.preventDefault(); saveRoutineLoopModal(); }" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:10px 40px 10px 14px;border-radius:8px;font-size:13.5px;box-sizing:border-box;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor=\'#f59e0b\'" onblur="this.style.borderColor=\'#334155\'" />'
+          + '<button type="button" class="step-del-btn" onclick="removeModalLoopStep(' + i + ')" title="Remove step" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;font-size:15px;font-weight:700;line-height:1;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;transition:all 0.15s" onmouseenter="this.style.color=\'#fca5a5\';this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.color=\'#94a3b8\';this.style.background=\'none\'">✕</button>'
           + '</div>';
       }).join('');
     }
