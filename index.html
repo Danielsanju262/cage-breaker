@@ -4653,7 +4653,10 @@
         + (opts.url ? '&sprop=website:' + encodeURIComponent(opts.url) : '')
         + (userEmail ? '&authuser=' + encodeURIComponent(userEmail) : '');
 
-      window.open(url, '_blank', 'noopener,noreferrer');
+      var win = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        window.location.href = url;
+      }
     };
 
     window.addEventToGoogleCalendarDirect = function (eventOpts, onComplete) {
@@ -4661,7 +4664,7 @@
       var savedToken = localStorage.getItem('gcal_access_token');
       var savedExpiry = parseInt(localStorage.getItem('gcal_token_expiry') || '0', 10);
       var isTokenValid = savedToken && (savedExpiry > Date.now());
-      var savedEmail = localStorage.getItem('gcal_account_email') || '';
+      var savedEmail = localStorage.getItem('gcal_account_email') || (typeof S !== 'undefined' && S.gcalAccountEmail) || '';
 
       var startDate = new Date(eventOpts.startIso);
       var endDate = eventOpts.endIso ? new Date(eventOpts.endIso) : new Date(startDate.getTime() + 30 * 60 * 1000);
@@ -4709,7 +4712,7 @@
                 localStorage.removeItem('gcal_access_token');
                 localStorage.removeItem('gcal_token_expiry');
               }
-              // Gracefully complete via direct calendar link with the selected account
+              // Fallback to direct calendar creation link
               window.createGoogleCalendarEvent(eventOpts, email);
               if (onComplete) onComplete(true);
             });
@@ -4737,13 +4740,15 @@
             .then(function (result) {
               var token = result.credential ? result.credential.accessToken : null;
               var email = (result.user && result.user.email) ? result.user.email : savedEmail;
+              if (email) {
+                localStorage.setItem('gcal_account_email', email);
+                if (typeof S !== 'undefined') { S.gcalAccountEmail = email; save(true); }
+              }
               if (token) {
                 localStorage.setItem('gcal_access_token', token);
                 localStorage.setItem('gcal_token_expiry', String(Date.now() + 3500 * 1000));
-                if (email) localStorage.setItem('gcal_account_email', email);
                 sendCalendarApiRequest(token, email);
               } else {
-                if (email) localStorage.setItem('gcal_account_email', email);
                 window.createGoogleCalendarEvent(opts, email);
                 if (cb) cb(true);
               }
@@ -4771,6 +4776,10 @@
       localStorage.removeItem('gcal_access_token');
       localStorage.removeItem('gcal_token_expiry');
       localStorage.removeItem('gcal_account_email');
+      if (typeof S !== 'undefined' && S.gcalAccountEmail) {
+        delete S.gcalAccountEmail;
+        save(true);
+      }
       if (typeof firebase !== 'undefined' && firebase.auth) {
         var provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('https://www.googleapis.com/auth/calendar.events');
@@ -4781,9 +4790,14 @@
           if (token) {
             localStorage.setItem('gcal_access_token', token);
             localStorage.setItem('gcal_token_expiry', String(Date.now() + 3500 * 1000));
-            if (email) localStorage.setItem('gcal_account_email', email);
+            if (email) {
+              localStorage.setItem('gcal_account_email', email);
+              if (typeof S !== 'undefined') { S.gcalAccountEmail = email; save(true); }
+            }
             var targetAccountEl = document.getElementById('gcal-target-account');
             if (targetAccountEl && email) targetAccountEl.textContent = email;
+            var modalEmailEl = document.getElementById('modal-gcal-email');
+            if (modalEmailEl && email) modalEmailEl.textContent = email;
             window.showToast('Connected Google account: ' + email, 'success');
           }
         }).catch(function (err) {
@@ -4867,11 +4881,11 @@
       detailsLines.push(deepLink);
 
       var details = detailsLines.join('\n');
-      var savedEmail = localStorage.getItem('gcal_account_email') || '';
+      var savedEmail = localStorage.getItem('gcal_account_email') || (typeof S !== 'undefined' && S.gcalAccountEmail) || '';
 
       var accountInfoHtml = '<div style="margin:14px 0 6px;padding:9px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;font-size:12px;color:#93c5fd;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left">'
         + '<span>Account: <strong id="gcal-target-account" style="color:#ffffff">' + (savedEmail ? esc(savedEmail) : 'Select Google Account on click') + '</strong></span>'
-        + (savedEmail ? '<button type="button" onclick="window.switchGoogleAccount(event)" style="font-size:11px;padding:2px 8px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:5px;cursor:pointer;white-space:nowrap" title="Switch to a different Google account">Switch</button>' : '')
+        + '<button type="button" onclick="window.switchGoogleAccount(event)" style="font-size:11px;padding:2px 8px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:5px;cursor:pointer;white-space:nowrap" title="Switch to a different Google account">' + (savedEmail ? 'Switch' : 'Connect') + '</button>'
         + '</div>';
 
       showCustomConfirm({
@@ -4908,6 +4922,7 @@
 
       var existingTime = targetItem.nextTargetTime || '';
       var itemTitle = targetType === 'subtask' ? (targetItem.text + ' (' + task.text + ')') : task.text;
+      var savedEmail = localStorage.getItem('gcal_account_email') || (typeof S !== 'undefined' && S.gcalAccountEmail) || '';
 
       // Format in user's local timezone for <input type="datetime-local"> (YYYY-MM-DDTHH:mm)
       var formattedInputValue = '';
@@ -4925,25 +4940,39 @@
       }
 
       var modalHtml = '<div class="modal-overlay" id="next-time-picker-modal" onclick="if(event.target===this)closeNextTimePickerModal()">'
-        + '<div class="modal" style="max-width:390px;padding:22px">'
+        + '<div class="modal" style="max-width:410px;padding:22px">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
         + '<h3 style="margin:0;font-size:16px;color:#fbbf24;display:flex;align-items:center;gap:6px">⏳ Set Target Time</h3>'
         + '<button class="modal-close" onclick="closeNextTimePickerModal()">✕</button>'
         + '</div>'
         + '<p style="font-size:12.5px;color:#cbd5e1;margin-bottom:14px;line-height:1.4">Target for: <strong>"' + e(targetItem.whatNext || targetItem.text) + '"</strong></p>'
         
-        + '<div style="margin-bottom:18px">'
+        + '<div style="margin-bottom:14px">'
         + '<label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Select Target Date & Time:</label>'
         + '<input type="datetime-local" id="custom-next-time-input" value="' + formattedInputValue + '" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px;color-scheme:dark" />'
         + '</div>'
 
-        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
-        + '<button type="button" class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11.5px;color:#fca5a5;padding:7px 11px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
-        + '<div style="display:flex;gap:8px">'
-        + '<button type="button" class="bg" onclick="closeNextTimePickerModal()" style="font-size:11.5px;padding:7px 12px">Cancel</button>'
-        + '<button type="button" class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\')" style="font-size:12px;padding:7px 16px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;font-weight:700">Save Time</button>'
+        // Prominent Google Calendar account display
+        + '<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
+        + '<div>'
+        + '<div style="font-size:10.5px;color:#94a3b8;font-weight:700">Google Calendar:</div>'
+        + '<div id="modal-gcal-email" style="font-size:12px;color:#93c5fd;font-weight:600;word-break:break-all">' + (savedEmail ? esc(savedEmail) : 'Ready to connect') + '</div>'
+        + '</div>'
+        + '<button type="button" onclick="window.switchGoogleAccount(event)" style="font-size:11px;padding:4px 9px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:6px;cursor:pointer;white-space:nowrap">' + (savedEmail ? 'Switch' : 'Connect') + '</button>'
+        + '</div>'
+
+        // Action Buttons
+        + '<div style="display:flex;flex-direction:column;gap:8px">'
+        + '<button type="button" class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', true)" style="width:100%;font-size:13px;padding:10px 14px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;font-weight:800;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px">📅 Save & Add to Google Calendar</button>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px">'
+        + '<button type="button" class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11px;color:#fca5a5;padding:6px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
+        + '<div style="display:flex;gap:6px">'
+        + '<button type="button" class="bg" onclick="closeNextTimePickerModal()" style="font-size:11.5px;padding:6px 12px">Cancel</button>'
+        + '<button type="button" class="b bb bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', false)" style="font-size:11.5px;padding:6px 12px;font-weight:600">Save Time Only</button>'
         + '</div>'
         + '</div>'
+        + '</div>'
+
         + '</div>'
         + '</div>';
 
@@ -4963,17 +4992,17 @@
       if (preset === 'clear') {
         isoStr = null;
       }
-      applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr);
+      applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr, false);
     };
 
-    window.saveCustomNextTargetTime = function (targetType, parentTaskId, subtaskId) {
+    window.saveCustomNextTargetTime = function (targetType, parentTaskId, subtaskId, addToCalendar) {
       var input = document.getElementById('custom-next-time-input');
       var val = input ? input.value : '';
       var isoStr = val ? new Date(val).toISOString() : null;
-      applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr);
+      applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr, addToCalendar !== false);
     };
 
-    function applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr) {
+    function applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr, addToCalendar) {
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
 
@@ -4990,10 +5019,8 @@
       closeNextTimePickerModal();
       render(true);
 
-      if (isoStr) {
-        setTimeout(function () {
-          window.promptGoogleCalendarEvent(targetType, parentTaskId, subtaskId, isoStr);
-        }, 120);
+      if (isoStr && addToCalendar) {
+        window.createGoogleCalendarEventFromItem(targetType, parentTaskId, subtaskId);
       }
     }
 
@@ -5060,8 +5087,145 @@
     };
 
     // ═══════════════════════════════════════════════
-    // HUB
     // ═══════════════════════════════════════════════
+    // IDENTITY REORDERING & HUB
+    // ═══════════════════════════════════════════════
+    window.identityDragFromId = null;
+
+    window.onIdentityDragStart = function (e, id) {
+      window.identityDragFromId = id;
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '' + id);
+      }
+      var card = document.getElementById('identity-card-' + id);
+      if (card) card.style.opacity = '0.45';
+    };
+
+    window.onIdentityDragOver = function (e, id) {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      var card = document.getElementById('identity-card-' + id);
+      if (card && window.identityDragFromId && String(window.identityDragFromId) !== String(id)) {
+        card.style.borderTop = '2px solid #f59e0b';
+        card.style.boxShadow = '0 0 16px rgba(245,158,11,0.6)';
+      }
+    };
+
+    window.onIdentityDragLeave = function (e, id) {
+      var card = document.getElementById('identity-card-' + id);
+      if (card) {
+        card.style.borderTop = '';
+        card.style.boxShadow = '';
+      }
+    };
+
+    window.onIdentityDrop = function (e, toId) {
+      e.preventDefault();
+      var fromId = window.identityDragFromId;
+      if (!fromId && e.dataTransfer) {
+        fromId = e.dataTransfer.getData('text/plain');
+      }
+      var card = document.getElementById('identity-card-' + toId);
+      if (card) {
+        card.style.borderTop = '';
+        card.style.boxShadow = '';
+      }
+      if (fromId && String(fromId) !== String(toId)) {
+        window.reorderIdentity(fromId, toId);
+      }
+      window.identityDragFromId = null;
+    };
+
+    window.onIdentityDragEnd = function (e) {
+      window.identityDragFromId = null;
+      document.querySelectorAll('.icard').forEach(function (c) {
+        c.style.opacity = '';
+        c.style.borderTop = '';
+        c.style.boxShadow = '';
+      });
+    };
+
+    window.reorderIdentity = function (fromId, toId) {
+      if (!S || !Array.isArray(S.identities)) return;
+      var fromIdx = S.identities.findIndex(function (item) { return String(item.id) === String(fromId); });
+      var toIdx = S.identities.findIndex(function (item) { return String(item.id) === String(toId); });
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+
+      var moved = S.identities.splice(fromIdx, 1)[0];
+      S.identities.splice(toIdx, 0, moved);
+      save(true);
+      render(true);
+    };
+
+    window.moveIdentityOrder = function (id, direction) {
+      if (!S || !Array.isArray(S.identities)) return;
+      var idx = S.identities.findIndex(function (item) { return String(item.id) === String(id); });
+      if (idx === -1) return;
+
+      var targetItem = S.identities[idx];
+      var isAchieved = !!targetItem.achieved;
+
+      var statusIndices = [];
+      S.identities.forEach(function (item, i) {
+        if (!!item.achieved === isAchieved) statusIndices.push(i);
+      });
+
+      var currentPos = statusIndices.indexOf(idx);
+      if (currentPos === -1) return;
+
+      var targetPos = direction === 'up' ? currentPos - 1 : currentPos + 1;
+      if (targetPos < 0 || targetPos >= statusIndices.length) return;
+
+      var swapIdx = statusIndices[targetPos];
+      var temp = S.identities[idx];
+      S.identities[idx] = S.identities[swapIdx];
+      S.identities[swapIdx] = temp;
+
+      save(true);
+      render(true);
+    };
+
+    window.identityTouchFromId = null;
+    window.onIdentityTouchStart = function (e, id) {
+      window.identityTouchFromId = id;
+    };
+    window.onIdentityTouchMove = function (e) {
+      if (!window.identityTouchFromId) return;
+      var touch = e.touches[0];
+      if (!touch) return;
+      var targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+      var card = targetEl ? targetEl.closest('.icard[data-identity-id]') : null;
+      document.querySelectorAll('.icard').forEach(function (c) {
+        c.style.borderTop = '';
+        c.style.boxShadow = '';
+      });
+      if (card && card.getAttribute('data-identity-id') !== String(window.identityTouchFromId)) {
+        card.style.borderTop = '2px solid #f59e0b';
+        card.style.boxShadow = '0 0 16px rgba(245,158,11,0.6)';
+      }
+    };
+    window.onIdentityTouchEnd = function (e) {
+      if (!window.identityTouchFromId) return;
+      var touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+      if (touch) {
+        var targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+        var card = targetEl ? targetEl.closest('.icard[data-identity-id]') : null;
+        if (card) {
+          var toId = card.getAttribute('data-identity-id');
+          if (toId && String(toId) !== String(window.identityTouchFromId)) {
+            window.reorderIdentity(window.identityTouchFromId, toId);
+          }
+        }
+      }
+      window.identityTouchFromId = null;
+      document.querySelectorAll('.icard').forEach(function (c) {
+        c.style.opacity = '';
+        c.style.borderTop = '';
+        c.style.boxShadow = '';
+      });
+    };
+
     function rHub(a) {
       const rawIds = (S && Array.isArray(S.identities)) ? S.identities : [];
       const ids = rawIds.map(sanitizeIdentity).filter(Boolean);
@@ -5070,38 +5234,38 @@
       const liveIds = ids.filter(function (id) { return !id.achieved; });
       const achievedIds = ids.filter(function (id) { return !!id.achieved; });
 
-      const sortedLive = [...liveIds].sort((a, b) => {
-        const al = loggedToday(a) ? 1 : 0, bl = loggedToday(b) ? 1 : 0;
-        return al - bl;
-      });
-
-      function renderCard(id) {
+      function renderCard(id, idx, totalInGroup) {
         const counts = getLogCounts(id);
         const streak = getStreak(id);
         const logged = loggedToday(id);
         const days = daysOld(id);
-        return `<div class="icard ${logged ? 'done' : 'needs'}" onclick="openIdentity('${id.id}')" style="cursor:pointer;position:relative">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div style="flex:1;padding-right:8px">
-            <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              ${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:700">HABIT</span>' : ''}
-              ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:800">🏆 ACHIEVED</span>' : ''}
-              ${(id.targetEventName || id.taggedEvent) ? `<button onclick="event.stopPropagation();openQuickTagEventModal('${id.id}')" style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Click to edit Tagged Event">Do it Before: "${e(id.targetEventName || id.taggedEvent)}"</button>` : ''}
+        return `<div class="icard ${logged ? 'done' : 'needs'}" id="identity-card-${id.id}" data-identity-id="${id.id}" onclick="openIdentity('${id.id}')" ondragover="onIdentityDragOver(event, '${id.id}')" ondragleave="onIdentityDragLeave(event, '${id.id}')" ondrop="onIdentityDrop(event, '${id.id}')" ondragend="onIdentityDragEnd(event)" style="cursor:pointer;position:relative;transition:all 0.2s ease">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="display:flex;align-items:flex-start;gap:8px;flex:1">
+            <span class="identity-drag-handle" draggable="true" ondragstart="event.stopPropagation();onIdentityDragStart(event, '${id.id}')" ontouchstart="event.stopPropagation();onIdentityTouchStart(event, '${id.id}')" ontouchmove="onIdentityTouchMove(event)" ontouchend="onIdentityTouchEnd(event)" onclick="event.stopPropagation()" style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:2px 4px;margin-top:2px;line-height:1;transition:color 0.2s;flex-shrink:0" title="Drag to reorder identity" onmouseenter="this.style.color='#f59e0b'" onmouseleave="this.style.color='#64748b'">⠿</span>
+            <div style="flex:1;padding-right:4px">
+              <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                ${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:700">HABIT</span>' : ''}
+                ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:800">🏆 ACHIEVED</span>' : ''}
+                ${(id.targetEventName || id.taggedEvent) ? `<button onclick="event.stopPropagation();openQuickTagEventModal('${id.id}')" style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Click to edit Tagged Event">Do it Before: "${e(id.targetEventName || id.taggedEvent)}"</button>` : ''}
+              </div>
+
+              <h3 style="font-family:Georgia,serif;font-size:16.5px;font-weight:700;color:#f8fafc;line-height:1.45;margin-bottom:6px">
+                <a href="javascript:void(0)" onclick="event.stopPropagation();openIdentity('${id.id}')" style="color:inherit;text-decoration:none;transition:color 0.2s" onmouseenter="this.style.color='#38bdf8'" onmouseleave="this.style.color='inherit'">
+                  👤 ${e(id.newIdentity || '')}
+                </a>
+              </h3>
+
+              ${(id.targetActionLine || id.targetEvent) ? `<p style="font-size:12.5px;color:#fbbf24;margin-bottom:6px;font-weight:600"><em>"${e(id.targetActionLine || id.targetEvent)}"</em></p>` : ''}
+              ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
+              ${renderTargetEventCountdown(id)}
             </div>
-
-            <h3 style="font-family:Georgia,serif;font-size:16.5px;font-weight:700;color:#f8fafc;line-height:1.45;margin-bottom:6px">
-              <a href="javascript:void(0)" onclick="event.stopPropagation();openIdentity('${id.id}')" style="color:inherit;text-decoration:none;transition:color 0.2s" onmouseenter="this.style.color='#38bdf8'" onmouseleave="this.style.color='inherit'">
-                👤 ${e(id.newIdentity || '')}
-              </a>
-            </h3>
-
-            ${(id.targetActionLine || id.targetEvent) ? `<p style="font-size:12.5px;color:#fbbf24;margin-bottom:6px;font-weight:600"><em>"${e(id.targetActionLine || id.targetEvent)}"</em></p>` : ''}
-            ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
-            ${renderTargetEventCountdown(id)}
           </div>
           <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
-            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
+            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:135px;overflow:hidden">
+              ${idx > 0 ? `<button onclick="event.stopPropagation();closeAllTaskMenus();moveIdentityOrder('${id.id}', 'up')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(59,130,246,0.15)'" onmouseleave="this.style.background='none'">▲ Move Up</button>` : ''}
+              ${idx < totalInGroup - 1 ? `<button onclick="event.stopPropagation();closeAllTaskMenus();moveIdentityOrder('${id.id}', 'down')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(59,130,246,0.15)'" onmouseleave="this.style.background='none'">▼ Move Down</button>` : ''}
               <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#4ade80'};font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">
                 ${id.achieved ? 'Re-open' : 'Achieve'}
               </button>
@@ -5132,10 +5296,10 @@
         <button class="b bb bs" onclick="syncNow()" style="font-size:11px;padding:5px 10px" title="Push & Pull latest data instantly">Sync</button>
       </div>
     </div>
-    <p class="d">${ids.length === 0 ? 'You haven\'t created any cards yet. Start by creating one below.' : ids.length + ' total identity cards (' + sortedLive.length + ' live, ' + achievedIds.length + ' achieved)'}</p>
+    <p class="d">${ids.length === 0 ? 'You haven\'t created any cards yet. Start by creating one below.' : ids.length + ' total identity cards (' + liveIds.length + ' live, ' + achievedIds.length + ' achieved)'}</p>
     
-    ${sortedLive.length > 0 ? '<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#4ede80;text-transform:uppercase;margin:12px 0 10px 0">LIVE IDENTITIES (' + sortedLive.length + ')</div>' : ''}
-    ${sortedLive.length === 0 && achievedIds.length === 0 ? '<p class="d">No active identities.</p>' : sortedLive.map(renderCard).join('')}
+    ${liveIds.length > 0 ? '<div style="font-size:12px;font-weight:800;letter-spacing:1px;color:#4ede80;text-transform:uppercase;margin:12px 0 10px 0">LIVE IDENTITIES (' + liveIds.length + ')</div>' : ''}
+    ${liveIds.length === 0 && achievedIds.length === 0 ? '<p class="d">No active identities.</p>' : liveIds.map(function(item, idx){ return renderCard(item, idx, liveIds.length); }).join('')}
 
     ${achievedIds.length > 0 ? `
       <div style="margin-top:28px;padding-top:20px;border-top:1px dashed rgba(234,179,8,0.3)">
@@ -5151,7 +5315,7 @@
         <div id="achieved-vault-wrapper" class="achieved-vault-wrapper ${window.achievedVaultExpanded ? 'expanded' : ''}">
           <div class="achieved-vault-inner" style="padding-top:10px">
             <p class="d" style="font-size:12px;margin:0 0 12px 0;color:#9ca3af">Completed identity standards that you have successfully mastered.</p>
-            ${achievedIds.map(renderCard).join('')}
+            ${achievedIds.map(function(item, idx){ return renderCard(item, idx, achievedIds.length); }).join('')}
           </div>
         </div>
       </div>
