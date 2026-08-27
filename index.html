@@ -2843,6 +2843,15 @@
       messagingSenderId: "685182492455"
     };
 
+    try {
+      if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+        fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+        fbDb = firebase.firestore();
+      }
+    } catch (e) {
+      console.warn('Initial Firebase app init:', e);
+    }
+
     const MASTER_DOC_ID = 'global_master';
     var fbApp = null, fbDb = null, unsubscribeFirestore = null;
     var _syncStatus = 'idle';
@@ -4800,9 +4809,10 @@
         var provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('https://www.googleapis.com/auth/calendar.events');
         provider.setCustomParameters({ prompt: 'select_account' });
+        
         firebase.auth().signInWithPopup(provider).then(function (result) {
           var token = result.credential ? result.credential.accessToken : null;
-          var email = result.user ? result.user.email : '';
+          var email = (result.user && result.user.email) ? result.user.email : '';
           if (email) {
             updateAccountUI(email);
           }
@@ -4814,36 +4824,11 @@
             window.showToast('Connected Google account: ' + email, 'success');
           }
         }).catch(function (err) {
-          console.warn('Google Auth popup issue on live server:', err);
-          // Fallback to manual entry dialog so the user is never stuck
-          showCustomPrompt({
-            title: 'Connect Google Calendar Account',
-            message: 'Enter your Google email address to link reminders to your calendar:',
-            placeholder: 'e.g. yourname@gmail.com',
-            defaultValue: localStorage.getItem('gcal_account_email') || (S && S.gcalAccountEmail) || '',
-            confirmText: 'Save Account',
-            onConfirm: function (inputEmail) {
-              var cleanEmail = (inputEmail || '').trim();
-              if (cleanEmail) {
-                updateAccountUI(cleanEmail);
-                window.showToast('Google account connected: ' + cleanEmail, 'success');
-              }
-            }
-          });
-        });
-      } else {
-        showCustomPrompt({
-          title: 'Connect Google Calendar Account',
-          message: 'Enter your Google email address:',
-          placeholder: 'yourname@gmail.com',
-          defaultValue: localStorage.getItem('gcal_account_email') || (S && S.gcalAccountEmail) || '',
-          confirmText: 'Save Account',
-          onConfirm: function (inputEmail) {
-            var cleanEmail = (inputEmail || '').trim();
-            if (cleanEmail) {
-              updateAccountUI(cleanEmail);
-              window.showToast('Google account connected: ' + cleanEmail, 'success');
-            }
+          console.warn('Google Auth popup error:', err);
+          if (err && err.code === 'auth/popup-blocked') {
+            window.showToast('Please enable popups in your browser to choose your Google Account', 'warning');
+          } else if (err && err.code === 'auth/unauthorized-domain') {
+            window.showToast('Domain not authorized in Firebase. Please add this domain to Firebase Auth settings.', 'error');
           }
         });
       }
@@ -5327,9 +5312,7 @@
           </div>
           <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
-            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:135px;overflow:hidden">
-              ${idx > 0 ? `<button onclick="event.stopPropagation();closeAllTaskMenus();moveIdentityOrder('${id.id}', 'up')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(59,130,246,0.15)'" onmouseleave="this.style.background='none'">▲ Move Up</button>` : ''}
-              ${idx < totalInGroup - 1 ? `<button onclick="event.stopPropagation();closeAllTaskMenus();moveIdentityOrder('${id.id}', 'down')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(59,130,246,0.15)'" onmouseleave="this.style.background='none'">▼ Move Down</button>` : ''}
+            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
               <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#4ade80'};font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">
                 ${id.achieved ? 'Re-open' : 'Achieve'}
               </button>
