@@ -4662,12 +4662,8 @@
         + (opts.url ? '&sprop=website:' + encodeURIComponent(opts.url) : '')
         + (userEmail ? '&authuser=' + encodeURIComponent(userEmail) : '');
 
-      var win = window.open(url, '_blank', 'noopener,noreferrer');
-      if (win) {
-        try { win.focus(); } catch (e) {}
-      } else {
-        window.showToast('Event link generated. Please allow popups if the window was blocked.', 'info');
-      }
+      // Open Google Calendar directly inside the app window
+      window.location.href = url;
     };
 
     window.addEventToGoogleCalendarDirect = function (eventOpts, onComplete) {
@@ -7508,13 +7504,8 @@
           + '</div>'
         ) : '';
 
-        var timerStatusAndNextHtml = '<div onclick="event.stopPropagation()" style="width:100%;max-width:100%;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.09);display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;text-align:left;box-sizing:border-box">'
-          + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:160px;background:' + mainStatusBg + ';padding:5px 9px;border-radius:8px;border:1px solid ' + mainStatusBorder + ';box-sizing:border-box">'
-          + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Status:</span>'
-          + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Current status..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);' + statusUpdateCall + '" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(curDoingNow) + '</textarea>'
-          + '</div>'
-          + '<span style="color:#64748b;font-size:12px;font-weight:700;align-self:flex-start;margin-top:6px">➔</span>'
-          + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:160px;background:' + mainNextBg + ';padding:5px 9px;border-radius:8px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box">'
+        var timerStatusAndNextHtml = '<div onclick="event.stopPropagation()" style="width:100%;max-width:100%;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.09);display:flex;align-items:flex-start;text-align:left;box-sizing:border-box">'
+          + '<div style="display:flex;align-items:flex-start;gap:6px;width:100%;background:' + mainNextBg + ';padding:5px 9px;border-radius:8px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box">'
           + '<span style="font-size:11.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Next:</span>'
           + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="What next..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);' + nextUpdateCall + '" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(curWhatNext) + '</textarea>'
           + '</div>'
@@ -7524,13 +7515,15 @@
         var activeParentTaskId = task.id;
         var activeSubtaskId = (taskHighestCd && taskHighestCd.source === 'subtask' && taskHighestCd.item) ? taskHighestCd.item.id : '';
         var timerClickHandler = "event.stopPropagation();openNextTimePickerModal('" + activeTargetType + "', '" + activeParentTaskId + "', '" + activeSubtaskId + "')";
+        var ttrDropdownHtml = '<div onclick="event.stopPropagation()" style="display:inline-flex;align-items:center">' + renderTimeToResultSelect(activeTargetType, activeParentTaskId, activeSubtaskId, activeItem.timeToResult || 'Not yet decided', 'font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid rgba(59,130,246,0.35);background:#0f172a;color:#93c5fd;cursor:pointer;min-width:96px;') + '</div>';
 
         collapsedTimerHtml = '<div class="task-card-collapsed-timer" onclick="toggleTimerCardExpand(\'' + task.id + '\', event)" style="cursor:pointer">'
           + '<div class="task-card-collapsed-timer-inner">'
           + '<span class="task-title" style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3">' + e(task.text) + '</span>'
           + subtaskContextHtml
-          + '<div style="display:flex;align-items:center;justify-content:center;margin-top:4px">'
-          + '<span class="live-task-timer-text" data-task-id="' + task.id + '" onclick="' + timerClickHandler + '" title="Click to edit or change target time" style="font-size:22px;font-weight:800;color:' + taskHighestCd.color + ';text-shadow:0 0 18px ' + taskHighestCd.glow + ';cursor:pointer">' + timerDisplayText + '</span>'
+          + '<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 4px;flex-wrap:wrap">'
+          + '<span class="live-task-timer-text" data-task-id="' + task.id + '" onclick="' + timerClickHandler + '" title="Click to edit or change target time" style="font-size:32px;font-weight:900;letter-spacing:0.5px;color:' + taskHighestCd.color + ';text-shadow:0 0 22px ' + taskHighestCd.glow + ';cursor:pointer;line-height:1.1">' + timerDisplayText + '</span>'
+          + ttrDropdownHtml
           + '</div>'
           + timerStatusAndNextHtml
           + (subtasks.length > 0 ? ('<div style="display:flex;align-items:center;justify-content:flex-start;width:100%;margin-top:4px;font-size:11px;color:#94a3b8"><span class="subtasks-badge-pill" style="font-size:11px;color:#94a3b8;cursor:pointer;display:inline-block" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks">' + subtasksDoneCount + '/' + subtasks.length + ' subtasks</span></div>') : '')
