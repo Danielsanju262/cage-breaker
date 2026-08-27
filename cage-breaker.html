@@ -17,11 +17,20 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
   <link rel="shortcut icon" href="favicon.ico">
-  <title>Break Your Cage</title>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 01: GLOBAL DESIGN TOKENS & COLOR PALETTE
+     * -------------------------------------------------------------------------------
+     * • Purpose: Centralized theme definition establishing dark-mode colors, glows,
+     *   border styles, elevation shadows, border radii, and cubic-bezier easing tokens.
+     * • Reasoning: CSS Custom Properties allow unified styling across all screens and
+     *   components without magic numbers, enabling smooth theme transitions.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     :root {
       color-scheme: dark;
       /* Clean Dark Color Palette */
@@ -66,12 +75,24 @@
       --transition-smooth: 0.38s var(--ease-spring);
     }
 
+    /* Universal box-sizing reset for consistent element geometry */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 02: BASE HTML & BODY FOUNDATION
+     * -------------------------------------------------------------------------------
+     * • Purpose: Configures viewport scrolling physics, ambient lighting gradients,
+     *   system typography fallback chain, and touch gesture behavior.
+     * • Reasoning:
+     *   - `scroll-behavior: smooth`: Smooth programmatic scrolling across views.
+     *   - `overflow-x: hidden`: Completely eliminates horizontal scrollbar jank.
+     *   - `-webkit-overflow-scrolling: touch`: Enables native iOS/Android momentum scrolling.
+     *   - `touch-action: pan-x pan-y`: Prevents 300ms double-tap browser delay on mobile.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     html {
       scroll-behavior: smooth;
       -webkit-text-size-adjust: 100%;
@@ -103,7 +124,14 @@
       -ms-touch-action: pan-x pan-y;
     }
 
-    /* Prevent text collisions, clipping & unexpected overflow */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 03: TEXT OVERFLOW & LAYOUT WRAPPING
+     * -------------------------------------------------------------------------------
+     * • Purpose: Prevents long words, URLs, or dense user task names from blowing out
+     *   card containers or creating unexpected horizontal overflow.
+     * • Reasoning: `overflow-wrap: break-word` and `min-width: 0` force Flexbox and Grid
+     *   children to strictly respect parent widths instead of expanding indefinitely.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     p, h1, h2, h3, h4, h5, h6, span, label, div, button, a, input, textarea {
       overflow-wrap: break-word;
       word-break: break-word;
@@ -113,7 +141,14 @@
       min-width: 0;
     }
 
-    /* Modern Cursor & Fast Touch Response Behavior */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 04: INTERACTION CURSORS & TOUCH TAP RESPONSE
+     * -------------------------------------------------------------------------------
+     * • Purpose: Guarantees tactile feedback on interactive buttons and prevents iOS
+     *   tap delays and gray flash highlights.
+     * • Reasoning: `touch-action: manipulation` disables double-tap zoom delays on mobile
+     *   taps; `:active` micro-scaling provides instant feedback without layout shifts.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     button, .btn, a, select, input[type="button"], input[type="submit"], input[type="reset"], input[type="checkbox"], input[type="radio"], [role="button"], .task-check-btn, .modal-close, .icard, .pc, .ch, .tab-btn {
       cursor: pointer !important;
       touch-action: manipulation;
@@ -139,7 +174,12 @@
       color: #ffffff;
     }
 
-    /* Modern Subtle Scrollbars & Mobile Smooth Scrolling */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 05: CUSTOM SLIM SCROLLBARS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Replaces default bulky OS scrollbars with sleek dark glass scrollbars.
+     * • Reasoning: 7px width preserves screen real estate while remaining easy to grab.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     ::-webkit-scrollbar {
       width: 7px;
       height: 7px;
@@ -155,7 +195,13 @@
       background: rgba(255, 255, 255, 0.25);
     }
 
-    /* Optimal Bounded Main Canvas (Not stretched, not stuffed) */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 06: BOUNDED ROOT CANVAS (#app) & RESPONSIVE BREAKPOINTS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Centers content with an optimal reading width (max 1080px) and adapts
+     *   padding between mobile phones, tablets, and wide desktop displays.
+     * • Reasoning: Prevents ultra-wide screens from stretching text too wide to read comfortably.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     #app {
       width: 100%;
       max-width: 1080px;
@@ -185,25 +231,41 @@
       }
     }
 
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 07: GPU-ACCELERATED SCREEN & BREATHING ANIMATIONS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Smooth 60 FPS transitions between screens and gentle visual breathing.
+     * • Reasoning:
+     *   - `.fade`: Instant display during state changes (prevents stuttering on re-render).
+     *   - `.fade-screen`: Hardware-accelerated `translateZ(0)` entrance on route navigation.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     .fade {
       opacity: 1;
     }
 
     .fade-screen {
-      animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: screenFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: opacity, transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
+    @keyframes screenFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes breathK {
       0%, 100% { transform: scale(1); opacity: 0.85; }
-      50% { transform: scale(1.03); opacity: 1; filter: drop-shadow(0 0 8px var(--accent-amber)); }
+      50% { transform: scale(1.02); opacity: 1; }
     }
 
-    /* Clean Typography Scale */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 08: TYPOGRAPHY SCALE
+     * -------------------------------------------------------------------------------
+     * • Purpose: Consistent heading hierarchy and legible body text styling.
+     * • Reasoning: Negative letter-spacing creates a modern, crisp editorial appearance.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     .t, h1 {
       font-size: 20px;
       font-weight: 700;
@@ -250,7 +312,12 @@
       text-align: center;
     }
 
-    /* Harmonious Color Classes */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 09: UTILITY CLASSES & HARMONIOUS COLOR HELPERS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Fast semantic styling helpers for labels, alignments, and color badges.
+     * • Reasoning: Utility classes reduce repetitive inline styles for common badge colors.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     .c { color: var(--text-primary); }
     .cr, .red { color: var(--accent-coral) !important; }
     .cg, .green { color: var(--accent-emerald) !important; }
@@ -267,8 +334,16 @@
       cursor: pointer !important;
     }
 
-    /* Button Hierarchy & Proportional Sizing with Active Micro-Interactions */
-    button, .btn {
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 10: BUTTON HIERARCHY & ACTIVE MICRO-INTERACTIONS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Primary, success, danger, and neutral button variants with tactile micro-clicks.
+     * • Reasoning:
+     *   - `transform: translateY(-1px)`: Lift on hover gives depth.
+     *   - `transform: scale(0.98)`: Physical tactile click sensation on tap.
+     *   - GPU accelerated transitions prevent layout thrashing and maintain 60 FPS.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
+    button, .btn, .b {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -281,27 +356,25 @@
       background: var(--bg-elevated);
       color: var(--text-primary);
       cursor: pointer;
-      transition: background 0.15s ease,
-                  border-color 0.15s ease,
-                  box-shadow 0.15s ease,
-                  color 0.15s ease,
-                  filter 0.15s ease;
+      transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+      will-change: transform;
+      transform: translateZ(0);
       outline: none;
       box-shadow: var(--shadow-sm);
       white-space: nowrap;
       max-width: 100%;
       flex-shrink: 0;
-      transform: none !important;
     }
 
-    button:hover, .btn:hover {
+    button:hover, .btn:hover, .b:hover {
       background: var(--bg-card-hover);
       border-color: var(--border-strong);
-      transform: none !important;
+      transform: translateY(-1px) translateZ(0);
     }
 
     button:active, .btn:active, .b:active, .bg:active {
-      transform: none !important;
+      transform: scale(0.98) translateZ(0);
+      transition: transform 0.06s ease;
     }
 
     .btn-p, button.primary {
@@ -350,7 +423,12 @@
       background: rgba(245, 158, 11, 0.22) !important;
     }
 
-    /* Proportional Form Inputs (Not stretched, not stuffed) */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 11: PROPORTIONAL FORM INPUTS & SELECT DROPDOWNS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Consistent styling for text boxes, date pickers, numbers, and selects.
+     * • Reasoning: `color-scheme: dark` forces dark native dropdown menus and picker icons.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     input[type="text"],
     input[type="number"],
     input[type="date"],
@@ -430,7 +508,15 @@
       color: var(--text-muted);
     }
 
-    /* Clean Sticky Navigation Topbar */
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 12: STICKY NAVIGATION TOPBAR & TABS
+     * -------------------------------------------------------------------------------
+     * • Purpose: Fast top navigation bar that sticks to viewport top with blurred glass background.
+     * • Reasoning:
+     *   - `position: sticky; top: 8px`: Remains visible without covering screen content.
+     *   - `backdrop-filter: blur(12px)`: Semi-transparent glass morphism look.
+     *   - On mobile screens, automatically scrolls horizontally without line-breaking.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
     .nav {
       display: flex;
       align-items: center;
@@ -489,22 +575,32 @@
       }
     }
 
-    /* Cards & Containers - Perfectly Balanced Spacing */
-    .card, .icard, .gc-card-box, .path-card, .ev-card, .evidence-log-card {
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CSS SECTION 13: MODULAR CARD CONTAINERS & HOVER ELEVATION
+     * -------------------------------------------------------------------------------
+     * • Purpose: Consistent bounding cards for identities, tasks, evidence logs, and loops.
+     * • Reasoning:
+     *   - `transform: translateZ(0)`: Promotes cards to GPU layers for 60fps scrolling.
+     *   - `will-change: transform`: Informs the browser compositor to avoid repaints on hover.
+     * ═══════════════════════════════════════════════════════════════════════════════ */
+    .card, .icard, .gc-card-box, .path-card, .ev-card, .evidence-log-card, .task-card, .routine-loop-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
       padding: 16px 18px;
       margin-bottom: 16px;
       box-shadow: var(--shadow-card);
-      transition: border-color var(--transition-fast), transform var(--transition-fast);
+      transition: transform 0.16s ease, border-color 0.16s ease;
+      will-change: transform;
+      transform: translateZ(0);
       position: relative;
       width: 100%;
       box-sizing: border-box;
     }
 
-    .card:hover, .icard:hover, .path-card:hover {
-      border-color: var(--border-strong);
+    .card:hover, .icard:hover, .path-card:hover, .task-card:hover, .routine-loop-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px) translateZ(0);
     }
 
     .anchor-event-box {
@@ -601,12 +697,16 @@
       display: grid;
       grid-template-rows: 0fr;
       opacity: 0;
-      transition: grid-template-rows 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-in-out;
+      transform: translateY(-4px);
+      transition: grid-template-rows 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .subtasks-wrapper.expanded {
       grid-template-rows: 1fr;
       opacity: 1;
+      transform: translateY(0);
     }
 
     .subtasks-inner {
@@ -614,10 +714,54 @@
       min-height: 0;
     }
 
+    /* Routine Loop Run Logs Smooth Accordion */
+    .loop-run-logs-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: grid-template-rows 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .loop-run-logs-wrapper.expanded {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .loop-run-logs-inner {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Achieved Vault Smooth Accordion */
+    .achieved-vault-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .achieved-vault-wrapper.expanded {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .achieved-vault-inner {
+      overflow: hidden;
+      min-height: 0;
+    }
+
     .subtasks-badge-pill {
       cursor: pointer !important;
       user-select: none;
-      transition: all 0.15s ease;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .subtasks-badge-pill:hover {
@@ -625,7 +769,7 @@
       border-color: rgba(59, 130, 246, 0.6) !important;
       background: rgba(59, 130, 246, 0.25) !important;
       color: #93c5fd !important;
-      transform: none !important;
+      transform: translateY(-1px);
     }
 
     /* Streak Dots Bar */
@@ -774,9 +918,9 @@
     /* Collapsed timer task card: smooth grid-based morph transition */
     .task-card-has-timer {
       overflow: hidden;
-      transition: border-color 0.5s cubic-bezier(0.25, 1, 0.35, 1),
-                  box-shadow 0.5s cubic-bezier(0.25, 1, 0.35, 1),
-                  background 0.5s cubic-bezier(0.25, 1, 0.35, 1);
+      transition: border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  background 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .task-card-has-timer.task-card-timer-expanded {
@@ -787,23 +931,24 @@
       display: grid;
       grid-template-rows: 0fr;
       opacity: 0;
-      transform: none !important;
-      transition: grid-template-rows 0.35s cubic-bezier(0.25, 1, 0.35, 1),
-                  opacity 0.3s cubic-bezier(0.25, 1, 0.35, 1);
+      contain: layout style;
+      will-change: grid-template-rows, opacity;
+      transform: translateZ(0);
+      transition: grid-template-rows 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.18s ease;
       pointer-events: none;
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-details {
       grid-template-rows: 1fr;
       opacity: 1;
-      transform: none !important;
       pointer-events: auto;
     }
 
     .task-card-has-timer .task-card-details-inner {
       overflow: hidden;
       min-height: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.18s ease;
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-details-inner {
@@ -814,15 +959,16 @@
       display: grid;
       grid-template-rows: 1fr;
       opacity: 1;
-      transform: none !important;
-      transition: grid-template-rows 0.35s cubic-bezier(0.25, 1, 0.35, 1),
-                  opacity 0.3s cubic-bezier(0.25, 1, 0.35, 1);
+      contain: layout style;
+      will-change: grid-template-rows, opacity;
+      transform: translateZ(0);
+      transition: grid-template-rows 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.18s ease;
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer {
       grid-template-rows: 0fr;
       opacity: 0;
-      transform: none !important;
       pointer-events: none;
     }
 
@@ -836,7 +982,7 @@
       padding: 14px 12px;
       gap: 6px;
       text-align: center;
-      transition: padding 0.55s cubic-bezier(0.25, 1, 0.35, 1);
+      transition: padding 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .task-card-has-timer.task-card-timer-expanded .task-card-collapsed-timer-inner {
@@ -1011,8 +1157,6 @@
     /* Modal Background Scroll & Touch Lock */
     html.modal-locked, body.modal-locked {
       overflow: hidden !important;
-      touch-action: none !important;
-      height: 100% !important;
       overscroll-behavior: none !important;
     }
 
@@ -1097,13 +1241,39 @@
     }
 
     .task-dropdown-menu {
-      animation: dropdownSlideIn 0.18s ease-out;
-      transform-origin: top center;
+      display: block !important;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px) scale(0.96);
+      transform-origin: top right;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                  visibility 0.22s ease;
+      pointer-events: none;
       background: #0f172a !important;
       border: 1px solid rgba(255, 255, 255, 0.22) !important;
       border-radius: 8px !important;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
       z-index: 500 !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .task-dropdown-menu.menu-open {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translateY(0) scale(1) !important;
+      pointer-events: auto !important;
+    }
+
+    .task-dropdown-menu button,
+    .task-dropdown-menu a {
+      transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    }
+
+    .task-dropdown-menu button:hover,
+    .task-dropdown-menu a:hover {
+      transform: translateX(2px);
     }
 
     /* Evidence Vault filter section & pills */
@@ -1185,32 +1355,35 @@
       flex-shrink: 0;
       font-size: 12px;
       font-weight: 800;
-      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-      transform: none !important;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.18s ease,
+                  border-color 0.18s ease,
+                  color 0.18s ease,
+                  box-shadow 0.18s ease;
     }
 
     .task-check-btn:hover {
       border-color: #3b82f6;
-      background: rgba(59, 130, 246, 0.15);
-      transform: none !important;
+      background: rgba(59, 130, 246, 0.18);
+      transform: scale(1.08);
     }
 
     .task-check-btn:active {
-      transform: none !important;
+      transform: scale(0.92);
     }
 
     .task-check-btn.checked {
-      background: #10b981;
-      border-color: #10b981;
-      color: #ffffff;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-      animation: none !important;
-      transform: none !important;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      border-color: #10b981 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+      animation: checkPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     @keyframes checkPop {
-      0% { opacity: 0.8; }
-      100% { opacity: 1; }
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.18); }
+      100% { transform: scale(1); }
     }
 
     .mg-add-row {
@@ -1239,8 +1412,41 @@
 <body>
   <div id="app"></div>
   <script>
+    /* ═══════════════════════════════════════════════════════════════════════════════
+     * CAGE BREAKER (BREAK YOUR CAGE) — COMPLETE ARCHITECTURE & DEVELOPER CODE MAP
+     * ═══════════════════════════════════════════════════════════════════════════════
+     * 
+     * OVERVIEW:
+     * High-performance, offline-first Progressive Web Application (PWA) built with
+     * vanilla JavaScript, reactive local storage, and Firestore real-time cloud sync.
+     * 
+     * ARCHITECTURE & DATA LIFECYCLE:
+     * 1. State Store (`S`): Single in-memory state tree containing all identities,
+     *    tasks, subtasks, routine loops, and evidence logs.
+     * 2. Local Persistence: State automatically serializes to `localStorage` on mutation.
+     * 3. Cloud Synchronization: Real-time bi-directional sync with Firestore master document.
+     * 4. Single-Page View Engine: Root `#app` dynamically rendered by screen handlers
+     *    (`rIdentity()`, `renderPractice()`, `renderReflect()`, `renderManage()`, `renderHub()`).
+     * 
+     * MASTER TABLE OF CONTENTS & MODULE DIRECTORY:
+     * ─────────────────────────────────────────────────────────────────────────────
+     * • MODULE 01: APPLICATION CONSTANTS, PROMPTS & DEFAULTS
+     * • MODULE 02: STATE STORE, DATA SCHEMAS & SANITIZERS
+     * • MODULE 03: LOCAL PERSISTENCE, BACKUP & JSON IMPORT/EXPORT
+     * • MODULE 04: SCREEN ROUTING, HISTORY STACK & GESTURE NAVIGATION
+     * • MODULE 05: GLOBAL CLOUD SYNCHRONIZATION ENGINE (FIREBASE FIRESTORE)
+     * • MODULE 06: CUSTOM UI MODAL, PROMPT, CONFIRM & TOAST SYSTEM
+     * • MODULE 07: LIVE COUNTDOWNS, TARGET TIMERS & GOOGLE CALENDAR ENGINE
+     * • MODULE 08: ROUTINE LOOPS & RECURRING HABIT ENGINE
+     * • MODULE 09: TASK & SUBTASK MANAGEMENT, EDITING & DRAG-AND-DROP
+     * • MODULE 10: TASK IDEAS & BRAINSTORMING MODAL SYSTEM
+     * • MODULE 11: EVIDENCE VAULT, LOGGING, SEARCH & FILTER ENGINE
+     * • MODULE 12: VIEW RENDERERS (HUB, IDENTITY, PRACTICE, REFLECT, MANAGE)
+     * • MODULE 13: MAIN ROUTER, LIFECYCLE & APP INITIALIZATION
+     * ═══════════════════════════════════════════════════════════════════════════════ */
+
     // ═══════════════════════════════════════════════
-    // CONSTANTS
+    // MODULE 01: CONSTANTS & DEFAULTS
     // ═══════════════════════════════════════════════
     const SK = "cage-v3";
     const PATHS = {
@@ -1349,8 +1555,17 @@
     };
 
     // ═══════════════════════════════════════════════
-    // STATE & ROUTING
+    // MODULE 02: STATE STORE, DATA SCHEMAS & SANITIZERS
     // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Defines the centralized reactive State tree (`S`), default templates (`DEF`),
+     *   initial seed data (`EMBEDDED_INITIAL_DATA`), and strict schema validators.
+     * • Engineering Reasoning:
+     *   - `sanitizeIdentity()` & `sanitizeTask()`: Defensive programming guards against
+     *     missing array properties or legacy data structures loaded from old storage versions.
+     *   - `countAllItems()`: Integrity safeguard that detects unexpected data loss before
+     *     cloud sync or state overwrites can occur.
+     * ------------------------------------------------------------------------------- */
     const EMBEDDED_INITIAL_DATA = {"screen": "hub", "currentId": "id_1787036210798", "deletedIds": [], "identities": [{"id": "id_1785407259528", "type": "quick", "path": "habit", "behaviors": [], "feelings": [], "oldIdentity": "Not caring for my skin", "oldEvidence": ["Not drinking enough water", "Not waking up early", "Not doing any facial", "Not finding ways to care for my skin"], "antiVisionText": "A life where I will be without trying anything, a life without any confidence.", "newIdentity": "Have A Clean, Glowing, & Smooth Skin", "crackAction": "Have A Clean, Glowing, & Smooth Skin", "actions": ["Have A Clean, Glowing, & Smooth Skin"], "createdDate": "2026-07-30T10:27:39.528Z", "logs": [{"date": "2026-07-30T10:27:48.891Z", "note": "Drank amla juice", "weight": "medium", "id": "log_1787251682856_xf59zjqql"}, {"date": "2026-07-30T10:27:52.541Z", "note": "Drank one litre of water already", "weight": "medium", "id": "log_1787251682856_lugbxyadg"}, {"date": "2026-07-30T10:27:57.634Z", "note": "Applied vitamin e oil", "weight": "fine", "id": "log_1787251682856_49s9oy0z1"}, {"date": "2026-07-30T13:29:13.915Z", "note": "Bought a cream for the eyes", "weight": "strong", "id": "log_1787251682856_6u0hp8xhz"}, {"date": "2026-07-30T13:29:43.271Z", "note": "Drank 1 litre of water.", "weight": "fine", "id": "log_1787251682856_kqsqf91fd"}, {"date": "2026-07-30T13:30:20.407Z", "note": "Applied olive oil to the face", "weight": "fine", "id": "log_1787251682856_vbsaoojgd"}, {"date": "2026-07-30T15:05:09.846Z", "note": "Ate yogurt", "weight": "fine", "id": "log_1787251682856_7g4aq72sa"}, {"date": "2026-07-30T15:05:22.248Z", "note": "ate papaya", "weight": "fine", "id": "log_1787251682856_1zrbb58vd"}, {"date": "2026-07-31T02:48:14.235Z", "note": "Drank avocado juice.", "weight": "fine", "id": "log_1787251682856_t8sqfc2w9"}, {"date": "2026-07-31T02:49:15.807Z", "note": "Applied Vitamin E oil.", "weight": "fine", "id": "log_1787251682856_aj5b58zwu"}, {"date": "2026-07-31T02:49:52.008Z", "note": "Woke up early", "weight": "fine", "id": "log_1787251682856_m951cjvpl"}, {"date": "2026-07-31T04:40:27.737Z", "note": "Did and drank amla juice", "weight": "medium", "id": "log_1787251682856_vtribrk24"}, {"date": "2026-07-31T04:40:46.408Z", "note": "Drank 1 litre of water.", "weight": "medium", "id": "log_1787251682856_rioa60o0w"}, {"date": "2026-07-31T04:41:21.319Z", "note": "Washed face with ice and applied moisturizer.", "weight": "medium", "id": "log_1787251682856_nvyyn4tvj"}, {"date": "2026-07-31T04:41:47.601Z", "note": "Ordered eye cream.", "weight": "medium", "id": "log_1787251682856_bb6pdxi73"}, {"date": "2026-07-31T07:49:49.316Z", "note": "Drank milk", "weight": "fine", "id": "log_1787251682856_norovuiti"}, {"date": "2026-07-31T07:50:54.799Z", "note": "Kept cucumber on my eyes.", "weight": "fine", "id": "log_1787251682856_dyt33s92h"}, {"date": "2026-07-31T07:51:10.174Z", "note": "Applied face cream.", "weight": "fine", "id": "log_1787251682856_p2bs7wf0s"}, {"date": "2026-07-31T08:27:26.931Z", "note": "Eat dry fruits.", "weight": "fine", "id": "log_1787251682856_03pl3m2f7"}, {"date": "2026-08-03T08:06:56.118Z", "note": "did facial for pores and dark eyes", "weight": "medium", "id": "log_1787251682856_zqfc05ew9"}, {"date": "2026-08-03T08:18:31.828Z", "note": "did facial for dark circles under the eyes", "weight": "medium", "id": "log_1787251682856_mf4bzoqg1"}, {"date": "2026-08-03T08:18:49.207Z", "note": "drank water 750 ml", "weight": "medium", "id": "log_1787251682856_n1n3o99x2"}, {"date": "2026-08-03T08:28:31.184Z", "note": "drank 750 ml water", "weight": "medium", "id": "log_1787251682856_0k9zguofs"}, {"date": "2026-08-03T08:44:38.891Z", "note": "Ate dry grapes.", "weight": "fine", "id": "log_1787251682856_k6r02ajxu"}, {"date": "2026-08-03T08:45:28.429Z", "note": "Applied moisturizer and under-eye cream", "weight": "medium", "id": "log_1787251682856_5k508prr8"}, {"date": "2026-08-03T08:46:49.434Z", "note": "Washed face.", "weight": "fine", "id": "log_1787251682856_brze9q6n2"}, {"date": "2026-08-03T08:52:38.498Z", "note": "Everyone started saying that my skin is glowing and reduction in exisiting problems", "weight": "strong", "id": "log_1787251682856_mzpv1bcvd"}, {"date": "2026-08-03T08:55:33.071Z", "note": "Had yogurt.", "weight": "fine", "id": "log_1787251682856_x5i5xy5zr"}, {"date": "2026-08-03T09:22:27.337Z", "note": "Drank amla juice", "weight": "medium", "id": "log_1787251682856_gzky4uftz"}, {"date": "2026-08-03T09:22:41.696Z", "note": "Drank butter fruit juice and ate papaya", "weight": "medium", "id": "log_1787251682856_v3snuzvaj"}, {"date": "2026-08-03T09:33:06.521Z", "note": "Had a peaceful sleep", "weight": "medium", "id": "log_1787251682856_833n9h46i"}, {"date": "2026-08-03T10:18:43.948Z", "note": "I ate a little less instead of eating continuously", "weight": "fine", "id": "log_1787251682856_08mckllnc"}, {"date": "2026-08-03T13:09:09.110Z", "note": "Bought mask and used it to cover my face without any dust because of which I got appreciation from vijay bro and jerry", "weight": "strong", "id": "log_1787251682856_0pemnou9p"}, {"date": "2026-08-04T02:14:29.799Z", "note": "washed face, applied moisturizer and eye cream before sleeping.", "weight": "medium", "id": "log_1787251682856_4amz2shve"}, {"date": "2026-08-04T02:27:06.792Z", "note": "Had a peaceful sleep.", "weight": "medium", "id": "log_1787251682856_8p0q9viyx"}, {"date": "2026-08-04T05:35:08.850Z", "note": "Had bath and applied vitamin e oil", "weight": "medium", "id": "log_1787251682856_eydin81ji"}, {"date": "2026-08-04T05:36:01.256Z", "note": "Drank milk", "weight": "fine", "id": "log_1787251682856_sh3sz5kqh"}, {"date": "2026-08-04T05:36:11.337Z", "note": "Drank amla juice", "weight": "fine", "id": "log_1787251682856_xk8bshdn6"}, {"date": "2026-08-04T05:36:58.192Z", "note": "Ate papaya", "weight": "fine", "id": "log_1787251682856_w53nruj21"}, {"date": "2026-08-04T05:37:18.277Z", "note": "Ate cucumber", "weight": "fine", "id": "log_1787251682856_dwny2yguv"}, {"date": "2026-08-04T05:56:02.323Z", "note": "Drank 750 ml water", "weight": "fine", "id": "log_1787251682856_gjyky3bpw"}, {"date": "2026-08-04T06:48:18.136Z", "note": "My patu kutty Jarina told that my face tone is even", "weight": "strong", "id": "log_1787251682856_tfso84k1b"}, {"date": "2026-08-04T08:41:03.024Z", "note": "Drank coconut water and ate banana", "weight": "medium", "id": "log_1787251682856_jjvuol078"}, {"date": "2026-08-04T10:34:13.632Z", "note": "Took a nap", "weight": "medium", "id": "log_1787251682856_7sf4w0ufi"}, {"date": "2026-08-04T10:35:00.069Z", "note": "Washed face, did facial for pores, and under eye.", "weight": "strong", "id": "log_1787251682856_pgvteu7q5"}, {"date": "2026-08-04T11:01:36.229Z", "note": "Preetha and jarina told that my skin is glowing", "weight": "strong", "id": "log_1787251682856_y7cghjoaz"}, {"date": "2026-08-04T20:27:56.407Z", "note": "Jarina told that my skin is glowing", "weight": "strong", "id": "log_1787251682856_4mrapzqpf"}, {"date": "2026-08-05T06:50:29.979Z", "note": "Ate banana and papaya", "weight": "medium", "id": "log_1787251682856_7i420erb7"}, {"date": "2026-08-05T06:52:09.446Z", "note": "Drank 750 ml water and washed my face", "weight": "medium", "id": "log_1787251682856_65u1ehjhu"}, {"date": "2026-08-05T06:52:29.495Z", "note": "Applied moisturizer and under eye cream", "weight": "medium", "id": "log_1787251682856_xqk3bku6w"}, {"date": "2026-08-05T06:52:51.675Z", "note": "Wiped face with tissue", "weight": "fine", "id": "log_1787251682856_xp6ge4p7p"}, {"date": "2026-08-06T08:24:00.647Z", "note": "Had bath and applied moisturizer", "weight": "medium", "id": "log_1787251682856_1ew70tjbl"}, {"date": "2026-08-06T08:24:58.919Z", "note": "Under eye mask", "weight": "medium", "id": "log_1787251682856_v4krmqhwr"}, {"date": "2026-08-07T03:01:00.967Z", "note": "Facial", "weight": "strong", "id": "log_1787251682856_wrdeicxoc"}, {"date": "2026-08-07T11:11:08.876Z", "note": "Drank water 1 bottle", "weight": "fine", "id": "log_1787251682856_bao6yyagt"}, {"date": "2026-08-13T03:35:54.153Z", "note": "Had bath and applied moisturizer", "weight": "medium", "id": "log_1787251682856_l3bcvnkxj"}], "reflections": [{"date": "2026-08-07T03:00:08.948Z", "oldPatterns": "Eating junk\nSleeping late\nUsing phone alot", "newMoments": "Drinking water \nFacial\nDrinking amla juice", "nextCrack": "Drink 3 litres water if I'm not going out and 1.5 litres of water if I'm going out", "id": "ref_1787251682856_nj66"}, {"date": "2026-08-07T03:00:08.948Z", "oldPatterns": "Eating junk\nSleeping late\nUsing phone alot", "newMoments": "Drinking water \nFacial\nDrinking amla juice", "nextCrack": "Drink 3 litres water if I'm not going out and 1.5 litres of water if I'm going out", "id": "ref_1787252851501_7gcd"}], "habits": [{"text": "Have A Clean, Glowing, & Smooth Skin", "createdDate": "2026-07-30T10:27:39.528Z", "checks": [], "id": "habit_1787251682856_1s96"}], "goalDays": 12, "goalVision": "1. Wake up, go to the bath, and look at my skin with pride for all the efforts.\n2. Afternoon after bath or makeup, getting happy about myself for caring for my skin properly for a long time.\n3. Evening during photoshoots, looking at my skin, I will gain confidence able to smile cleanly, be able to speak with everyone with confidence, etc.", "goalActions": ["Have A Clean, Glowing, & Smooth Skin"], "goalSetDate": "2026-07-30T10:27:39.528Z", "updatedAt": "2026-08-19T16:32:46.813Z", "antiVision14Day": "I won't have my full voice; I will have no confidence; I will want to end the day as soon as possible because of discomfort and awkwardness caused by my ugly skin.", "dailyCrack": {"date": "2026-08-13", "whatItCanBe": "Drink 2 bottles of water", "howPlanning": "Fill the bottle as soon as its empty and you can drink only one bottle if you are going out", "achieved": true, "snoozedUntil": null}, "routineLoops": [], "targetEvent": "", "tasks": [], "targetEventTime": null, "achieved": true, "achievedAt": "2026-08-19T16:32:46.813Z", "targetActionLine": "", "targetEventName": "", "taggedEvent": "", "deletedLogIds": [], "deletedTaskIds": [], "deletedSubtaskIds": [], "deletedIdeaIds": [], "deletedHabitIds": [], "deletedRoutineLoopIds": [], "deletedReflectionIds": []}, {"id": "id_1787036210798", "type": "quick", "path": "habit", "behaviors": [], "feelings": [], "oldIdentity": "The version of me that hesitated and stayed in the old pattern", "oldEvidence": [], "antiVisionText": "Living beneath my potential and repeating the same excuses for another decade.", "newIdentity": "Uff, atlast I got all the documents and completed the loan process. Now I can start buying things immediately", "crackAction": "Uff, atlast the loan process is completed 😮‍💨", "actions": ["Uff, atlast the loan process is completed 😮‍💨"], "createdDate": "2026-08-18T06:56:50.798Z", "logs": [{"date": "2026-08-19T03:10:24.677Z", "note": "Took and sent the mutation record", "weight": "medium", "id": "log_1787251682856_u6m8bu6db"}, {"date": "2026-08-19T09:31:02.979Z", "subtaskId": "subtask_1787131842058_05jw", "taskId": "task_1787108935130_x1e9", "note": "Completed subtask: \"Activate for mom\" (Task: Activate repayment)", "weight": "fine", "id": "log_1787251682856_d7q1rjd5s"}, {"date": "2026-08-19T09:57:21.956Z", "taskId": "task_1787052980765_x3oc", "note": "Completed task: \"RTC (from 1980-2026 to be collected)\"", "weight": "strong", "id": "log_1787251682856_lkqd6m77s"}, {"date": "2026-08-19T09:58:48.074Z", "ideaId": "idea_1787074910200_4oc3", "subtaskId": null, "taskId": "task_1787053122470_22m4", "note": "Completed idea: \"Call to the number sent to Jarina\" (from Task: Tax paid receipt to be collected)", "weight": "fine", "id": "log_1787251682856_bimqjcebi"}, {"date": "2026-08-19T11:37:13.660Z", "ideaId": "idea_1787067039482_mq7x", "subtaskId": null, "taskId": "task_1787052955515_v839", "note": "Completed idea: \"Online sites\" (from Task: EC (from March of this year to till date to be collected))", "weight": "fine", "id": "log_1787251682856_18q359vl1"}, {"date": "2026-08-19T12:49:47.882Z", "ideaId": "idea_1787114602160_dw6w", "subtaskId": null, "taskId": "task_1787108935130_x1e9", "note": "Completed idea: \"Activate mom's\" (from Task: Activate repayment)", "weight": "fine", "id": "log_1787153864157_xdqtjzria"}, {"id": "log_1787171531613_ma4i17phf", "date": "2026-08-19T20:32:11.612Z", "note": "Completed idea: \"Landeed\" (from Task: EC (from March of this year to till date to be collected))", "weight": "fine", "taskId": "task_1787052955515_v839", "subtaskId": null, "ideaId": "idea_1787061989684_ft7c"}, {"id": "log_1787174357714_mogmypg5r", "date": "2026-08-19T21:19:17.714Z", "note": "All the tasks happened quickly today", "weight": "strong", "taskId": null, "subtaskId": null, "ideaId": null}], "reflections": [], "habits": [{"text": "Uff, atlast the loan process is completed 😮‍💨", "createdDate": "2026-08-18T06:56:50.798Z", "checks": [], "id": "habit_1787251682856_cn82"}], "goalDays": 30, "goalVision": "Morning: Waking up energized.\nAfternoon: Consistent and focused execution.\nEvening: Quiet pride in living my standard.", "goalActions": ["Uff, atlast the loan process is completed 😮‍💨"], "goalSetDate": "2026-08-18T06:56:50.798Z", "updatedAt": "2026-08-22T12:07:18.525Z", "targetEvent": "We are going to Wonderla as a family", "routineLoops": [{"id": "rl_1787058901376_xxzx", "taskId": null, "title": "Search how to get a document", "steps": ["Go to Google/Youtube/AI", "Search a document's name and add how to get it", "Check for information", "Find a new information", "Put it in practice"], "whatNext": "", "timeToResult": "Immediately", "outcome": "Pending", "effectiveness": "Medium", "iterationCount": 0, "runLogs": [], "lastExecuted": null, "flowViewMode": "linear", "createdDate": "2026-08-18T13:19:11.543Z", "updatedAt": "2026-08-19T10:04:55.748Z"}, {"id": "rl_1787075056558_v03u", "taskId": null, "title": "Documents", "steps": ["Use AI/Youtube/Google", "Use keywords to search a broker for a particular document", "Open each result", "Verify the quality of the result"], "whatNext": "", "timeToResult": "Same day", "outcome": "Pending", "effectiveness": "Very High", "iterationCount": 0, "runLogs": [], "lastExecuted": null, "flowViewMode": "linear", "createdDate": "2026-08-18T17:45:59.682Z", "updatedAt": "2026-08-19T10:04:55.748Z"}], "dailyCrack": null, "antiVision14Day": "If you continue without adding evidence for 14 days: \"The version of me that hesitated and stayed in the old pattern\" becomes 14x more deeply rooted. Your skin/habits stay neglected, snooze & hesitation compound, and you lose another 2 weeks to quiet regret.", "tasks": [{"id": "task_1787052955515_v839", "text": "EC (from March of this year to till date to be collected)", "doingNow": "", "whatNext": "", "nextTargetTime": "2026-08-21T19:35:00.000Z", "completed": false, "completedAt": null, "status": "in_process", "expanded": false, "ideas": [{"id": "idea_1787061989684_ft7c", "text": "Landeed", "completed": true, "completedAt": "2026-08-19T20:32:11.612Z", "createdDate": "2026-08-18T14:06:29.684Z"}, {"id": "idea_1787067039482_mq7x", "text": "Online sites", "completed": true, "completedAt": "2026-08-19T11:37:13.660Z", "createdDate": "2026-08-18T15:30:39.482Z"}], "subtasks": [], "createdDate": "2026-08-18T11:35:55.515Z", "updatedAt": "2026-08-20T19:35:53.865Z"}, {"id": "task_1787053122470_22m4", "text": "Tax paid receipt to be collected", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787067229347_skn0", "text": "Go to panchayat office", "completed": false, "completedAt": null, "createdDate": "2026-08-18T15:33:49.347Z"}, {"id": "idea_1787074910200_4oc3", "text": "Call to the number sent to Jarina", "completed": true, "completedAt": "2026-08-19T12:53:42.698Z", "createdDate": "2026-08-18T17:41:50.200Z"}], "subtasks": [{"id": "subtask_1787174243599_s0rh", "text": "Go to taverekere and give 500 to the panchayat accountant", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "ideas": [], "createdDate": "2026-08-19T21:17:23.599Z", "updatedAt": "2026-08-19T21:17:23.599Z"}], "createdDate": "2026-08-18T11:38:42.470Z", "updatedAt": "2026-08-18T17:41:50.200Z"}, {"id": "task_1787052980765_x3oc", "text": "RTC (from 1980-2026 to be collected)", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": true, "completedAt": "2026-08-19T09:57:21.956Z", "status": "completed", "expanded": false, "ideas": [{"id": "idea_1787074844127_18a5", "text": "Offline from known people", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:40:44.127Z"}, {"id": "idea_1787074876215_f28d", "text": "Any broker or agencies", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:41:16.215Z"}, {"id": "idea_1787074888495_u0b5", "text": "Use keywords to search for brokers on google", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:41:28.495Z"}, {"id": "idea_1787075052088_y4aa", "text": "Either online through keywords to search a broker or offline from Ramakrishnan", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:44:12.088Z"}], "subtasks": [], "createdDate": "2026-08-18T11:36:20.765Z", "updatedAt": "2026-08-18T17:44:12.088Z"}, {"id": "task_1787053098224_xij5", "text": "Court order to be collected", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787074985508_en2p", "text": "Ramakrishnan", "completed": false, "completedAt": null, "createdDate": "2026-08-18T17:43:05.508Z"}], "subtasks": [], "createdDate": "2026-08-18T11:38:18.224Z", "updatedAt": "2026-08-18T17:43:05.508Z"}, {"id": "task_1787108935130_x1e9", "text": "Activate repayment", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787114557842_5mjd", "text": "Send the form in gmail by downloading it from the portal", "completed": false, "completedAt": null, "createdDate": "2026-08-19T04:42:37.842Z"}, {"id": "idea_1787114602160_dw6w", "text": "Activate mom's", "completed": true, "completedAt": "2026-08-19T12:49:47.882Z", "createdDate": "2026-08-19T04:43:22.160Z"}], "subtasks": [], "createdDate": "2026-08-19T03:08:55.130Z", "updatedAt": "2026-08-19T03:08:55.130Z"}, {"id": "task_1787108960906_8wfu", "text": "HSBC bank account opening", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [], "subtasks": [], "createdDate": "2026-08-19T03:09:20.907Z", "updatedAt": "2026-08-19T03:09:20.907Z"}, {"id": "task_1787108973940_rsr6", "text": "Send dad's adhaar card", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787143707103_hmdg", "text": "When daddy is there ask his adhaar number and get his digital adhaar copy from online.", "completed": false, "completedAt": null, "createdDate": "2026-08-19T12:48:27.103Z"}], "subtasks": [], "createdDate": "2026-08-19T03:09:33.940Z", "updatedAt": "2026-08-19T03:09:33.940Z"}], "targetEventTime": null, "achieved": false, "achievedAt": null, "targetActionLine": "We are going to Wonderla as a family", "deletedLogIds": [], "targetEventName": "", "taggedEvent": "", "deletedTaskIds": [], "deletedSubtaskIds": [], "deletedIdeaIds": [], "deletedHabitIds": [], "deletedRoutineLoopIds": [], "deletedReflectionIds": []}]};
     const DEF = { screen: "hub", identities: [], creating: null, currentId: null, deletedIds: [] };
 
@@ -1660,6 +1875,7 @@
     window.isIdentityIncomplete = isIdentityIncomplete;
 
     window.openUpdateFormatModal = function (idId) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = (S && Array.isArray(S.identities)) ? S.identities.find(function (i) { return i && i.id === idId; }) : null;
       if (!id) return;
       var currentWho = id.newIdentity || '';
@@ -1725,11 +1941,12 @@
         id.updatedAt = new Date().toISOString();
         save(true);
         window.closeUpdateFormatModal();
-        render();
+        render(true);
       }
     };
 
     window.openQuickTagEventModal = function (idId) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = (S && Array.isArray(S.identities)) ? S.identities.find(function (i) { return i && i.id === idId; }) : null;
       if (!id) return;
       var currentTag = id.targetEventName || id.taggedEvent || id.targetActionLine || id.targetEvent || '';
@@ -1779,7 +1996,7 @@
         id.updatedAt = new Date().toISOString();
         save(true);
         window.closeQuickTagEventModal();
-        render();
+        render(true);
       }
     };
 
@@ -1815,6 +2032,18 @@
       return null;
     }
 
+    // ═══════════════════════════════════════════════
+    // MODULE 03: LOCAL PERSISTENCE, BACKUP & JSON RECOVERY ENGINE
+    // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Multi-tier local persistence using browser localStorage, rolling
+     *   timestamped historical snapshots, backup failovers, and JSON import/export.
+     * • Engineering Reasoning:
+     *   - Multiple candidate key scanning (`cage-v3`, `cage-v2`, `_backup`): Ensures zero
+     *     data loss during software upgrades or localStorage schema migrations.
+     *   - `save(immediate, isUserAction)`: Differentiates pure navigation vs data mutations
+     *     so navigating tabs doesn't pollute action timestamps or trigger unneeded cloud writes.
+     * ------------------------------------------------------------------------------- */
     function load() {
       try {
         if (isLocalhost()) {
@@ -1883,11 +2112,17 @@
         var res = bestState || { ...DEF };
         if (Array.isArray(res.identities)) {
           res.identities.forEach(function (id) {
+            id.achievedVaultExpanded = false;
             if (Array.isArray(id.tasks)) {
-              id.tasks.forEach(function (t) { t.expanded = false; });
+              id.tasks.forEach(function (t) {
+                t.expanded = false;
+                t.timerExpanded = false;
+              });
             }
           });
         }
+        window.expandedLoopRunLogs = {};
+        window.achievedVaultExpanded = false;
 
         const urlScr = getScreenFromUrl();
         if (urlScr) {
@@ -2077,6 +2312,19 @@
       } catch (e) { }
     }
 
+    // ═══════════════════════════════════════════════
+    // MODULE 04: SCREEN ROUTING, HISTORY STACK & GESTURE NAVIGATION
+    // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: SPA router managing view transitions, browser history stack (`pushState`,
+     *   `popstate`), hardware back button handling on mobile devices, swipe gestures,
+     *   and universal Escape key dismissal.
+     * • Engineering Reasoning:
+     *   - `closeTopModal()`: Cascading modal stack dismisser ensuring modals close in reverse order.
+     *   - `handleBackAction()`: Hierarchical back handler that blurs virtual keyboards first,
+     *     closes active dropdowns/modals second, and only then navigates backwards in history.
+     *   - Global `Escape` key listener intercepts keystrokes even inside inputs without losing focus.
+     * ------------------------------------------------------------------------------- */
     window.isScreenChanging = false;
     function getFadeClass() {
       return window.isScreenChanging ? 'fade-screen' : 'fade';
@@ -2089,7 +2337,7 @@
       save(false, false); // Navigation only: save locally, DO NOT push to cloud!
       try {
         if (window.location.hash !== '#' + scr) {
-          history.pushState(null, '', '#' + scr);
+          history.pushState({ cageApp: true, screen: scr }, '', '#' + scr);
         }
       } catch (e) { }
       window.scrollTo(0, 0);
@@ -2097,22 +2345,241 @@
       setTimeout(function () { window.isScreenChanging = false; }, 300);
     }
 
+    window.closeTopModal = function () {
+      var customDialog = document.getElementById('custom-dialog-overlay');
+      if (customDialog) {
+        customDialog.remove();
+        document.documentElement.classList.remove('modal-locked');
+        document.body.classList.remove('modal-locked');
+        return true;
+      }
+
+      var timePicker = document.getElementById('next-time-picker-modal');
+      if (timePicker) {
+        window.closeNextTimePickerModal();
+        return true;
+      }
+
+      var syncModal = document.getElementById('sync-modal-overlay');
+      if (syncModal) {
+        syncModal.remove();
+        return true;
+      }
+
+      var ideasModal = document.getElementById('ideas-pop-modal') || document.getElementById('ideas-modal');
+      if (ideasModal) {
+        ideasModal.remove();
+        return true;
+      }
+
+      var taskCompletionModal = document.getElementById('task-completion-modal');
+      if (taskCompletionModal) {
+        taskCompletionModal.remove();
+        return true;
+      }
+
+      var routineLoopModal = document.getElementById('routine-loop-modal');
+      if (routineLoopModal) {
+        routineLoopModal.remove();
+        return true;
+      }
+
+      var runLoopModal = document.getElementById('run-loop-modal');
+      if (runLoopModal) {
+        runLoopModal.remove();
+        return true;
+      }
+
+      var evidenceModal = document.getElementById('evidence-modal');
+      if (evidenceModal) {
+        evidenceModal.remove();
+        return true;
+      }
+
+      var customizerModal = document.getElementById('sections-customizer-modal');
+      if (customizerModal) {
+        customizerModal.remove();
+        return true;
+      }
+
+      var quickTagModal = document.getElementById('quick-tag-event-modal-container');
+      if (quickTagModal) {
+        quickTagModal.remove();
+        return true;
+      }
+
+      var genericModals = document.querySelectorAll('.modal-overlay');
+      if (genericModals && genericModals.length > 0) {
+        genericModals[genericModals.length - 1].remove();
+        document.documentElement.classList.remove('modal-locked');
+        document.body.classList.remove('modal-locked');
+        return true;
+      }
+
+      return false;
+    };
+
+    window.handleBackAction = function () {
+      // Step 1: Focused input / Virtual Keyboard -> Blur active input to dismiss keyboard
+      var activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT' || activeEl.isContentEditable)) {
+        activeEl.blur();
+        return true;
+      }
+
+      // Step 2: Open dropdown menus -> Close all dropdowns
+      var openMenus = document.querySelectorAll('.task-dropdown-menu.menu-open');
+      if (openMenus && openMenus.length > 0) {
+        window.closeAllTaskMenus();
+        return true;
+      }
+
+      // Step 3: Open modals / dialogs -> Close uppermost modal
+      if (window.closeTopModal && window.closeTopModal()) {
+        return true;
+      }
+
+      // Step 4: Expanded task / subtask / loop log drawers -> Collapse them
+      var id = getCurRef() || cur();
+      if (id && Array.isArray(id.tasks)) {
+        var hasExpanded = false;
+        id.tasks.forEach(function (t) {
+          if (t && (t.expanded || t.timerExpanded)) {
+            t.expanded = false;
+            t.timerExpanded = false;
+            hasExpanded = true;
+          }
+        });
+        if (hasExpanded) {
+          save(true);
+          render(true);
+          return true;
+        }
+      }
+
+      // Step 5: Inner Screen -> Go back to All Cards (Hub)
+      if (S && S.screen && S.screen !== 'hub') {
+        go('hub');
+        return true;
+      }
+
+      // Step 6: Root All Cards screen with nothing open -> Allow native app close / exit
+      return false;
+    };
+
     window.addEventListener('popstate', function () {
-      const scr = getScreenFromUrl() || 'hub';
-      if (S && S.screen !== scr) {
-        S.screen = scr;
-        save();
-        render();
+      var handled = window.handleBackAction();
+      if (handled) {
+        try {
+          history.pushState({ cageApp: true, screen: S ? S.screen : 'hub' }, '', '#' + (S ? S.screen : 'hub'));
+        } catch (e) { }
+      } else {
+        const scr = getScreenFromUrl() || 'hub';
+        if (S && S.screen !== scr) {
+          S.screen = scr;
+          save(false, false);
+          render();
+        }
       }
     });
+
     window.addEventListener('hashchange', function () {
       const scr = getScreenFromUrl() || 'hub';
       if (S && S.screen !== scr) {
         S.screen = scr;
-        save();
+        save(false, false);
         render();
       }
     });
+
+    // Mobile Edge Swipe Gesture Listener (Swipe from left edge to go back)
+    (function initEdgeSwipeBack() {
+      var touchStartX = 0;
+      var touchStartY = 0;
+      var touchStartTime = 0;
+
+      window.addEventListener('touchstart', function (e) {
+        if (e.touches && e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartTime = Date.now();
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', function (e) {
+        if (e.changedTouches && e.changedTouches.length === 1) {
+          var touchEndX = e.changedTouches[0].clientX;
+          var touchEndY = e.changedTouches[0].clientY;
+          var deltaX = touchEndX - touchStartX;
+          var deltaY = touchEndY - touchStartY;
+          var duration = Date.now() - touchStartTime;
+
+          // Left edge swipe: Started within 35px of screen edge, swiped right > 60px, horizontal gesture
+          if (touchStartX <= 35 && deltaX > 60 && Math.abs(deltaY) < 45 && duration < 450) {
+            window.handleBackAction();
+          }
+        }
+      }, { passive: true });
+    })();
+
+    // Global ESCAPE Key Listener (Works universally across laptop/browser, including while typing)
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc' || e.keyCode === 27) {
+        // 1. Close open modal if any exists
+        if (window.closeTopModal && window.closeTopModal()) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        // 2. Close open dropdown menus if any
+        var openMenus = document.querySelectorAll('.task-dropdown-menu.menu-open');
+        if (openMenus && openMenus.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.closeAllTaskMenus();
+          return;
+        }
+
+        // 3. Cancel any inline editing in progress
+        if (window.editingTaskId || window.editingSubtaskId || window.editingLoopId || (window.editingLogIdx !== null && window.editingLogIdx !== undefined) || (window.editingModalIdeaIdx !== null && window.editingModalIdeaIdx !== undefined)) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.editingTaskId && window.cancelEditTask) window.cancelEditTask();
+          if (window.editingSubtaskId && window.cancelEditSubtask) window.cancelEditSubtask();
+          if (window.editingLoopId && window.cancelInlineEditLoop) window.cancelInlineEditLoop();
+          if (window.editingModalIdeaIdx !== null && window.editingModalIdeaIdx !== undefined && window.cancelEditModalIdea) window.cancelEditModalIdea();
+          return;
+        }
+
+        // 4. If typing in an active input/textarea, blur it to exit input focus
+        var activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT' || activeEl.isContentEditable)) {
+          e.preventDefault();
+          activeEl.blur();
+          return;
+        }
+
+        // 5. If task cards are expanded, collapse them
+        var id = getCurRef() || cur();
+        if (id && Array.isArray(id.tasks)) {
+          var hasExpanded = false;
+          id.tasks.forEach(function (t) {
+            if (t && (t.expanded || t.timerExpanded)) {
+              t.expanded = false;
+              t.timerExpanded = false;
+              hasExpanded = true;
+            }
+          });
+          if (hasExpanded) {
+            e.preventDefault();
+            save(true);
+            render(true);
+            return;
+          }
+        }
+      }
+    }, true); // Capture phase ensures it intercepts even when typing in input/textarea
     function cur() {
       const ids = Array.isArray(S.identities) ? S.identities : [];
       const found = ids.find(i => i && i.id === S.currentId);
@@ -2141,8 +2608,11 @@
       const a = $('#app');
       if (!a) return;
       var shouldPreserve = preserveScroll !== false;
-      var sx = shouldPreserve ? (window.pageXOffset || window.scrollX || document.documentElement.scrollLeft || 0) : 0;
-      var sy = shouldPreserve ? (window.pageYOffset || window.scrollY || document.documentElement.scrollTop || 0) : 0;
+      var rawY = (window.pageYOffset || window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0);
+      var rawX = (window.pageXOffset || window.scrollX || document.documentElement.scrollLeft || document.body.scrollLeft || 0);
+
+      var sy = shouldPreserve ? (rawY > 0 ? rawY : (window._modalSavedScrollY || window._lastKnownPageScrollY || 0)) : 0;
+      var sx = shouldPreserve ? (rawX > 0 ? rawX : (window._modalSavedScrollX || window._lastKnownPageScrollX || 0)) : 0;
 
       var activeId = document.activeElement ? document.activeElement.id : null;
       var selStart = null, selEnd = null;
@@ -2171,6 +2641,9 @@
         window.scrollTo(sx, sy);
         requestAnimationFrame(function () {
           window.scrollTo(sx, sy);
+          setTimeout(function () {
+            window.scrollTo(sx, sy);
+          }, 30);
         });
       }
 
@@ -2219,12 +2692,16 @@
     });
 
     window.closeAllTaskMenus = function () {
-      var allMenus = document.querySelectorAll('.task-dropdown-menu');
+      var allMenus = document.querySelectorAll('.task-dropdown-menu.menu-open');
       allMenus.forEach(function (m) {
-        m.style.display = 'none';
-        var parentCard = m.closest('.task-card, .routine-loop-card, .section-card-frame, [data-task-card], .tasks-container');
+        m.classList.remove('menu-open');
+        var parentCard = m.closest('.task-card, .routine-loop-card, .section-card-frame, [data-task-card], .tasks-container, .icard');
         if (parentCard) {
-          parentCard.style.zIndex = '';
+          setTimeout(function () {
+            if (!m.classList.contains('menu-open')) {
+              parentCard.style.zIndex = '';
+            }
+          }, 240);
         }
       });
     };
@@ -2236,14 +2713,15 @@
       }
       var menuId = (typeof taskIdOrMenuId === 'string' && taskIdOrMenuId.indexOf('menu-') !== -1) ? taskIdOrMenuId : ('task-menu-' + taskIdOrMenuId);
       var menu = document.getElementById(menuId);
-      var wasOpen = menu && (menu.style.display !== 'none' && menu.style.display !== '');
+      var wasOpen = menu && menu.classList.contains('menu-open');
       
       // Close all menus first
       window.closeAllTaskMenus();
       
       if (menu && !wasOpen) {
-        menu.style.display = 'block';
-        var parentCard = menu.closest('.task-card, .routine-loop-card, .section-card-frame, [data-task-card], .tasks-container');
+        // Trigger smooth opening animation
+        menu.classList.add('menu-open');
+        var parentCard = menu.closest('.task-card, .routine-loop-card, .section-card-frame, [data-task-card], .tasks-container, .icard');
         if (parentCard) {
           parentCard.style.zIndex = '600';
           parentCard.style.position = 'relative';
@@ -2256,8 +2734,19 @@
     });
 
     // ═══════════════════════════════════════════════
-    // GLOBAL COMMON CLOUD SYNC ENGINE (SINGLE SHARED MASTER DATASET)
+    // MODULE 05: GLOBAL CLOUD SYNCHRONIZATION ENGINE (FIREBASE FIRESTORE)
     // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Real-time, multi-device synchronization engine powered by Firebase
+     *   Firestore, using a unified single-master document pattern (`MASTER_DOC_ID`).
+     * • Engineering Reasoning:
+     *   - `MASTER_DOC_ID = 'global_master'`: Eliminates complex document partitioning and
+     *     guarantees all devices read and write from an authoritative single source of truth.
+     *   - `mergeStates()`: Robust conflict resolution algorithm that compares timestamps,
+     *     merges array collections, preserves offline edits, and honors soft-deleted IDs.
+     *   - Snapshot listener (`onSnapshot`): Automatically updates the UI in real-time
+     *     when another device makes changes, without requiring manual page reloads.
+     * ------------------------------------------------------------------------------- */
     const FIREBASE_CONFIG = {
       projectId: "testing-project-d451a",
       appId: "1:685182492455:web:53b42ad4ea820bb6921302",
@@ -2911,6 +3400,7 @@
     }, 100);
 
     window.openSyncModal = function () {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var syncCode = getSyncCode();
       var pairingUrl = window.location.origin + window.location.pathname + '#sync=' + syncCode;
       
@@ -2983,6 +3473,7 @@
     window.closeSyncModal = function () {
       var modal = document.getElementById('sync-modal-overlay');
       if (modal) modal.remove();
+      render(true);
     };
 
     // ═══════════════════════════════════════════════
@@ -3142,15 +3633,54 @@
     // BACKGROUND SCROLL & TOUCH LOCK ENGINE
     // ═══════════════════════════════════════════════
     (function initModalScrollLockEngine() {
+      window._lastKnownPageScrollY = 0;
+      window._lastKnownPageScrollX = 0;
+      window._modalSavedScrollY = 0;
+      window._modalSavedScrollX = 0;
+
+      window.saveCurrentScrollPosition = function () {
+        var y = window.pageYOffset || window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        var x = window.pageXOffset || window.scrollX || document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+        if (y > 0) {
+          window._modalSavedScrollY = y;
+          window._lastKnownPageScrollY = y;
+        }
+        if (x > 0) {
+          window._modalSavedScrollX = x;
+          window._lastKnownPageScrollX = x;
+        }
+      };
+
+      window.addEventListener('scroll', function () {
+        var isLocked = document.body && (document.body.classList.contains('modal-locked') || document.documentElement.classList.contains('modal-locked'));
+        if (!isLocked) {
+          var y = window.pageYOffset || window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+          var x = window.pageXOffset || window.scrollX || document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+          if (y > 0) {
+            window._lastKnownPageScrollY = y;
+            window._lastKnownPageScrollX = x;
+          }
+        }
+      }, { passive: true });
+
       function updateScrollLock() {
-        var hasModal = !!document.querySelector('.modal-overlay, #sync-modal-overlay, #quick-tag-event-modal-container, #update-format-modal-container, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal');
+        var hasModal = !!document.querySelector('.modal-overlay, #sync-modal-overlay, #quick-tag-event-modal-container, #update-format-modal-container, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal, #task-completion-modal, #sections-customizer-modal, #next-time-picker-modal, #custom-dialog-overlay');
         var isLocked = document.body ? document.body.classList.contains('modal-locked') : false;
         if (hasModal && !isLocked && document.body && document.documentElement) {
+          window.saveCurrentScrollPosition();
           document.body.classList.add('modal-locked');
           document.documentElement.classList.add('modal-locked');
         } else if (!hasModal && isLocked && document.body && document.documentElement) {
           document.body.classList.remove('modal-locked');
           document.documentElement.classList.remove('modal-locked');
+          var restoreY = window._modalSavedScrollY || window._lastKnownPageScrollY || 0;
+          var restoreX = window._modalSavedScrollX || window._lastKnownPageScrollX || 0;
+          if (restoreY > 0 || restoreX > 0) {
+            window.scrollTo(restoreX, restoreY);
+            requestAnimationFrame(function () {
+              window.scrollTo(restoreX, restoreY);
+            });
+          }
         }
       }
 
@@ -3167,7 +3697,7 @@
 
       function startObserver() {
         if (document.body) {
-          observer.observe(document.body, { childList: true });
+          observer.observe(document.body, { childList: true, subtree: true });
         }
       }
 
@@ -3179,8 +3709,8 @@
 
       // Prevent background touch scrolling on mobile while modal overlay is present
       document.addEventListener('touchmove', function (e) {
-        if (document.querySelector('.modal-overlay, #sync-modal-overlay, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal')) {
-          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal, .modal-body');
+        if (document.querySelector('.modal-overlay, #sync-modal-overlay, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal, #task-completion-modal, #sections-customizer-modal, #next-time-picker-modal, #custom-dialog-overlay')) {
+          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal, .modal-body, .custom-confirm-card');
           if (!scrollable) {
             e.preventDefault();
           }
@@ -3189,8 +3719,8 @@
 
       // Prevent mouse wheel scrolling on background
       document.addEventListener('wheel', function (e) {
-        if (document.querySelector('.modal-overlay, #sync-modal-overlay, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal')) {
-          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal, .modal-body');
+        if (document.querySelector('.modal-overlay, #sync-modal-overlay, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal, #task-completion-modal, #sections-customizer-modal, #next-time-picker-modal, #custom-dialog-overlay')) {
+          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal, .modal-body, .custom-confirm-card');
           if (!scrollable) {
             e.preventDefault();
           }
@@ -3254,14 +3784,27 @@
     })();
 
     // ═══════════════════════════════════════════════
-    // CUSTOM UI DIALOG SYSTEM (NO SYSTEM ALERTS / CONFIRMS)
+    // MODULE 06: CUSTOM UI MODAL, PROMPT, CONFIRM & TOAST SYSTEM
     // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Pure CSS/JS modal dialogue replacements (`showCustomAlert`, `showCustomConfirm`,
+     *   `showCustomPrompt`, `showToast`) that replace ugly, blocking browser native alerts.
+     * • Engineering Reasoning:
+     *   - `initModalScrollLockEngine()`: Locks background document scrolling with `MutationObserver`
+     *     and records pre-modal scroll positions, ensuring zero scroll jumping when closing modals.
+     *   - `initAntiPinchZoomEngine()`: Prevents accidental browser zooming on mobile touch interactions.
+     *   - Accessible keyboard focus trap: Auto-focuses confirm button and supports Enter/Escape keys.
+     * ------------------------------------------------------------------------------- */
     window.showCustomConfirm = function (options) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var opts = (typeof options === 'string') ? { message: options } : (options || {});
       var title = opts.title || 'Confirmation Required';
       var message = opts.message || 'Are you sure you want to proceed?';
       var confirmText = opts.confirmText || 'Confirm';
       var confirmBg = opts.confirmBg || 'linear-gradient(135deg, #ef4444, #dc2626)';
+      var cancelText = opts.cancelText || 'Cancel';
+      var icon = opts.icon || '⚠️';
+      var isHtml = !!opts.isHtml;
       var onConfirm = opts.onConfirm || null;
       var onCancel = opts.onCancel || null;
 
@@ -3273,13 +3816,15 @@
       overlay.className = 'modal-overlay';
       overlay.style.cssText = 'display:flex;z-index:99999;background:rgba(5,8,18,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;';
 
+      var bodyHtml = isHtml ? message : esc(message);
+
       overlay.innerHTML = '<div class="modal-box" style="max-width:400px;width:90%;text-align:center;border:1px solid rgba(245,158,11,0.4);background:rgba(15,23,42,0.98);box-shadow:0 0 35px rgba(245,158,11,0.25);border-radius:14px;padding:24px;box-sizing:border-box">'
-        + '<div style="font-size:36px;margin-bottom:8px">⚠️</div>'
+        + '<div style="font-size:36px;margin-bottom:8px">' + icon + '</div>'
         + '<div style="font-size:16px;font-weight:800;color:#fbbf24;margin-bottom:8px;letter-spacing:0.5px">' + esc(title) + '</div>'
-        + '<p style="font-size:13px;color:#e2e8f0;margin-bottom:22px;line-height:1.5;margin-top:0">' + esc(message) + '</p>'
+        + '<div style="font-size:13px;color:#e2e8f0;margin-bottom:22px;line-height:1.5;margin-top:0">' + bodyHtml + '</div>'
         + '<div style="display:flex;justify-content:center;gap:12px;width:100%">'
-        + '<button class="b bp bs" id="dialog-confirm-btn" tabindex="1" style="flex:1;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:' + confirmBg + ';color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(239,68,68,0.3);outline:none">' + esc(confirmText) + '</button>'
-        + '<button class="bg" id="dialog-cancel-btn" tabindex="2" style="flex:1;padding:9px 16px;font-size:13px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer;outline:none">Cancel</button>'
+        + '<button class="b bp bs" id="dialog-confirm-btn" tabindex="1" style="flex:1;padding:9px 16px;font-size:13px;font-weight:700;border-radius:8px;background:' + confirmBg + ';color:#fff;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(37,99,235,0.3);outline:none">' + esc(confirmText) + '</button>'
+        + '<button class="bg" id="dialog-cancel-btn" tabindex="2" style="flex:1;padding:9px 16px;font-size:13px;border-radius:8px;border:1px solid #374151;color:#cbd5e1;cursor:pointer;outline:none">' + esc(cancelText) + '</button>'
         + '</div>'
         + '</div>';
 
@@ -3325,6 +3870,7 @@
     };
 
     window.showCustomAlert = function (message, title, icon) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var oldOverlay = document.getElementById('custom-dialog-overlay');
       if (oldOverlay) oldOverlay.remove();
 
@@ -3369,6 +3915,7 @@
     };
 
     window.showCustomPrompt = function (options, callback) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var opts = (typeof options === 'string') ? { message: options } : (options || {});
       var title = opts.title || 'Input Required';
       var message = opts.message || '';
@@ -3647,6 +4194,20 @@
     // ═══════════════════════════════════════════════
     // HUB
     // ═══════════════════════════════════════════════
+    // ═══════════════════════════════════════════════
+    // MODULE 07: LIVE COUNTDOWNS, TARGET TIMERS & GOOGLE CALENDAR ENGINE
+    // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Live second-by-second countdown tickers, color-coded time scarcity
+     *   indicators, local timezone datetime formatters, and background Google Calendar sync.
+     * • Engineering Reasoning:
+     *   - `updateLiveCountdowns()`: Runs every 1,000ms via `setInterval` and updates existing
+     *     DOM text nodes directly without triggering expensive virtual tree re-renders.
+     *   - `formatDatetimeLocal()`: Converts UTC dates to local `YYYY-MM-DDTHH:mm` format,
+     *     preventing timezone shift bugs in HTML5 `<input type="datetime-local">`.
+     *   - Google Calendar REST API integration: Creates events in the background via OAuth
+     *     tokens with `login_hint` caching to avoid repeated user prompts.
+     * ------------------------------------------------------------------------------- */
     function formatDatetimeLocal(isoStr) {
       if (!isoStr) return '';
       var d = new Date(isoStr);
@@ -3890,12 +4451,21 @@
       var statuses = [];
 
       var taskCd = getItemTimerStatus(task);
-      if (taskCd) statuses.push(taskCd);
+      if (taskCd) {
+        taskCd.source = 'task';
+        taskCd.item = task;
+        statuses.push(taskCd);
+      }
 
       if (Array.isArray(task.subtasks)) {
         task.subtasks.forEach(function (st) {
           var stCd = getItemTimerStatus(st);
-          if (stCd) statuses.push(stCd);
+          if (stCd) {
+            stCd.source = 'subtask';
+            stCd.item = st;
+            stCd.parentTask = task;
+            statuses.push(stCd);
+          }
         });
       }
 
@@ -3934,7 +4504,289 @@
       }
     }
 
+    window.showToast = function (msg, type) {
+      var oldToast = document.getElementById('cage-app-toast');
+      if (oldToast) oldToast.remove();
+
+      var toast = document.createElement('div');
+      toast.id = 'cage-app-toast';
+      var isSuccess = type !== 'error';
+      var bg = isSuccess ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+      var border = isSuccess ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+      var icon = isSuccess ? '✅' : '⚠️';
+
+      toast.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-12px);background:' + bg + ';color:#ffffff;border:1px solid ' + border + ';backdrop-filter:blur(14px);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 14px 36px rgba(0,0,0,0.55);z-index:999999;display:flex;align-items:center;gap:8px;opacity:0;transition:all 0.28s cubic-bezier(0.16, 1, 0.3, 1);pointer-events:none;';
+      toast.innerHTML = '<span style="font-size:15px">' + icon + '</span><span>' + esc(msg) + '</span>';
+
+      document.body.appendChild(toast);
+      requestAnimationFrame(function () {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+      });
+
+      setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-12px)';
+        setTimeout(function () { if (toast.parentNode) toast.remove(); }, 300);
+      }, 3500);
+    };
+
+    window.createGoogleCalendarEvent = function (opts, email) {
+      if (!opts || !opts.startIso) return;
+      var startDate = new Date(opts.startIso);
+      if (isNaN(startDate.getTime())) return;
+
+      var endDate;
+      if (opts.endIso) {
+        endDate = new Date(opts.endIso);
+      } else {
+        endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
+      }
+
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      function formatGCalDate(d) {
+        return d.getUTCFullYear()
+          + pad(d.getUTCMonth() + 1)
+          + pad(d.getUTCDate())
+          + 'T'
+          + pad(d.getUTCHours())
+          + pad(d.getUTCMinutes())
+          + pad(d.getUTCSeconds())
+          + 'Z';
+      }
+
+      var datesParam = formatGCalDate(startDate) + '/' + formatGCalDate(endDate);
+      var title = opts.title || 'Task Reminder - Cage Breaker';
+      var details = opts.details || '';
+      var userEmail = email || localStorage.getItem('gcal_account_email') || '';
+
+      var url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+        + '&text=' + encodeURIComponent(title)
+        + '&dates=' + encodeURIComponent(datesParam)
+        + '&details=' + encodeURIComponent(details)
+        + (userEmail ? '&authuser=' + encodeURIComponent(userEmail) : '');
+
+      window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    window.addEventToGoogleCalendarDirect = function (eventOpts, onComplete) {
+      if (!eventOpts || !eventOpts.startIso) return;
+      var savedToken = localStorage.getItem('gcal_access_token');
+      var savedExpiry = parseInt(localStorage.getItem('gcal_token_expiry') || '0', 10);
+      var isTokenValid = savedToken && (savedExpiry > Date.now());
+      var savedEmail = localStorage.getItem('gcal_account_email') || '';
+
+      var startDate = new Date(eventOpts.startIso);
+      var endDate = eventOpts.endIso ? new Date(eventOpts.endIso) : new Date(startDate.getTime() + 30 * 60 * 1000);
+
+      var payload = {
+        summary: eventOpts.title,
+        description: eventOpts.details || '',
+        start: {
+          dateTime: startDate.toISOString()
+        },
+        end: {
+          dateTime: endDate.toISOString()
+        },
+        reminders: {
+          useDefault: true
+        }
+      };
+
+      function sendCalendarApiRequest(token, email) {
+        fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(function (res) {
+          if (res.ok) {
+            return res.json().then(function () {
+              window.showToast('Event added to Google Calendar' + (email ? ' (' + email + ')' : '') + '!', 'success');
+              if (onComplete) onComplete(true);
+            });
+          } else {
+            return res.json().then(function (err) {
+              console.warn('GCal API error status:', res.status, err);
+              if (res.status === 401) {
+                localStorage.removeItem('gcal_access_token');
+                localStorage.removeItem('gcal_token_expiry');
+              }
+              // Gracefully complete via direct calendar link with the selected account
+              window.createGoogleCalendarEvent(eventOpts, email);
+              if (onComplete) onComplete(true);
+            });
+          }
+        })
+        .catch(function (err) {
+          console.warn('GCal network error:', err);
+          window.createGoogleCalendarEvent(eventOpts, email);
+          if (onComplete) onComplete(true);
+        });
+      }
+
+      function promptGoogleAuthAndSave(opts, cb) {
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+          var provider = new firebase.auth.GoogleAuthProvider();
+          provider.addScope('https://www.googleapis.com/auth/calendar.events');
+          
+          if (savedEmail) {
+            provider.setCustomParameters({
+              login_hint: savedEmail
+            });
+          }
+
+          firebase.auth().signInWithPopup(provider)
+            .then(function (result) {
+              var token = result.credential ? result.credential.accessToken : null;
+              var email = (result.user && result.user.email) ? result.user.email : savedEmail;
+              if (token) {
+                localStorage.setItem('gcal_access_token', token);
+                localStorage.setItem('gcal_token_expiry', String(Date.now() + 3500 * 1000));
+                if (email) localStorage.setItem('gcal_account_email', email);
+                sendCalendarApiRequest(token, email);
+              } else {
+                if (email) localStorage.setItem('gcal_account_email', email);
+                window.createGoogleCalendarEvent(opts, email);
+                if (cb) cb(true);
+              }
+            })
+            .catch(function (err) {
+              console.warn('Google Auth popup error:', err);
+              window.createGoogleCalendarEvent(opts, savedEmail);
+              if (cb) cb(true);
+            });
+        } else {
+          window.createGoogleCalendarEvent(opts, savedEmail);
+          if (cb) cb(true);
+        }
+      }
+
+      if (isTokenValid) {
+        sendCalendarApiRequest(savedToken, savedEmail);
+      } else {
+        promptGoogleAuthAndSave(eventOpts, onComplete);
+      }
+    };
+
+    window.switchGoogleAccount = function (e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      localStorage.removeItem('gcal_access_token');
+      localStorage.removeItem('gcal_token_expiry');
+      localStorage.removeItem('gcal_account_email');
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        var provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('https://www.googleapis.com/auth/calendar.events');
+        provider.setCustomParameters({ prompt: 'select_account' });
+        firebase.auth().signInWithPopup(provider).then(function (result) {
+          var token = result.credential ? result.credential.accessToken : null;
+          var email = result.user ? result.user.email : '';
+          if (token) {
+            localStorage.setItem('gcal_access_token', token);
+            localStorage.setItem('gcal_token_expiry', String(Date.now() + 3500 * 1000));
+            if (email) localStorage.setItem('gcal_account_email', email);
+            var targetAccountEl = document.getElementById('gcal-target-account');
+            if (targetAccountEl && email) targetAccountEl.textContent = email;
+            window.showToast('Connected Google account: ' + email, 'success');
+          }
+        }).catch(function (err) {
+          console.warn('Switch account error:', err);
+        });
+      }
+    };
+
+    window.createGoogleCalendarEventFromItem = function (targetType, parentTaskId, subtaskId) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+
+      var task = id.tasks.find(function (t) { return t.id === parentTaskId; });
+      if (!task) return;
+
+      var targetItem = targetType === 'subtask' ? ((task.subtasks || []).find(function (s) { return s.id === subtaskId; })) : task;
+      if (!targetItem || !targetItem.nextTargetTime) return;
+
+      var itemTitle = targetType === 'subtask' ? (targetItem.text + ' (' + task.text + ')') : task.text;
+      var detailsLines = [];
+      detailsLines.push('📌 Task: ' + task.text);
+      if (targetType === 'subtask') {
+        detailsLines.push('🔹 Subtask: ' + targetItem.text);
+      }
+      if (targetItem.whatNext) {
+        detailsLines.push('➔ What\'s Next: ' + targetItem.whatNext);
+      }
+      if (targetItem.doingNow) {
+        detailsLines.push('⚡ Current Status: ' + targetItem.doingNow);
+      }
+      var details = detailsLines.join('\n');
+
+      window.addEventToGoogleCalendarDirect({
+        title: itemTitle,
+        startIso: targetItem.nextTargetTime,
+        details: details
+      });
+    };
+
+    window.promptGoogleCalendarEvent = function (targetType, parentTaskId, subtaskId, isoStr) {
+      if (!isoStr) return;
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+
+      var task = id.tasks.find(function (t) { return t.id === parentTaskId; });
+      if (!task) return;
+
+      var targetItem = targetType === 'subtask' ? ((task.subtasks || []).find(function (s) { return s.id === subtaskId; })) : task;
+      if (!targetItem) return;
+
+      var itemTitle = targetType === 'subtask' ? (targetItem.text + ' (' + task.text + ')') : task.text;
+      var formattedDate = new Date(isoStr).toLocaleString([], {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+
+      var detailsLines = [];
+      detailsLines.push('📌 Task: ' + task.text);
+      if (targetType === 'subtask') {
+        detailsLines.push('🔹 Subtask: ' + targetItem.text);
+      }
+      if (targetItem.whatNext) {
+        detailsLines.push('➔ What\'s Next: ' + targetItem.whatNext);
+      }
+      if (targetItem.doingNow) {
+        detailsLines.push('⚡ Current Status: ' + targetItem.doingNow);
+      }
+      var details = detailsLines.join('\n');
+      var savedEmail = localStorage.getItem('gcal_account_email') || '';
+
+      var accountInfoHtml = '<div style="margin:14px 0 6px;padding:9px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;font-size:12px;color:#93c5fd;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left">'
+        + '<span>Account: <strong id="gcal-target-account" style="color:#ffffff">' + (savedEmail ? esc(savedEmail) : 'Select Google Account on click') + '</strong></span>'
+        + (savedEmail ? '<button type="button" onclick="window.switchGoogleAccount(event)" style="font-size:11px;padding:2px 8px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:5px;cursor:pointer;white-space:nowrap" title="Switch to a different Google account">Switch</button>' : '')
+        + '</div>';
+
+      showCustomConfirm({
+        title: 'Convert to Google Calendar Event?',
+        icon: '📅',
+        isHtml: true,
+        message: 'Target time set for <strong>"' + esc(itemTitle) + '"</strong> at <strong>' + esc(formattedDate) + '</strong>.'
+          + accountInfoHtml
+          + '<div style="font-size:11.5px;color:#94a3b8;margin-top:6px">Event will be added directly in the background with automatic reminders.</div>',
+        confirmText: '📅 Add to Google Calendar',
+        confirmBg: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+        cancelText: 'No, thanks',
+        onConfirm: function () {
+          window.addEventToGoogleCalendarDirect({
+            title: itemTitle,
+            startIso: isoStr,
+            details: details
+          });
+        }
+      });
+    };
+
     window.openNextTimePickerModal = function (targetType, parentTaskId, subtaskId) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
 
@@ -3945,25 +4797,41 @@
       if (!targetItem) return;
 
       var existingTime = targetItem.nextTargetTime || '';
+      var itemTitle = targetType === 'subtask' ? (targetItem.text + ' (' + task.text + ')') : task.text;
+
+      // Format in user's local timezone for <input type="datetime-local"> (YYYY-MM-DDTHH:mm)
+      var formattedInputValue = '';
+      if (existingTime) {
+        var existingDate = new Date(existingTime);
+        // Only pre-fill if existing time is in the future (if past/expired, leave blank)
+        if (!isNaN(existingDate.getTime()) && existingDate.getTime() > Date.now()) {
+          var y = existingDate.getFullYear();
+          var m = ('0' + (existingDate.getMonth() + 1)).slice(-2);
+          var d = ('0' + existingDate.getDate()).slice(-2);
+          var h = ('0' + existingDate.getHours()).slice(-2);
+          var min = ('0' + existingDate.getMinutes()).slice(-2);
+          formattedInputValue = y + '-' + m + '-' + d + 'T' + h + ':' + min;
+        }
+      }
 
       var modalHtml = '<div class="modal-overlay" id="next-time-picker-modal" onclick="if(event.target===this)closeNextTimePickerModal()">'
-        + '<div class="modal" style="max-width:380px;padding:20px">'
+        + '<div class="modal" style="max-width:390px;padding:22px">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
-        + '<h3 style="margin:0;font-size:15px;color:#fbbf24">⏳ Set Target Time</h3>'
+        + '<h3 style="margin:0;font-size:16px;color:#fbbf24;display:flex;align-items:center;gap:6px">⏳ Set Target Time</h3>'
         + '<button class="modal-close" onclick="closeNextTimePickerModal()">✕</button>'
         + '</div>'
-        + '<p style="font-size:12px;color:#cbd5e1;margin-bottom:14px">Target time for: <strong>"' + e(targetItem.whatNext || targetItem.text) + '"</strong></p>'
+        + '<p style="font-size:12.5px;color:#cbd5e1;margin-bottom:14px;line-height:1.4">Target for: <strong>"' + e(targetItem.whatNext || targetItem.text) + '"</strong></p>'
         
         + '<div style="margin-bottom:18px">'
         + '<label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Select Target Date & Time:</label>'
-        + '<input type="datetime-local" id="custom-next-time-input" value="' + (existingTime ? new Date(existingTime).toISOString().slice(0, 16) : '') + '" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px" />'
+        + '<input type="datetime-local" id="custom-next-time-input" value="' + formattedInputValue + '" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px;color-scheme:dark" />'
         + '</div>'
 
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<button class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11.5px;color:#fca5a5;padding:6px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<button type="button" class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11.5px;color:#fca5a5;padding:7px 11px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
         + '<div style="display:flex;gap:8px">'
-        + '<button class="bg" onclick="closeNextTimePickerModal()" style="font-size:11.5px;padding:6px 12px">Cancel</button>'
-        + '<button class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\')" style="font-size:11.5px;padding:6px 14px;background:#2563eb;color:#fff;font-weight:700">Save Time</button>'
+        + '<button type="button" class="bg" onclick="closeNextTimePickerModal()" style="font-size:11.5px;padding:7px 12px">Cancel</button>'
+        + '<button type="button" class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\')" style="font-size:12px;padding:7px 16px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;font-weight:700">Save Time</button>'
         + '</div>'
         + '</div>'
         + '</div>'
@@ -3982,29 +4850,9 @@
 
     window.setNextTargetTimePreset = function (targetType, parentTaskId, subtaskId, preset) {
       var isoStr = null;
-      var now = new Date();
-
-      if (preset === 'tomorrow10am') {
-        var d = new Date();
-        d.setDate(d.getDate() + 1);
-        d.setHours(10, 0, 0, 0);
-        isoStr = d.toISOString();
-      } else if (preset === '24h') {
-        isoStr = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-      } else if (preset === '48h') {
-        isoStr = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
-      } else if (preset === 'friday10am') {
-        var d = new Date();
-        d.setHours(10, 0, 0, 0);
-        var day = d.getDay();
-        var diff = (5 - day + 7) % 7;
-        if (diff === 0 && now.getHours() >= 10) diff = 7;
-        d.setDate(d.getDate() + diff);
-        isoStr = d.toISOString();
-      } else if (preset === 'clear') {
+      if (preset === 'clear') {
         isoStr = null;
       }
-
       applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr);
     };
 
@@ -4030,7 +4878,13 @@
       id.updatedAt = new Date().toISOString();
       save(true);
       closeNextTimePickerModal();
-      render();
+      render(true);
+
+      if (isoStr) {
+        setTimeout(function () {
+          window.promptGoogleCalendarEvent(targetType, parentTaskId, subtaskId, isoStr);
+        }, 120);
+      }
     }
 
     function renderTargetEventCountdown(id) {
@@ -4080,7 +4934,19 @@
     window.achievedVaultExpanded = window.achievedVaultExpanded || false;
     window.toggleAchievedVault = function () {
       window.achievedVaultExpanded = !window.achievedVaultExpanded;
-      render();
+      var wrap = document.getElementById('achieved-vault-wrapper');
+      var btn = document.getElementById('achieved-vault-toggle-btn');
+      var totalAchieved = Array.isArray(S.identities) ? S.identities.filter(function (id) { return id && id.achieved; }).length : 0;
+      if (wrap) {
+        if (window.achievedVaultExpanded) {
+          wrap.classList.add('expanded');
+        } else {
+          wrap.classList.remove('expanded');
+        }
+      }
+      if (btn) {
+        btn.textContent = window.achievedVaultExpanded ? 'Hide Vault ▴' : ('Show Vault (' + totalAchieved + ') ▾');
+      }
     };
 
     // ═══════════════════════════════════════════════
@@ -4125,7 +4991,7 @@
           </div>
           <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
             <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
-            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
+            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
               <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#4ade80'};font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">
                 ${id.achieved ? 'Re-open' : 'Achieve'}
               </button>
@@ -4168,14 +5034,16 @@
             <span style="font-size:18px">🏆</span>
             <h3 style="margin:0;font-size:15px;color:#fde047;letter-spacing:0.5px">IDENTITIES ACHIEVED (${achievedIds.length})</h3>
           </div>
-          <button class="bg" style="font-size:12px;color:#fde047;font-weight:700;border:1px solid rgba(234,179,8,0.35);padding:4px 10px;border-radius:6px;background:rgba(234,179,8,0.12)">
+          <button id="achieved-vault-toggle-btn" class="bg" style="font-size:12px;color:#fde047;font-weight:700;border:1px solid rgba(234,179,8,0.35);padding:4px 10px;border-radius:6px;background:rgba(234,179,8,0.12)">
             ${window.achievedVaultExpanded ? 'Hide Vault ▴' : 'Show Vault (' + achievedIds.length + ') ▾'}
           </button>
         </div>
-        ${window.achievedVaultExpanded ? `
-          <p class="d" style="font-size:12px;margin:10px 0 12px 0;color:#9ca3af">Completed identity standards that you have successfully mastered.</p>
-          ${achievedIds.map(renderCard).join('')}
-        ` : ''}
+        <div id="achieved-vault-wrapper" class="achieved-vault-wrapper ${window.achievedVaultExpanded ? 'expanded' : ''}">
+          <div class="achieved-vault-inner" style="padding-top:10px">
+            <p class="d" style="font-size:12px;margin:0 0 12px 0;color:#9ca3af">Completed identity standards that you have successfully mastered.</p>
+            ${achievedIds.map(renderCard).join('')}
+          </div>
+        </div>
       </div>
     ` : ''}
 
@@ -4313,8 +5181,18 @@
     };
 
     // ═══════════════════════════════════════════════
-    // BULK DELETE ENGINE (LOGS & EVIDENCE)
+    // MODULE 11: EVIDENCE VAULT, LOGGING, SEARCH & FILTER ENGINE
     // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Habit verification and proof logging engine categorized into Efforts,
+     *   Appreciations, and Realisations, featuring multi-preset time filters (Today,
+     *   7 Days, 30 Days, All Time), search indexing, streak heatmaps, and bulk deletion.
+     * • Engineering Reasoning:
+     *   - Category segmentation (`evidence`, `appreciation`, `realisation`): Reinforces
+     *     positive psychological feedback loops from different emotional angles.
+     *   - Client-side live filtering: Instant sub-millisecond search and preset filtering
+     *     without server roundtrips.
+     * ------------------------------------------------------------------------------- */
     window.bulkLogState = window.bulkLogState || { active: false, selectedIdxs: [] };
 
     window.toggleLogBulkMode = function () {
@@ -4424,7 +5302,7 @@
             + '</div>'
             + '<div style="position:relative;display:inline-block;flex-shrink:0">'
             + '<button class="bg" onclick="toggleTaskMenu(\'log-menu-' + item.realIdx + '\', event)" style="font-size:14px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-            + '<div id="log-menu-' + item.realIdx + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+            + '<div id="log-menu-' + item.realIdx + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
             + '<button onclick="event.stopPropagation();closeAllTaskMenus();startLogBulkSelect(' + item.realIdx + ')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
             + '<button onclick="event.stopPropagation();closeAllTaskMenus();editLog(' + item.realIdx + ')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
             + '<button onclick="event.stopPropagation();closeAllTaskMenus();delLog(' + item.realIdx + ')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
@@ -4559,8 +5437,19 @@
     }
 
     // ═══════════════════════════════════════════════
-    // TASK DRAG & DROP REORDERING & SECTION CUSTOMIZER
+    // MODULE 09: TASK & SUBTASK MANAGEMENT, STATUS & DRAG-AND-DROP ENGINE
     // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Comprehensive task and subtask hierarchy system supporting status workflows
+     *   (`yet_to_start`, `in_process`, `completed`), HTML5 drag-and-drop reordering, inline
+     *   micro-editing with auto-expanding textareas, time-to-result estimation, and bulk deletion.
+     * • Engineering Reasoning:
+     *   - `HTML5 Drag and Drop API`: Allows intuitive card reordering without heavy third-party libs.
+     *   - `tombstone` / `deletedTaskIds` / `deletedSubtaskIds`: Prevents deleted tasks from
+     *     reappearing when merging with older cloud snapshots from other devices.
+     *   - Auto-expanding textareas (`auto-expand-input`): Adapts height dynamically to content
+     *     without creating ugly scrollbars within task cards.
+     * ------------------------------------------------------------------------------- */
     window.taskDragFromIdx = null;
 
     window.onTaskDragStart = function (e, idx) {
@@ -4695,6 +5584,7 @@
     };
 
     window.openSectionsCustomizerModal = function () {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = getCurRef() || cur();
       if (!id) return;
       var hs = id.hiddenSections || {};
@@ -4750,6 +5640,7 @@
     window.closeSectionsCustomizerModal = function () {
       var modal = document.getElementById('sections-customizer-modal');
       if (modal) modal.remove();
+      render(true);
     };
 
     window.switchIdentity = function (id) {
@@ -4956,6 +5847,7 @@
     };
 
     window.openTaskCompletionModal = function (taskId) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = cur();
       if (!id || !id.tasks) return;
       var task = id.tasks.find(function (t) { return t.id === taskId; });
@@ -5017,6 +5909,7 @@
     window.closeTaskCompletionModal = function () {
       var modal = document.getElementById('task-completion-modal');
       if (modal) modal.remove();
+      render(true);
     };
 
     window.executeTaskCompletion = function (taskId) {
@@ -5065,7 +5958,6 @@
 
       save(true);
       closeTaskCompletionModal();
-      render();
     };
 
     window.toggleTaskExpanded = function (taskId) {
@@ -5074,7 +5966,32 @@
       var task = id.tasks.find(function (t) { return t.id === taskId; });
       if (!task) return;
 
-      task.expanded = !task.expanded;
+      var willExpand = !task.expanded;
+
+      // Accordion mode: Close all other tasks when expanding one
+      if (willExpand) {
+        id.tasks.forEach(function (t) {
+          if (t.id !== taskId) {
+            t.expanded = false;
+            t.timerExpanded = false;
+            var otherCard = document.querySelector('[data-task-id="' + t.id + '"]');
+            if (otherCard) {
+              otherCard.classList.remove('task-card-timer-expanded');
+              var otherPill = otherCard.querySelector('.subtasks-badge-pill');
+              if (otherPill) {
+                otherPill.style.color = '#94a3b8';
+                otherPill.style.background = 'rgba(255,255,255,0.05)';
+                otherPill.style.borderColor = 'rgba(255,255,255,0.1)';
+                otherPill.title = 'Click to expand subtasks';
+              }
+            }
+            var otherWrapper = document.getElementById('subtasks-wrapper-' + t.id);
+            if (otherWrapper) otherWrapper.classList.remove('expanded');
+          }
+        });
+      }
+
+      task.expanded = willExpand;
       task.updatedAt = new Date().toISOString();
       id.updatedAt = new Date().toISOString();
       save(true);
@@ -5117,7 +6034,32 @@
       var task = id.tasks.find(function (t) { return t.id === taskId; });
       if (!task) return;
 
-      task.timerExpanded = !task.timerExpanded;
+      var willExpand = !task.timerExpanded;
+
+      // Accordion mode: Close all other tasks when expanding one
+      if (willExpand) {
+        id.tasks.forEach(function (t) {
+          if (t.id !== taskId) {
+            t.timerExpanded = false;
+            t.expanded = false;
+            var otherCard = document.querySelector('[data-task-id="' + t.id + '"]');
+            if (otherCard) {
+              otherCard.classList.remove('task-card-timer-expanded');
+              var otherPill = otherCard.querySelector('.subtasks-badge-pill');
+              if (otherPill) {
+                otherPill.style.color = '#94a3b8';
+                otherPill.style.background = 'rgba(255,255,255,0.05)';
+                otherPill.style.borderColor = 'rgba(255,255,255,0.1)';
+                otherPill.title = 'Click to expand subtasks';
+              }
+            }
+            var otherWrapper = document.getElementById('subtasks-wrapper-' + t.id);
+            if (otherWrapper) otherWrapper.classList.remove('expanded');
+          }
+        });
+      }
+
+      task.timerExpanded = willExpand;
       task.updatedAt = new Date().toISOString();
       id.updatedAt = new Date().toISOString();
       save(true);
@@ -5164,7 +6106,7 @@
       html += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px">' + esc(displayLabel) + '</span>';
       html += '<span style="font-size:9px;opacity:0.7;margin-left:2px">▾</span>';
       html += '</button>';
-      html += '<div id="' + menuId + '" class="task-dropdown-menu" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.85);z-index:150;width:100%;min-width:100%;box-sizing:border-box;overflow:hidden;padding:3px">';
+      html += '<div id="' + menuId + '" class="task-dropdown-menu" style="position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.85);z-index:150;width:100%;min-width:100%;box-sizing:border-box;overflow:hidden;padding:3px;transform-origin:top center">';
       
       // Option 1: Immediately
       html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();setTimeToResultDirect(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\', \'Immediately\')" style="width:100%;text-align:center;padding:7px 8px;background:' + (!isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (!isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
@@ -5609,6 +6551,7 @@
     window.editingModalIdeaId = null;
 
     window.openIdeasModal = function (targetType, taskId, subtaskId) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       window.activeIdeasTarget = { targetType: targetType, taskId: taskId, subtaskId: subtaskId };
       window.editingModalIdeaId = null;
       renderIdeasModalContent();
@@ -5619,7 +6562,7 @@
       window.editingModalIdeaId = null;
       var modal = document.getElementById('ideas-pop-modal');
       if (modal) modal.remove();
-      render();
+      render(true);
     };
 
     function getActiveIdeasTargetObj() {
@@ -6119,9 +7062,9 @@
               var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
               var subtaskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isSubBulkSelected ? 'checked' : '') + ' onchange="toggleSubtaskBulkSelect(\'' + task.id + '\', \'' + st.id + '\', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select subtask for bulk delete" />') : '';
 
-              var subIdeasButtonHtml = (isSubCompleted && stTotalIdeas === 0) ? '' : (
-                '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
-                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 || isSubDone ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
+              var subIdeasButtonHtml = isSubCompleted ? '' : (
+                '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
+                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
                 + '</button>'
               );
 
@@ -6146,7 +7089,7 @@
                 + '</select>'
                 + '<div style="position:relative;display:inline-block">'
                 + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:14px;line-height:1;padding:3px 7px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
@@ -6216,22 +7159,60 @@
       var collapsedTimerHtml = '';
       if (hasActiveTimer) {
         var timerDisplayText = taskHighestCd.timerText || taskHighestCd.text;
+        var activeItem = (taskHighestCd && taskHighestCd.item) || task;
+        var isSubActive = taskHighestCd && taskHighestCd.source === 'subtask' && taskHighestCd.item;
+
+        var curDoingNow = (isSubActive ? activeItem.doingNow : task.doingNow) || (task.doingNow || '');
+        var curWhatNext = (isSubActive ? activeItem.whatNext : task.whatNext) || (task.whatNext || '');
+
+        var statusUpdateCall = isSubActive
+          ? 'updateSubtaskDoingNow(\'' + task.id + '\', \'' + activeItem.id + '\', this.value)'
+          : 'updateTaskDoingNow(\'' + task.id + '\', this.value)';
+        var nextUpdateCall = isSubActive
+          ? 'updateSubtaskWhatNext(\'' + task.id + '\', \'' + activeItem.id + '\', this.value)'
+          : 'updateTaskWhatNext(\'' + task.id + '\', this.value)';
+
+        var subtaskContextHtml = isSubActive ? (
+          '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);padding:3px 10px;border-radius:12px;font-size:11.5px;color:#93c5fd;font-weight:600;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+          + '<span style="font-size:12px">🎯 Subtask:</span> ' + esc(activeItem.text)
+          + '</div>'
+        ) : '';
+
+        var timerStatusAndNextHtml = '<div onclick="event.stopPropagation()" style="width:100%;max-width:100%;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.09);display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;text-align:left;box-sizing:border-box">'
+          + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:160px;background:' + mainStatusBg + ';padding:5px 9px;border-radius:8px;border:1px solid ' + mainStatusBorder + ';box-sizing:border-box">'
+          + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Status:</span>'
+          + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="Current status..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);' + statusUpdateCall + '" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(curDoingNow) + '</textarea>'
+          + '</div>'
+          + '<span style="color:#64748b;font-size:12px;font-weight:700;align-self:flex-start;margin-top:6px">➔</span>'
+          + '<div style="display:flex;align-items:flex-start;gap:6px;flex:1 1 180px;min-width:160px;background:' + mainNextBg + ';padding:5px 9px;border-radius:8px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box">'
+          + '<span style="font-size:11.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Next:</span>'
+          + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="What next..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);' + nextUpdateCall + '" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(curWhatNext) + '</textarea>'
+          + '</div>'
+          + '</div>';
+
+        var activeTargetType = (taskHighestCd && taskHighestCd.source === 'subtask') ? 'subtask' : 'task';
+        var activeParentTaskId = task.id;
+        var activeSubtaskId = (taskHighestCd && taskHighestCd.source === 'subtask' && taskHighestCd.item) ? taskHighestCd.item.id : '';
+        var timerClickHandler = "event.stopPropagation();openNextTimePickerModal('" + activeTargetType + "', '" + activeParentTaskId + "', '" + activeSubtaskId + "')";
+
         collapsedTimerHtml = '<div class="task-card-collapsed-timer" onclick="toggleTimerCardExpand(\'' + task.id + '\', event)" style="cursor:pointer">'
           + '<div class="task-card-collapsed-timer-inner">'
           + '<span class="task-title" style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3">' + e(task.text) + '</span>'
-          + '<div style="display:flex;align-items:center;justify-content:center;margin-top:6px">'
-          + '<span class="live-task-timer-text" data-task-id="' + task.id + '" style="font-size:22px;font-weight:800;color:' + taskHighestCd.color + ';text-shadow:0 0 18px ' + taskHighestCd.glow + '">' + timerDisplayText + '</span>'
+          + subtaskContextHtml
+          + '<div style="display:flex;align-items:center;justify-content:center;margin-top:4px">'
+          + '<span class="live-task-timer-text" data-task-id="' + task.id + '" onclick="' + timerClickHandler + '" title="Click to edit or change target time" style="font-size:22px;font-weight:800;color:' + taskHighestCd.color + ';text-shadow:0 0 18px ' + taskHighestCd.glow + ';cursor:pointer">' + timerDisplayText + '</span>'
           + '</div>'
-          + (subtasks.length > 0 ? '<span class="subtasks-badge-pill" style="font-size:11px;color:#94a3b8;margin-top:4px;cursor:pointer;display:inline-block" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks">' + subtasksDoneCount + '/' + subtasks.length + ' subtasks</span>' : '')
+          + timerStatusAndNextHtml
+          + (subtasks.length > 0 ? ('<div style="display:flex;align-items:center;justify-content:flex-start;width:100%;margin-top:4px;font-size:11px;color:#94a3b8"><span class="subtasks-badge-pill" style="font-size:11px;color:#94a3b8;cursor:pointer;display:inline-block" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks">' + subtasksDoneCount + '/' + subtasks.length + ' subtasks</span></div>') : '')
           + '</div>'
           + '</div>';
       }
 
       var timerCardClass = hasActiveTimer ? (' task-card-has-timer' + (isTimerExpanded ? ' task-card-timer-expanded' : '')) : '';
 
-      var mainIdeasButtonHtml = (isTaskCompleted && mainTotalIdeas === 0) ? '' : (
-        '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
-        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 || task.completed ? mainTotalIdeas : (mainActiveIdeas + '/' + mainTotalIdeas)) : '+')
+      var mainIdeasButtonHtml = (isTaskCompleted || task.completed || curStatus === 'completed') ? '' : (
+        '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
+        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? mainTotalIdeas : (mainActiveIdeas + '/' + mainTotalIdeas)) : '+')
         + '</button>'
       );
 
@@ -6264,7 +7245,7 @@
         + '</select>'
         + '<div style="position:relative;display:inline-block">'
         + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:15px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-        + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+        + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
@@ -6488,6 +7469,20 @@
         + '</div>';
     }
 
+    // ═══════════════════════════════════════════════
+    // MODULE 12: VIEW RENDERERS (IDENTITY HUB, WORKSPACE, PRACTICE, REFLECT, MANAGE)
+    // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Component rendering pipelines generating the complete visual interface for:
+     *   - Identity Hub (`rHub`): Multi-card dashboard showing all active/achieved identities.
+     *   - Identity Workspace (`rIdentity` / `renderIdentityView`): Hero identity cards, target countdowns, tasks.
+     *   - Daily Practice (`rPractice`): Daily friction journaling and anti-vision contrast.
+     *   - Reflection Vault (`rReflect`): Weekly transformation retrospectives and pattern audits.
+     *   - Identity Settings (`rManage`): Edit identity wording, goals, and deletion.
+     * • Engineering Reasoning:
+     *   - Pure template-literal string generation: Maximum execution speed with zero virtual DOM overhead.
+     *   - Safe escaping (`esc()` / `e()`): Prevents XSS injection from user input in notes and names.
+     * ------------------------------------------------------------------------------- */
     function renderIdentityView(a, id) {
       if (!id) return go('hub');
       var counts = getLogCounts(id);
@@ -7398,6 +8393,7 @@
     };
 
     window.openEvidenceModal = function () {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = cur();
       if (!id) return;
       var modal = document.getElementById('evidence-modal');
@@ -7662,6 +8658,7 @@
       if (modal) {
         modal.remove();
       }
+      render(true);
     };
 
     window.delModalLog = function (i) {
@@ -8485,11 +9482,43 @@
       return '<span class="meta-pill meta-time">⏱️ ' + e(time) + '</span>';
     }
 
-    window.expandedLoopRunLogs = window.expandedLoopRunLogs || {};
+    window.expandedLoopRunLogs = {};
     window.toggleLoopRunLogs = function (loopId) {
       window.expandedLoopRunLogs = window.expandedLoopRunLogs || {};
-      window.expandedLoopRunLogs[loopId] = !window.expandedLoopRunLogs[loopId];
-      render();
+      var willExpand = !window.expandedLoopRunLogs[loopId];
+      
+      // Close all other open loop log drawers smoothly
+      var curId = getCurRef() || cur();
+      if (curId && Array.isArray(curId.routineLoops)) {
+        curId.routineLoops.forEach(function (rl) {
+          if (rl.id !== loopId) {
+            window.expandedLoopRunLogs[rl.id] = false;
+            var otherWrap = document.getElementById('loop-logs-wrapper-' + rl.id);
+            if (otherWrap) otherWrap.classList.remove('expanded');
+            var otherBtn = document.getElementById('loop-logs-btn-' + rl.id);
+            if (otherBtn) {
+              var count = Array.isArray(rl.runLogs) ? rl.runLogs.length : 0;
+              otherBtn.innerHTML = count + ' Logged Run' + (count === 1 ? '' : 's') + ' ▾';
+            }
+          }
+        });
+      }
+
+      window.expandedLoopRunLogs[loopId] = willExpand;
+      var wrap = document.getElementById('loop-logs-wrapper-' + loopId);
+      var btn = document.getElementById('loop-logs-btn-' + loopId);
+      if (wrap) {
+        if (willExpand) {
+          wrap.classList.add('expanded');
+        } else {
+          wrap.classList.remove('expanded');
+        }
+      }
+      if (btn && curId) {
+        var currentLoop = curId.routineLoops.find(function (rl) { return rl.id === loopId; });
+        var count = (currentLoop && Array.isArray(currentLoop.runLogs)) ? currentLoop.runLogs.length : 0;
+        btn.innerHTML = count + ' Logged Run' + (count === 1 ? '' : 's') + ' ' + (willExpand ? '▲' : '▾');
+      }
     };
 
     function renderLoopFlowDiagram(steps, loopId, isTaskCompleted) {
@@ -8723,29 +9752,32 @@
       var runLogs = Array.isArray(rl.runLogs) ? rl.runLogs : [];
       var isLogsExpanded = !!(window.expandedLoopRunLogs && window.expandedLoopRunLogs[rl.id]);
       var runLogsButtonHtml = runLogs.length > 0 ? (
-        '<button class="bg" onclick="toggleLoopRunLogs(\'' + rl.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid rgba(245,158,11,0.35);color:#fbbf24;border-radius:6px;display:inline-flex;align-items:center;gap:4px" title="View past run logs">'
+        '<button id="loop-logs-btn-' + rl.id + '" class="bg" onclick="toggleLoopRunLogs(\'' + rl.id + '\')" style="font-size:11px;padding:3px 8px;border:1px solid rgba(245,158,11,0.35);color:#fbbf24;border-radius:6px;display:inline-flex;align-items:center;gap:4px" title="View past run logs">'
         + '' + runLogs.length + ' Logged Run' + (runLogs.length === 1 ? '' : 's') + ' ' + (isLogsExpanded ? '▲' : '▾')
         + '</button>'
       ) : '';
 
-      var runLogsDrawerHtml = '';
-      if (runLogs.length > 0 && isLogsExpanded) {
-        runLogsDrawerHtml = '<div style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.9);border:1px solid rgba(245,158,11,0.25);border-radius:10px;display:flex;flex-direction:column;gap:8px">'
-          + '<div style="font-size:11px;font-weight:800;color:#fbbf24;letter-spacing:0.8px;margin-bottom:2px">LOGGED RUN HISTORY (' + runLogs.length + ' RUN' + (runLogs.length === 1 ? '' : 'S') + '):</div>'
-          + runLogs.map(function (log) {
-              return '<div style="font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">'
-                + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-                + '<span style="color:#fbbf24;font-weight:700">Cycle #' + log.cycle + '</span>'
-                + '<span style="color:#94a3b8;font-size:11px">' + timeAgo(log.date) + '</span>'
-                + (log.outcome ? renderOutcomeBadge(log.outcome, log.cycle) : '')
-                + (log.whatNext ? '<span style="color:#fef3c7;font-style:italic">"Next: ' + e(log.whatNext) + '"</span>' : '')
-                + (log.note ? '<span style="color:#d1d5db;font-size:11px"> — ' + e(log.note) + '</span>' : '')
-                + '</div>'
-                + '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px">+2 pts logged</span>'
-                + '</div>';
-            }).join('')
-          + '</div>';
-      }
+      var runLogsDrawerHtml = runLogs.length > 0 ? (
+        '<div id="loop-logs-wrapper-' + rl.id + '" class="loop-run-logs-wrapper ' + (isLogsExpanded ? 'expanded' : '') + '">'
+        + '<div class="loop-run-logs-inner">'
+        + '<div style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.9);border:1px solid rgba(245,158,11,0.25);border-radius:10px;display:flex;flex-direction:column;gap:8px">'
+        + '<div style="font-size:11px;font-weight:800;color:#fbbf24;letter-spacing:0.8px;margin-bottom:2px">LOGGED RUN HISTORY (' + runLogs.length + ' RUN' + (runLogs.length === 1 ? '' : 'S') + '):</div>'
+        + runLogs.map(function (log) {
+            return '<div style="font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">'
+              + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+              + '<span style="color:#fbbf24;font-weight:700">Cycle #' + log.cycle + '</span>'
+              + '<span style="color:#94a3b8;font-size:11px">' + timeAgo(log.date) + '</span>'
+              + (log.outcome ? renderOutcomeBadge(log.outcome, log.cycle) : '')
+              + (log.whatNext ? '<span style="color:#fef3c7;font-style:italic">"Next: ' + e(log.whatNext) + '"</span>' : '')
+              + (log.note ? '<span style="color:#d1d5db;font-size:11px"> — ' + e(log.note) + '</span>' : '')
+              + '</div>'
+              + '<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.15);padding:2px 6px;border-radius:4px">+2 pts logged</span>'
+              + '</div>';
+          }).join('')
+        + '</div>'
+        + '</div>'
+        + '</div>'
+      ) : '';
 
       return '<div class="routine-loop-card" id="loop-card-' + rl.id + '">'
         + '<div class="routine-loop-top" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
@@ -8754,7 +9786,7 @@
         + runLogsButtonHtml
         + '<div style="position:relative;display:inline-block">'
         + '<button class="bg" onclick="toggleTaskMenu(\'loop-menu-' + rl.id + '\', event)" style="font-size:15px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-        + '<div id="loop-menu-' + rl.id + '" class="task-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+        + '<div id="loop-menu-' + rl.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();startInlineEditLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteRoutineLoop(\'' + rl.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
         + '</div>'
@@ -8845,6 +9877,7 @@
     window.modalLoopDraft = null;
 
     window.openRoutineLoopModal = function (loopId) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       var id = cur();
       if (!id) return;
       if (!id.routineLoops) id.routineLoops = [];
@@ -8890,6 +9923,7 @@
       var modal = document.getElementById('routine-loop-modal');
       if (modal) modal.remove();
       window.modalLoopDraft = null;
+      render(true);
     };
 
     window.addModalLoopStep = function () {
@@ -9080,7 +10114,6 @@
       }
 
       save(true);
-      render();
       closeRoutineLoopModal();
     };
 
@@ -9102,6 +10135,7 @@
     };
 
     window.openLogRunModal = function (loopId, skipAnimation) {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
       if (!skipAnimation) {
         window.triggerLoopRunAnimation(loopId, function () {
           window.openLogRunModal(loopId, true);
@@ -9223,7 +10257,7 @@
         weight: 'medium'
       });
 
-      save();
+      save(true);
       closeLogRunModal();
 
       var card = document.getElementById('loop-card-' + loopId);
@@ -9232,10 +10266,10 @@
         card.style.boxShadow = '0 0 30px rgba(74,222,128,0.7), 0 0 10px #4ede80';
         card.style.borderColor = '#4ede80';
         setTimeout(function () {
-          render();
+          render(true);
         }, 500);
       } else {
-        render();
+        render(true);
       }
     };
 
@@ -9334,7 +10368,16 @@
       });
     }
 
-    // 🚀 INITIAL BOOTSTRAP RENDER
+    // ═══════════════════════════════════════════════
+    // MODULE 13: MAIN ROUTER, LIFECYCLE & APP INITIALIZATION
+    // ═══════════════════════════════════════════════
+    /* -------------------------------------------------------------------------------
+     * • Purpose: Final application bootstrap sequence that handles DOM ready events,
+     *   clears outdated service worker caches, boots real-time cloud listeners, and renders.
+     * • Engineering Reasoning:
+     *   - `DOMContentLoaded` check: Ensures DOM elements are fully constructed before
+     *     initial mount, while providing immediate fallback if script runs post-DOMContentLoaded.
+     * ------------------------------------------------------------------------------- */
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () {
         render();
