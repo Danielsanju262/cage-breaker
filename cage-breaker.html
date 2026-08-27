@@ -4663,8 +4663,10 @@
         + (userEmail ? '&authuser=' + encodeURIComponent(userEmail) : '');
 
       var win = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!win) {
-        window.location.href = url;
+      if (win) {
+        try { win.focus(); } catch (e) {}
+      } else {
+        window.showToast('Event link generated. Please allow popups if the window was blocked.', 'info');
       }
     };
 
@@ -4985,7 +4987,7 @@
         
         + '<div style="margin-bottom:14px">'
         + '<label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Select Target Date & Time:</label>'
-        + '<input type="datetime-local" id="custom-next-time-input" min="' + minFormatted + '" value="' + formattedInputValue + '" oninput="onCustomNextTimeInputChange(this)" onchange="onCustomNextTimeInputChange(this)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px;color-scheme:dark" />'
+        + '<input type="datetime-local" id="custom-next-time-input" min="' + minFormatted + '" value="' + formattedInputValue + '" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px;color-scheme:dark" />'
         + '</div>'
 
         // Prominent Google Calendar account display
@@ -5013,22 +5015,6 @@
       if (existingModal) existingModal.remove();
 
       document.body.insertAdjacentHTML('beforeend', modalHtml);
-    };
-
-    window.onCustomNextTimeInputChange = function (input) {
-      if (!input || !input.value) return;
-      var val = input.value;
-      if (val && val.length >= 16) {
-        var chosen = new Date(val);
-        if (!isNaN(chosen.getTime())) {
-          // Immediately close the browser native date/time dropdown popover
-          input.blur();
-          var primaryBtn = document.getElementById('save-time-gcal-btn');
-          if (primaryBtn) {
-            primaryBtn.focus();
-          }
-        }
-      }
     };
 
     window.closeNextTimePickerModal = function () {
