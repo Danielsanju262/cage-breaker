@@ -1665,7 +1665,7 @@
         doingNow: typeof st.doingNow === 'string' ? st.doingNow.trim() : '',
         whatNext: typeof st.whatNext === 'string' ? st.whatNext.trim() : '',
         nextTargetTime: st.nextTargetTime || st.nextDueTime || null,
-        timeToResult: st.timeToResult || 'Immediately',
+        timeToResult: st.timeToResult || 'Not yet decided',
         completed: isSubComp,
         completedAt: st.completedAt || null,
         status: subStatus,
@@ -1714,7 +1714,7 @@
         doingNow: typeof t.doingNow === 'string' ? t.doingNow.trim() : '',
         whatNext: typeof t.whatNext === 'string' ? t.whatNext.trim() : '',
         nextTargetTime: t.nextTargetTime || t.nextDueTime || null,
-        timeToResult: t.timeToResult || 'Immediately',
+        timeToResult: t.timeToResult || 'Not yet decided',
         completed: isComp,
         completedAt: t.completedAt || null,
         status: status,
@@ -5719,7 +5719,7 @@
         completed: false,
         completedAt: null,
         status: 'yet_to_start',
-        timeToResult: 'Immediately',
+        timeToResult: 'Not yet decided',
         expanded: false,
         ideas: [],
         createdDate: new Date().toISOString(),
@@ -6094,26 +6094,33 @@
     };
 
     window.renderTimeToResultSelect = function (targetType, taskId, subtaskId, currentVal, customStyle) {
-      currentVal = currentVal || 'Immediately';
-      var isCustom = currentVal !== 'Immediately';
+      currentVal = currentVal || 'Not yet decided';
+      var isNotDecided = (currentVal === 'Not yet decided' || currentVal === 'not_yet_decided');
+      var isImmediately = (currentVal === 'Immediately');
+      var isCustom = !isNotDecided && !isImmediately;
       var menuId = 'ttr-menu-' + targetType + '-' + taskId + (subtaskId ? ('-' + subtaskId) : '');
-      var displayLabel = isCustom ? currentVal : 'Immediately';
-      var defaultStyle = 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:' + (isCustom ? '#93c5fd' : '#cbd5e1') + ';cursor:pointer;width:auto;max-width:140px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;gap:4px;line-height:1.2;';
-      var styleStr = customStyle ? (customStyle + ';max-width:140px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;') : defaultStyle;
+      var displayLabel = isNotDecided ? 'Not yet decided' : (isImmediately ? 'Immediately' : currentVal);
+      var defaultStyle = 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:' + (isCustom ? '#93c5fd' : '#cbd5e1') + ';cursor:pointer;width:auto;max-width:155px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;gap:4px;line-height:1.2;';
+      var styleStr = customStyle ? (customStyle + ';max-width:155px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;') : defaultStyle;
 
       var html = '<div style="position:relative;display:inline-block;flex-shrink:0">';
-      html += '<button type="button" class="bg" onclick="toggleTaskMenu(\'' + menuId + '\', event)" style="' + styleStr + '" title="Time to result: ' + esc(currentVal) + '">';
-      html += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px">' + esc(displayLabel) + '</span>';
+      html += '<button type="button" class="bg" onclick="toggleTaskMenu(\'' + menuId + '\', event)" style="' + styleStr + '" title="Time to result: ' + esc(displayLabel) + '">';
+      html += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:125px">' + esc(displayLabel) + '</span>';
       html += '<span style="font-size:9px;opacity:0.7;margin-left:2px">▾</span>';
       html += '</button>';
-      html += '<div id="' + menuId + '" class="task-dropdown-menu" style="position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.85);z-index:150;width:100%;min-width:100%;box-sizing:border-box;overflow:hidden;padding:3px;transform-origin:top center">';
+      html += '<div id="' + menuId + '" class="task-dropdown-menu" style="position:absolute;left:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.85);z-index:150;min-width:130px;box-sizing:border-box;overflow:hidden;padding:3px;transform-origin:top center">';
       
-      // Option 1: Immediately
-      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();setTimeToResultDirect(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\', \'Immediately\')" style="width:100%;text-align:center;padding:7px 8px;background:' + (!isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (!isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
+      // Option 1: Not yet decided (Default)
+      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();setTimeToResultDirect(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\', \'Not yet decided\')" style="width:100%;text-align:center;padding:7px 8px;margin-bottom:2px;background:' + (isNotDecided ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (isNotDecided ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
+      html += 'Not yet decided';
+      html += '</button>';
+
+      // Option 2: Immediately
+      html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();setTimeToResultDirect(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\', \'Immediately\')" style="width:100%;text-align:center;padding:7px 8px;margin-bottom:2px;background:' + (isImmediately ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (isImmediately ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
       html += 'Immediately';
       html += '</button>';
 
-      // Option 2: Custom
+      // Option 3: Custom
       html += '<button type="button" onclick="event.stopPropagation();closeAllTaskMenus();openCustomTimeToResultPrompt(\'' + targetType + '\', \'' + taskId + '\', \'' + (subtaskId || '') + '\')" style="width:100%;text-align:center;padding:7px 8px;background:' + (isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + ';border:none;border-radius:5px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer;display:block;box-sizing:border-box" onmouseenter="this.style.background=\'rgba(59,130,246,0.35)\'" onmouseleave="this.style.background=\'' + (isCustom ? '#2563eb' : 'rgba(255,255,255,0.06)') + '\'">';
       html += 'Custom';
       html += '</button>';
@@ -6131,7 +6138,7 @@
       var targetItem = targetType === 'subtask' ? ((task.subtasks || []).find(function (s) { return s.id === subtaskId; })) : task;
       if (!targetItem) return;
 
-      targetItem.timeToResult = val || 'Immediately';
+      targetItem.timeToResult = val || 'Not yet decided';
       targetItem.updatedAt = new Date().toISOString();
       id.updatedAt = new Date().toISOString();
       save(true);
@@ -6147,7 +6154,7 @@
       if (!targetItem) return;
 
       var currentVal = targetItem.timeToResult || '';
-      var defaultPromptVal = (currentVal && currentVal !== 'Immediately') ? currentVal : '';
+      var defaultPromptVal = (currentVal && currentVal !== 'Immediately' && currentVal !== 'Not yet decided') ? currentVal : '';
 
       showCustomPrompt({
         title: 'Custom Time to Result',
@@ -6165,7 +6172,7 @@
           if (inputVal !== null && inputVal.trim() !== '') {
             freshTarget.timeToResult = inputVal.trim();
           } else {
-            freshTarget.timeToResult = 'Immediately';
+            freshTarget.timeToResult = 'Not yet decided';
           }
           freshTarget.updatedAt = new Date().toISOString();
           freshId.updatedAt = new Date().toISOString();
@@ -6181,6 +6188,8 @@
     window.handleTimeToResultChange = function (targetType, taskId, subtaskId, selectedValue) {
       if (selectedValue === 'Immediately') {
         window.setTimeToResultDirect(targetType, taskId, subtaskId, 'Immediately');
+      } else if (selectedValue === 'Not yet decided') {
+        window.setTimeToResultDirect(targetType, taskId, subtaskId, 'Not yet decided');
       } else {
         window.openCustomTimeToResultPrompt(targetType, taskId, subtaskId);
       }
@@ -6324,7 +6333,7 @@
         completed: false,
         completedAt: null,
         status: 'yet_to_start',
-        timeToResult: 'Immediately',
+        timeToResult: 'Not yet decided',
         ideas: [],
         createdDate: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -7081,7 +7090,7 @@
                 + (isSubDone ? '<span style="font-size:9.5px;font-weight:700;color:#4ede80;background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:4px;flex-shrink:0">DONE</span>' : '')
                 + '</div>'
                 + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
-                + (!isSubDone && curSubStatus !== 'completed' ? renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Immediately', 'font-size:10.5px;font-weight:600;padding:3px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark') : '')
+                + (!isSubDone && curSubStatus !== 'completed' ? renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Not yet decided', 'font-size:10.5px;font-weight:600;padding:3px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark') : '')
                 + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeSubtaskStatus(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="font-size:10.5px;font-weight:700;padding:3px 6px;border-radius:6px;border:1px solid ' + subStatusBorder + ';background:' + subStatusBg + ';color:' + subStatusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
                 + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curSubStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
                 + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curSubStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
@@ -7237,7 +7246,7 @@
         + '</div>'
         + '</div>'
         + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
-        + (!task.completed && curStatus !== 'completed' ? renderTimeToResultSelect('task', task.id, null, task.timeToResult || 'Immediately', 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:140px;text-overflow:ellipsis;flex-shrink:0;color-scheme:dark') : '')
+        + (!task.completed && curStatus !== 'completed' ? renderTimeToResultSelect('task', task.id, null, task.timeToResult || 'Not yet decided', 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;max-width:155px;text-overflow:ellipsis;flex-shrink:0;color-scheme:dark') : '')
         + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeTaskStatus(\'' + task.id + '\', this.value)" style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid ' + statusBorder + ';background:' + statusBg + ';color:' + statusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
         + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
         + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
