@@ -4773,13 +4773,29 @@
 
     window.switchGoogleAccount = function (e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
-      localStorage.removeItem('gcal_access_token');
-      localStorage.removeItem('gcal_token_expiry');
-      localStorage.removeItem('gcal_account_email');
-      if (typeof S !== 'undefined' && S.gcalAccountEmail) {
-        delete S.gcalAccountEmail;
-        save(true);
+      
+      // Ensure Firebase is initialized
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length && typeof FIREBASE_CONFIG !== 'undefined') {
+          try { firebase.initializeApp(FIREBASE_CONFIG); } catch (err) {}
+        }
       }
+
+      function updateAccountUI(email) {
+        if (!email) return;
+        localStorage.setItem('gcal_account_email', email);
+        if (typeof S !== 'undefined') { S.gcalAccountEmail = email; save(true); }
+        var targetAccountEl = document.getElementById('gcal-target-account');
+        if (targetAccountEl) targetAccountEl.textContent = email;
+        var modalEmailEl = document.getElementById('modal-gcal-email');
+        if (modalEmailEl) {
+          modalEmailEl.textContent = email;
+          modalEmailEl.style.color = '#93c5fd';
+        }
+        var switchBtn = document.getElementById('modal-gcal-switch-btn');
+        if (switchBtn) switchBtn.textContent = 'Switch';
+      }
+
       if (typeof firebase !== 'undefined' && firebase.auth) {
         var provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('https://www.googleapis.com/auth/calendar.events');
@@ -4787,21 +4803,48 @@
         firebase.auth().signInWithPopup(provider).then(function (result) {
           var token = result.credential ? result.credential.accessToken : null;
           var email = result.user ? result.user.email : '';
+          if (email) {
+            updateAccountUI(email);
+          }
           if (token) {
             localStorage.setItem('gcal_access_token', token);
             localStorage.setItem('gcal_token_expiry', String(Date.now() + 3500 * 1000));
-            if (email) {
-              localStorage.setItem('gcal_account_email', email);
-              if (typeof S !== 'undefined') { S.gcalAccountEmail = email; save(true); }
-            }
-            var targetAccountEl = document.getElementById('gcal-target-account');
-            if (targetAccountEl && email) targetAccountEl.textContent = email;
-            var modalEmailEl = document.getElementById('modal-gcal-email');
-            if (modalEmailEl && email) modalEmailEl.textContent = email;
+          }
+          if (email) {
             window.showToast('Connected Google account: ' + email, 'success');
           }
         }).catch(function (err) {
-          console.warn('Switch account error:', err);
+          console.warn('Google Auth popup issue on live server:', err);
+          // Fallback to manual entry dialog so the user is never stuck
+          showCustomPrompt({
+            title: 'Connect Google Calendar Account',
+            message: 'Enter your Google email address to link reminders to your calendar:',
+            placeholder: 'e.g. yourname@gmail.com',
+            defaultValue: localStorage.getItem('gcal_account_email') || (S && S.gcalAccountEmail) || '',
+            confirmText: 'Save Account',
+            onConfirm: function (inputEmail) {
+              var cleanEmail = (inputEmail || '').trim();
+              if (cleanEmail) {
+                updateAccountUI(cleanEmail);
+                window.showToast('Google account connected: ' + cleanEmail, 'success');
+              }
+            }
+          });
+        });
+      } else {
+        showCustomPrompt({
+          title: 'Connect Google Calendar Account',
+          message: 'Enter your Google email address:',
+          placeholder: 'yourname@gmail.com',
+          defaultValue: localStorage.getItem('gcal_account_email') || (S && S.gcalAccountEmail) || '',
+          confirmText: 'Save Account',
+          onConfirm: function (inputEmail) {
+            var cleanEmail = (inputEmail || '').trim();
+            if (cleanEmail) {
+              updateAccountUI(cleanEmail);
+              window.showToast('Google account connected: ' + cleanEmail, 'success');
+            }
+          }
         });
       }
     };
@@ -4924,6 +4967,14 @@
       var itemTitle = targetType === 'subtask' ? (targetItem.text + ' (' + task.text + ')') : task.text;
       var savedEmail = localStorage.getItem('gcal_account_email') || (typeof S !== 'undefined' && S.gcalAccountEmail) || '';
 
+      // Format minimum selectable date & time (block past dates/times)
+      var now = new Date();
+      var minFormatted = now.getFullYear() + '-'
+        + ('0' + (now.getMonth() + 1)).slice(-2) + '-'
+        + ('0' + now.getDate()).slice(-2) + 'T'
+        + ('0' + now.getHours()).slice(-2) + ':'
+        + ('0' + now.getMinutes()).slice(-2);
+
       // Format in user's local timezone for <input type="datetime-local"> (YYYY-MM-DDTHH:mm)
       var formattedInputValue = '';
       if (existingTime) {
@@ -4949,27 +5000,24 @@
         
         + '<div style="margin-bottom:14px">'
         + '<label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">Select Target Date & Time:</label>'
-        + '<input type="datetime-local" id="custom-next-time-input" value="' + formattedInputValue + '" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px;color-scheme:dark" />'
+        + '<input type="datetime-local" id="custom-next-time-input" min="' + minFormatted + '" value="' + formattedInputValue + '" oninput="onCustomNextTimeInputChange(this)" onchange="onCustomNextTimeInputChange(this)" style="width:100%;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px;color-scheme:dark" />'
         + '</div>'
 
         // Prominent Google Calendar account display
         + '<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
-        + '<div>'
+        + '<div style="min-width:0;flex:1">'
         + '<div style="font-size:10.5px;color:#94a3b8;font-weight:700">Google Calendar:</div>'
-        + '<div id="modal-gcal-email" style="font-size:12px;color:#93c5fd;font-weight:600;word-break:break-all">' + (savedEmail ? esc(savedEmail) : 'Ready to connect') + '</div>'
+        + '<div id="modal-gcal-email" style="font-size:12px;color:' + (savedEmail ? '#93c5fd' : '#cbd5e1') + ';font-weight:600;word-break:break-all">' + (savedEmail ? esc(savedEmail) : 'Not connected yet') + '</div>'
         + '</div>'
-        + '<button type="button" onclick="window.switchGoogleAccount(event)" style="font-size:11px;padding:4px 9px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:6px;cursor:pointer;white-space:nowrap">' + (savedEmail ? 'Switch' : 'Connect') + '</button>'
+        + '<button type="button" id="modal-gcal-switch-btn" onclick="window.switchGoogleAccount(event)" style="font-size:11px;padding:5px 12px;background:rgba(59,130,246,0.22);border:1px solid rgba(59,130,246,0.5);color:#93c5fd;font-weight:700;border-radius:6px;cursor:pointer;white-space:nowrap">' + (savedEmail ? 'Switch' : 'Connect') + '</button>'
         + '</div>'
 
         // Action Buttons
         + '<div style="display:flex;flex-direction:column;gap:8px">'
-        + '<button type="button" class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', true)" style="width:100%;font-size:13px;padding:10px 14px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;font-weight:800;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px">📅 Save & Add to Google Calendar</button>'
+        + '<button type="button" id="save-time-gcal-btn" class="b bp bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', true)" style="width:100%;font-size:13px;padding:10px 14px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;font-weight:800;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px">📅 Save & Add to Google Calendar</button>'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px">'
-        + '<button type="button" class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11px;color:#fca5a5;padding:6px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
-        + '<div style="display:flex;gap:6px">'
-        + '<button type="button" class="bg" onclick="closeNextTimePickerModal()" style="font-size:11.5px;padding:6px 12px">Cancel</button>'
-        + '<button type="button" class="b bb bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', false)" style="font-size:11.5px;padding:6px 12px;font-weight:600">Save Time Only</button>'
-        + '</div>'
+        + '<button type="button" class="bg" onclick="setNextTargetTimePreset(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', \'clear\')" style="font-size:11.5px;color:#fca5a5;padding:7px 12px;border:1px solid rgba(239,68,68,0.3);border-radius:6px">Clear Time</button>'
+        + '<button type="button" class="b bb bs" onclick="saveCustomNextTargetTime(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + (subtaskId || '') + '\', false)" style="font-size:11.5px;padding:7px 18px;font-weight:700">Save</button>'
         + '</div>'
         + '</div>'
 
@@ -4980,6 +5028,22 @@
       if (existingModal) existingModal.remove();
 
       document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
+
+    window.onCustomNextTimeInputChange = function (input) {
+      if (!input || !input.value) return;
+      var val = input.value;
+      if (val && val.length >= 16) {
+        var chosen = new Date(val);
+        if (!isNaN(chosen.getTime())) {
+          // Immediately close the browser native date/time dropdown popover
+          input.blur();
+          var primaryBtn = document.getElementById('save-time-gcal-btn');
+          if (primaryBtn) {
+            primaryBtn.focus();
+          }
+        }
+      }
     };
 
     window.closeNextTimePickerModal = function () {
