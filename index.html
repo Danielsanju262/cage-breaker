@@ -1501,6 +1501,14 @@
     }
 
     function getTypeSelectorVal(prefix) {
+      var id = (typeof getCurRef === 'function' ? getCurRef() : null) || (typeof cur === 'function' ? cur() : null);
+      if (id && id.lastEvidenceCategory) {
+        return id.lastEvidenceCategory;
+      }
+      var savedCat = null;
+      try { savedCat = localStorage.getItem('cb_evidence_category'); } catch (e) {}
+      if (savedCat) return savedCat;
+
       if (!window.typeSelectorState) {
         try {
           window.typeSelectorState = JSON.parse(localStorage.getItem('cage_type_selector_state') || '{}');
@@ -1508,7 +1516,7 @@
           window.typeSelectorState = {};
         }
       }
-      return (window.typeSelectorState && window.typeSelectorState[prefix]) || (window.typeSelectorState && window.typeSelectorState['default']) || 'evidence';
+      return (window.typeSelectorState && window.typeSelectorState[prefix]) || (window.typeSelectorState && window.typeSelectorState['default']) || 'appreciation';
     }
 
     function renderTypeSelector(prefix) {
@@ -1537,7 +1545,14 @@
       window.typeSelectorState['default'] = type;
       try {
         localStorage.setItem('cage_type_selector_state', JSON.stringify(window.typeSelectorState));
+        localStorage.setItem('cb_evidence_category', type);
       } catch (e) {}
+
+      var id = (typeof getCurRef === 'function' ? getCurRef() : null) || (typeof cur === 'function' ? cur() : null);
+      if (id) {
+        id.lastEvidenceCategory = type;
+        if (typeof save === 'function') save(true);
+      }
       
       // Preserve any input value if already typed
       var inputEl = document.getElementById(prefix);
@@ -1566,7 +1581,7 @@
      *   - `countAllItems()`: Integrity safeguard that detects unexpected data loss before
      *     cloud sync or state overwrites can occur.
      * ------------------------------------------------------------------------------- */
-    const EMBEDDED_INITIAL_DATA = {"screen": "hub", "currentId": "id_1787036210798", "deletedIds": [], "identities": [{"id": "id_1785407259528", "type": "quick", "path": "habit", "behaviors": [], "feelings": [], "oldIdentity": "Not caring for my skin", "oldEvidence": ["Not drinking enough water", "Not waking up early", "Not doing any facial", "Not finding ways to care for my skin"], "antiVisionText": "A life where I will be without trying anything, a life without any confidence.", "newIdentity": "Have A Clean, Glowing, & Smooth Skin", "crackAction": "Have A Clean, Glowing, & Smooth Skin", "actions": ["Have A Clean, Glowing, & Smooth Skin"], "createdDate": "2026-07-30T10:27:39.528Z", "logs": [{"date": "2026-07-30T10:27:48.891Z", "note": "Drank amla juice", "weight": "medium", "id": "log_1787251682856_xf59zjqql"}, {"date": "2026-07-30T10:27:52.541Z", "note": "Drank one litre of water already", "weight": "medium", "id": "log_1787251682856_lugbxyadg"}, {"date": "2026-07-30T10:27:57.634Z", "note": "Applied vitamin e oil", "weight": "fine", "id": "log_1787251682856_49s9oy0z1"}, {"date": "2026-07-30T13:29:13.915Z", "note": "Bought a cream for the eyes", "weight": "strong", "id": "log_1787251682856_6u0hp8xhz"}, {"date": "2026-07-30T13:29:43.271Z", "note": "Drank 1 litre of water.", "weight": "fine", "id": "log_1787251682856_kqsqf91fd"}, {"date": "2026-07-30T13:30:20.407Z", "note": "Applied olive oil to the face", "weight": "fine", "id": "log_1787251682856_vbsaoojgd"}, {"date": "2026-07-30T15:05:09.846Z", "note": "Ate yogurt", "weight": "fine", "id": "log_1787251682856_7g4aq72sa"}, {"date": "2026-07-30T15:05:22.248Z", "note": "ate papaya", "weight": "fine", "id": "log_1787251682856_1zrbb58vd"}, {"date": "2026-07-31T02:48:14.235Z", "note": "Drank avocado juice.", "weight": "fine", "id": "log_1787251682856_t8sqfc2w9"}, {"date": "2026-07-31T02:49:15.807Z", "note": "Applied Vitamin E oil.", "weight": "fine", "id": "log_1787251682856_aj5b58zwu"}, {"date": "2026-07-31T02:49:52.008Z", "note": "Woke up early", "weight": "fine", "id": "log_1787251682856_m951cjvpl"}, {"date": "2026-07-31T04:40:27.737Z", "note": "Did and drank amla juice", "weight": "medium", "id": "log_1787251682856_vtribrk24"}, {"date": "2026-07-31T04:40:46.408Z", "note": "Drank 1 litre of water.", "weight": "medium", "id": "log_1787251682856_rioa60o0w"}, {"date": "2026-07-31T04:41:21.319Z", "note": "Washed face with ice and applied moisturizer.", "weight": "medium", "id": "log_1787251682856_nvyyn4tvj"}, {"date": "2026-07-31T04:41:47.601Z", "note": "Ordered eye cream.", "weight": "medium", "id": "log_1787251682856_bb6pdxi73"}, {"date": "2026-07-31T07:49:49.316Z", "note": "Drank milk", "weight": "fine", "id": "log_1787251682856_norovuiti"}, {"date": "2026-07-31T07:50:54.799Z", "note": "Kept cucumber on my eyes.", "weight": "fine", "id": "log_1787251682856_dyt33s92h"}, {"date": "2026-07-31T07:51:10.174Z", "note": "Applied face cream.", "weight": "fine", "id": "log_1787251682856_p2bs7wf0s"}, {"date": "2026-07-31T08:27:26.931Z", "note": "Eat dry fruits.", "weight": "fine", "id": "log_1787251682856_03pl3m2f7"}, {"date": "2026-08-03T08:06:56.118Z", "note": "did facial for pores and dark eyes", "weight": "medium", "id": "log_1787251682856_zqfc05ew9"}, {"date": "2026-08-03T08:18:31.828Z", "note": "did facial for dark circles under the eyes", "weight": "medium", "id": "log_1787251682856_mf4bzoqg1"}, {"date": "2026-08-03T08:18:49.207Z", "note": "drank water 750 ml", "weight": "medium", "id": "log_1787251682856_n1n3o99x2"}, {"date": "2026-08-03T08:28:31.184Z", "note": "drank 750 ml water", "weight": "medium", "id": "log_1787251682856_0k9zguofs"}, {"date": "2026-08-03T08:44:38.891Z", "note": "Ate dry grapes.", "weight": "fine", "id": "log_1787251682856_k6r02ajxu"}, {"date": "2026-08-03T08:45:28.429Z", "note": "Applied moisturizer and under-eye cream", "weight": "medium", "id": "log_1787251682856_5k508prr8"}, {"date": "2026-08-03T08:46:49.434Z", "note": "Washed face.", "weight": "fine", "id": "log_1787251682856_brze9q6n2"}, {"date": "2026-08-03T08:52:38.498Z", "note": "Everyone started saying that my skin is glowing and reduction in exisiting problems", "weight": "strong", "id": "log_1787251682856_mzpv1bcvd"}, {"date": "2026-08-03T08:55:33.071Z", "note": "Had yogurt.", "weight": "fine", "id": "log_1787251682856_x5i5xy5zr"}, {"date": "2026-08-03T09:22:27.337Z", "note": "Drank amla juice", "weight": "medium", "id": "log_1787251682856_gzky4uftz"}, {"date": "2026-08-03T09:22:41.696Z", "note": "Drank butter fruit juice and ate papaya", "weight": "medium", "id": "log_1787251682856_v3snuzvaj"}, {"date": "2026-08-03T09:33:06.521Z", "note": "Had a peaceful sleep", "weight": "medium", "id": "log_1787251682856_833n9h46i"}, {"date": "2026-08-03T10:18:43.948Z", "note": "I ate a little less instead of eating continuously", "weight": "fine", "id": "log_1787251682856_08mckllnc"}, {"date": "2026-08-03T13:09:09.110Z", "note": "Bought mask and used it to cover my face without any dust because of which I got appreciation from vijay bro and jerry", "weight": "strong", "id": "log_1787251682856_0pemnou9p"}, {"date": "2026-08-04T02:14:29.799Z", "note": "washed face, applied moisturizer and eye cream before sleeping.", "weight": "medium", "id": "log_1787251682856_4amz2shve"}, {"date": "2026-08-04T02:27:06.792Z", "note": "Had a peaceful sleep.", "weight": "medium", "id": "log_1787251682856_8p0q9viyx"}, {"date": "2026-08-04T05:35:08.850Z", "note": "Had bath and applied vitamin e oil", "weight": "medium", "id": "log_1787251682856_eydin81ji"}, {"date": "2026-08-04T05:36:01.256Z", "note": "Drank milk", "weight": "fine", "id": "log_1787251682856_sh3sz5kqh"}, {"date": "2026-08-04T05:36:11.337Z", "note": "Drank amla juice", "weight": "fine", "id": "log_1787251682856_xk8bshdn6"}, {"date": "2026-08-04T05:36:58.192Z", "note": "Ate papaya", "weight": "fine", "id": "log_1787251682856_w53nruj21"}, {"date": "2026-08-04T05:37:18.277Z", "note": "Ate cucumber", "weight": "fine", "id": "log_1787251682856_dwny2yguv"}, {"date": "2026-08-04T05:56:02.323Z", "note": "Drank 750 ml water", "weight": "fine", "id": "log_1787251682856_gjyky3bpw"}, {"date": "2026-08-04T06:48:18.136Z", "note": "My patu kutty Jarina told that my face tone is even", "weight": "strong", "id": "log_1787251682856_tfso84k1b"}, {"date": "2026-08-04T08:41:03.024Z", "note": "Drank coconut water and ate banana", "weight": "medium", "id": "log_1787251682856_jjvuol078"}, {"date": "2026-08-04T10:34:13.632Z", "note": "Took a nap", "weight": "medium", "id": "log_1787251682856_7sf4w0ufi"}, {"date": "2026-08-04T10:35:00.069Z", "note": "Washed face, did facial for pores, and under eye.", "weight": "strong", "id": "log_1787251682856_pgvteu7q5"}, {"date": "2026-08-04T11:01:36.229Z", "note": "Preetha and jarina told that my skin is glowing", "weight": "strong", "id": "log_1787251682856_y7cghjoaz"}, {"date": "2026-08-04T20:27:56.407Z", "note": "Jarina told that my skin is glowing", "weight": "strong", "id": "log_1787251682856_4mrapzqpf"}, {"date": "2026-08-05T06:50:29.979Z", "note": "Ate banana and papaya", "weight": "medium", "id": "log_1787251682856_7i420erb7"}, {"date": "2026-08-05T06:52:09.446Z", "note": "Drank 750 ml water and washed my face", "weight": "medium", "id": "log_1787251682856_65u1ehjhu"}, {"date": "2026-08-05T06:52:29.495Z", "note": "Applied moisturizer and under eye cream", "weight": "medium", "id": "log_1787251682856_xqk3bku6w"}, {"date": "2026-08-05T06:52:51.675Z", "note": "Wiped face with tissue", "weight": "fine", "id": "log_1787251682856_xp6ge4p7p"}, {"date": "2026-08-06T08:24:00.647Z", "note": "Had bath and applied moisturizer", "weight": "medium", "id": "log_1787251682856_1ew70tjbl"}, {"date": "2026-08-06T08:24:58.919Z", "note": "Under eye mask", "weight": "medium", "id": "log_1787251682856_v4krmqhwr"}, {"date": "2026-08-07T03:01:00.967Z", "note": "Facial", "weight": "strong", "id": "log_1787251682856_wrdeicxoc"}, {"date": "2026-08-07T11:11:08.876Z", "note": "Drank water 1 bottle", "weight": "fine", "id": "log_1787251682856_bao6yyagt"}, {"date": "2026-08-13T03:35:54.153Z", "note": "Had bath and applied moisturizer", "weight": "medium", "id": "log_1787251682856_l3bcvnkxj"}], "reflections": [{"date": "2026-08-07T03:00:08.948Z", "oldPatterns": "Eating junk\nSleeping late\nUsing phone alot", "newMoments": "Drinking water \nFacial\nDrinking amla juice", "nextCrack": "Drink 3 litres water if I'm not going out and 1.5 litres of water if I'm going out", "id": "ref_1787251682856_nj66"}, {"date": "2026-08-07T03:00:08.948Z", "oldPatterns": "Eating junk\nSleeping late\nUsing phone alot", "newMoments": "Drinking water \nFacial\nDrinking amla juice", "nextCrack": "Drink 3 litres water if I'm not going out and 1.5 litres of water if I'm going out", "id": "ref_1787252851501_7gcd"}], "habits": [{"text": "Have A Clean, Glowing, & Smooth Skin", "createdDate": "2026-07-30T10:27:39.528Z", "checks": [], "id": "habit_1787251682856_1s96"}], "goalDays": 12, "goalVision": "1. Wake up, go to the bath, and look at my skin with pride for all the efforts.\n2. Afternoon after bath or makeup, getting happy about myself for caring for my skin properly for a long time.\n3. Evening during photoshoots, looking at my skin, I will gain confidence able to smile cleanly, be able to speak with everyone with confidence, etc.", "goalActions": ["Have A Clean, Glowing, & Smooth Skin"], "goalSetDate": "2026-07-30T10:27:39.528Z", "updatedAt": "2026-08-19T16:32:46.813Z", "antiVision14Day": "I won't have my full voice; I will have no confidence; I will want to end the day as soon as possible because of discomfort and awkwardness caused by my ugly skin.", "dailyCrack": {"date": "2026-08-13", "whatItCanBe": "Drink 2 bottles of water", "howPlanning": "Fill the bottle as soon as its empty and you can drink only one bottle if you are going out", "achieved": true, "snoozedUntil": null}, "routineLoops": [], "targetEvent": "", "tasks": [], "targetEventTime": null, "achieved": true, "achievedAt": "2026-08-19T16:32:46.813Z", "targetActionLine": "", "targetEventName": "", "taggedEvent": "", "deletedLogIds": [], "deletedTaskIds": [], "deletedSubtaskIds": [], "deletedIdeaIds": [], "deletedHabitIds": [], "deletedRoutineLoopIds": [], "deletedReflectionIds": []}, {"id": "id_1787036210798", "type": "quick", "path": "habit", "behaviors": [], "feelings": [], "oldIdentity": "The version of me that hesitated and stayed in the old pattern", "oldEvidence": [], "antiVisionText": "Living beneath my potential and repeating the same excuses for another decade.", "newIdentity": "Uff, atlast I got all the documents and completed the loan process. Now I can start buying things immediately", "crackAction": "Uff, atlast the loan process is completed 😮‍💨", "actions": ["Uff, atlast the loan process is completed 😮‍💨"], "createdDate": "2026-08-18T06:56:50.798Z", "logs": [{"date": "2026-08-19T03:10:24.677Z", "note": "Took and sent the mutation record", "weight": "medium", "id": "log_1787251682856_u6m8bu6db"}, {"date": "2026-08-19T09:31:02.979Z", "subtaskId": "subtask_1787131842058_05jw", "taskId": "task_1787108935130_x1e9", "note": "Completed subtask: \"Activate for mom\" (Task: Activate repayment)", "weight": "fine", "id": "log_1787251682856_d7q1rjd5s"}, {"date": "2026-08-19T09:57:21.956Z", "taskId": "task_1787052980765_x3oc", "note": "Completed task: \"RTC (from 1980-2026 to be collected)\"", "weight": "strong", "id": "log_1787251682856_lkqd6m77s"}, {"date": "2026-08-19T09:58:48.074Z", "ideaId": "idea_1787074910200_4oc3", "subtaskId": null, "taskId": "task_1787053122470_22m4", "note": "Completed idea: \"Call to the number sent to Jarina\" (from Task: Tax paid receipt to be collected)", "weight": "fine", "id": "log_1787251682856_bimqjcebi"}, {"date": "2026-08-19T11:37:13.660Z", "ideaId": "idea_1787067039482_mq7x", "subtaskId": null, "taskId": "task_1787052955515_v839", "note": "Completed idea: \"Online sites\" (from Task: EC (from March of this year to till date to be collected))", "weight": "fine", "id": "log_1787251682856_18q359vl1"}, {"date": "2026-08-19T12:49:47.882Z", "ideaId": "idea_1787114602160_dw6w", "subtaskId": null, "taskId": "task_1787108935130_x1e9", "note": "Completed idea: \"Activate mom's\" (from Task: Activate repayment)", "weight": "fine", "id": "log_1787153864157_xdqtjzria"}, {"id": "log_1787171531613_ma4i17phf", "date": "2026-08-19T20:32:11.612Z", "note": "Completed idea: \"Landeed\" (from Task: EC (from March of this year to till date to be collected))", "weight": "fine", "taskId": "task_1787052955515_v839", "subtaskId": null, "ideaId": "idea_1787061989684_ft7c"}, {"id": "log_1787174357714_mogmypg5r", "date": "2026-08-19T21:19:17.714Z", "note": "All the tasks happened quickly today", "weight": "strong", "taskId": null, "subtaskId": null, "ideaId": null}], "reflections": [], "habits": [{"text": "Uff, atlast the loan process is completed 😮‍💨", "createdDate": "2026-08-18T06:56:50.798Z", "checks": [], "id": "habit_1787251682856_cn82"}], "goalDays": 30, "goalVision": "Morning: Waking up energized.\nAfternoon: Consistent and focused execution.\nEvening: Quiet pride in living my standard.", "goalActions": ["Uff, atlast the loan process is completed 😮‍💨"], "goalSetDate": "2026-08-18T06:56:50.798Z", "updatedAt": "2026-08-22T12:07:18.525Z", "targetEvent": "We are going to Wonderla as a family", "routineLoops": [{"id": "rl_1787058901376_xxzx", "taskId": null, "title": "Search how to get a document", "steps": ["Go to Google/Youtube/AI", "Search a document's name and add how to get it", "Check for information", "Find a new information", "Put it in practice"], "whatNext": "", "timeToResult": "Immediately", "outcome": "Pending", "effectiveness": "Medium", "iterationCount": 0, "runLogs": [], "lastExecuted": null, "flowViewMode": "linear", "createdDate": "2026-08-18T13:19:11.543Z", "updatedAt": "2026-08-19T10:04:55.748Z"}, {"id": "rl_1787075056558_v03u", "taskId": null, "title": "Documents", "steps": ["Use AI/Youtube/Google", "Use keywords to search a broker for a particular document", "Open each result", "Verify the quality of the result"], "whatNext": "", "timeToResult": "Same day", "outcome": "Pending", "effectiveness": "Very High", "iterationCount": 0, "runLogs": [], "lastExecuted": null, "flowViewMode": "linear", "createdDate": "2026-08-18T17:45:59.682Z", "updatedAt": "2026-08-19T10:04:55.748Z"}], "dailyCrack": null, "antiVision14Day": "If you continue without adding evidence for 14 days: \"The version of me that hesitated and stayed in the old pattern\" becomes 14x more deeply rooted. Your skin/habits stay neglected, snooze & hesitation compound, and you lose another 2 weeks to quiet regret.", "tasks": [{"id": "task_1787052955515_v839", "text": "EC (from March of this year to till date to be collected)", "doingNow": "", "whatNext": "", "nextTargetTime": "2026-08-21T19:35:00.000Z", "completed": false, "completedAt": null, "status": "in_process", "expanded": false, "ideas": [{"id": "idea_1787061989684_ft7c", "text": "Landeed", "completed": true, "completedAt": "2026-08-19T20:32:11.612Z", "createdDate": "2026-08-18T14:06:29.684Z"}, {"id": "idea_1787067039482_mq7x", "text": "Online sites", "completed": true, "completedAt": "2026-08-19T11:37:13.660Z", "createdDate": "2026-08-18T15:30:39.482Z"}], "subtasks": [], "createdDate": "2026-08-18T11:35:55.515Z", "updatedAt": "2026-08-20T19:35:53.865Z"}, {"id": "task_1787053122470_22m4", "text": "Tax paid receipt to be collected", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787067229347_skn0", "text": "Go to panchayat office", "completed": false, "completedAt": null, "createdDate": "2026-08-18T15:33:49.347Z"}, {"id": "idea_1787074910200_4oc3", "text": "Call to the number sent to Jarina", "completed": true, "completedAt": "2026-08-19T12:53:42.698Z", "createdDate": "2026-08-18T17:41:50.200Z"}], "subtasks": [{"id": "subtask_1787174243599_s0rh", "text": "Go to taverekere and give 500 to the panchayat accountant", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "ideas": [], "createdDate": "2026-08-19T21:17:23.599Z", "updatedAt": "2026-08-19T21:17:23.599Z"}], "createdDate": "2026-08-18T11:38:42.470Z", "updatedAt": "2026-08-18T17:41:50.200Z"}, {"id": "task_1787052980765_x3oc", "text": "RTC (from 1980-2026 to be collected)", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": true, "completedAt": "2026-08-19T09:57:21.956Z", "status": "completed", "expanded": false, "ideas": [{"id": "idea_1787074844127_18a5", "text": "Offline from known people", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:40:44.127Z"}, {"id": "idea_1787074876215_f28d", "text": "Any broker or agencies", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:41:16.215Z"}, {"id": "idea_1787074888495_u0b5", "text": "Use keywords to search for brokers on google", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:41:28.495Z"}, {"id": "idea_1787075052088_y4aa", "text": "Either online through keywords to search a broker or offline from Ramakrishnan", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:44:12.088Z"}], "subtasks": [], "createdDate": "2026-08-18T11:36:20.765Z", "updatedAt": "2026-08-18T17:44:12.088Z"}, {"id": "task_1787053098224_xij5", "text": "Court order to be collected", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787074985508_en2p", "text": "Ramakrishnan", "completed": false, "completedAt": null, "createdDate": "2026-08-18T17:43:05.508Z"}], "subtasks": [], "createdDate": "2026-08-18T11:38:18.224Z", "updatedAt": "2026-08-18T17:43:05.508Z"}, {"id": "task_1787108935130_x1e9", "text": "Activate repayment", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787114557842_5mjd", "text": "Send the form in gmail by downloading it from the portal", "completed": false, "completedAt": null, "createdDate": "2026-08-19T04:42:37.842Z"}, {"id": "idea_1787114602160_dw6w", "text": "Activate mom's", "completed": true, "completedAt": "2026-08-19T12:49:47.882Z", "createdDate": "2026-08-19T04:43:22.160Z"}], "subtasks": [], "createdDate": "2026-08-19T03:08:55.130Z", "updatedAt": "2026-08-19T03:08:55.130Z"}, {"id": "task_1787108960906_8wfu", "text": "HSBC bank account opening", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [], "subtasks": [], "createdDate": "2026-08-19T03:09:20.907Z", "updatedAt": "2026-08-19T03:09:20.907Z"}, {"id": "task_1787108973940_rsr6", "text": "Send dad's adhaar card", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787143707103_hmdg", "text": "When daddy is there ask his adhaar number and get his digital adhaar copy from online.", "completed": false, "completedAt": null, "createdDate": "2026-08-19T12:48:27.103Z"}], "subtasks": [], "createdDate": "2026-08-19T03:09:33.940Z", "updatedAt": "2026-08-19T03:09:33.940Z"}], "targetEventTime": null, "achieved": false, "achievedAt": null, "targetActionLine": "We are going to Wonderla as a family", "deletedLogIds": [], "targetEventName": "", "taggedEvent": "", "deletedTaskIds": [], "deletedSubtaskIds": [], "deletedIdeaIds": [], "deletedHabitIds": [], "deletedRoutineLoopIds": [], "deletedReflectionIds": []}]};
+    const EMBEDDED_INITIAL_DATA = {"screen": "hub", "currentId": "id_1787036210798", "deletedIds": [], "identities": [{"id": "id_1785407259528", "type": "quick", "path": "habit", "behaviors": [], "feelings": [], "oldIdentity": "Not caring for my skin", "oldEvidence": ["Not drinking enough water", "Not waking up early", "Not doing any facial", "Not finding ways to care for my skin"], "antiVisionText": "A life where I will be without trying anything, a life without any confidence.", "newIdentity": "Have A Clean, Glowing, & Smooth Skin", "crackAction": "Have A Clean, Glowing, & Smooth Skin", "actions": ["Have A Clean, Glowing, & Smooth Skin"], "createdDate": "2026-07-30T10:27:39.528Z", "logs": [{"date": "2026-07-30T10:27:48.891Z", "note": "Drank amla juice", "weight": "medium", "id": "log_1787251682856_xf59zjqql"}, {"date": "2026-07-30T10:27:52.541Z", "note": "Drank one litre of water already", "weight": "medium", "id": "log_1787251682856_lugbxyadg"}, {"date": "2026-07-30T10:27:57.634Z", "note": "Applied vitamin e oil", "weight": "fine", "id": "log_1787251682856_49s9oy0z1"}, {"date": "2026-07-30T13:29:13.915Z", "note": "Bought a cream for the eyes", "weight": "strong", "id": "log_1787251682856_6u0hp8xhz"}, {"date": "2026-07-30T13:29:43.271Z", "note": "Drank 1 litre of water.", "weight": "fine", "id": "log_1787251682856_kqsqf91fd"}, {"date": "2026-07-30T13:30:20.407Z", "note": "Applied olive oil to the face", "weight": "fine", "id": "log_1787251682856_vbsaoojgd"}, {"date": "2026-07-30T15:05:09.846Z", "note": "Ate yogurt", "weight": "fine", "id": "log_1787251682856_7g4aq72sa"}, {"date": "2026-07-30T15:05:22.248Z", "note": "ate papaya", "weight": "fine", "id": "log_1787251682856_1zrbb58vd"}, {"date": "2026-07-31T02:48:14.235Z", "note": "Drank avocado juice.", "weight": "fine", "id": "log_1787251682856_t8sqfc2w9"}, {"date": "2026-07-31T02:49:15.807Z", "note": "Applied Vitamin E oil.", "weight": "fine", "id": "log_1787251682856_aj5b58zwu"}, {"date": "2026-07-31T02:49:52.008Z", "note": "Woke up early", "weight": "fine", "id": "log_1787251682856_m951cjvpl"}, {"date": "2026-07-31T04:40:27.737Z", "note": "Did and drank amla juice", "weight": "medium", "id": "log_1787251682856_vtribrk24"}, {"date": "2026-07-31T04:40:46.408Z", "note": "Drank 1 litre of water.", "weight": "medium", "id": "log_1787251682856_rioa60o0w"}, {"date": "2026-07-31T04:41:21.319Z", "note": "Washed face with ice and applied moisturizer.", "weight": "medium", "id": "log_1787251682856_nvyyn4tvj"}, {"date": "2026-07-31T04:41:47.601Z", "note": "Ordered eye cream.", "weight": "medium", "id": "log_1787251682856_bb6pdxi73"}, {"date": "2026-07-31T07:49:49.316Z", "note": "Drank milk", "weight": "fine", "id": "log_1787251682856_norovuiti"}, {"date": "2026-07-31T07:50:54.799Z", "note": "Kept cucumber on my eyes.", "weight": "fine", "id": "log_1787251682856_dyt33s92h"}, {"date": "2026-07-31T07:51:10.174Z", "note": "Applied face cream.", "weight": "fine", "id": "log_1787251682856_p2bs7wf0s"}, {"date": "2026-07-31T08:27:26.931Z", "note": "Eat dry fruits.", "weight": "fine", "id": "log_1787251682856_03pl3m2f7"}, {"date": "2026-08-03T08:06:56.118Z", "note": "did facial for pores and dark eyes", "weight": "medium", "id": "log_1787251682856_zqfc05ew9"}, {"date": "2026-08-03T08:18:31.828Z", "note": "did facial for dark circles under the eyes", "weight": "medium", "id": "log_1787251682856_mf4bzoqg1"}, {"date": "2026-08-03T08:18:49.207Z", "note": "drank water 750 ml", "weight": "medium", "id": "log_1787251682856_n1n3o99x2"}, {"date": "2026-08-03T08:28:31.184Z", "note": "drank 750 ml water", "weight": "medium", "id": "log_1787251682856_0k9zguofs"}, {"date": "2026-08-03T08:44:38.891Z", "note": "Ate dry grapes.", "weight": "fine", "id": "log_1787251682856_k6r02ajxu"}, {"date": "2026-08-03T08:45:28.429Z", "note": "Applied moisturizer and under-eye cream", "weight": "medium", "id": "log_1787251682856_5k508prr8"}, {"date": "2026-08-03T08:46:49.434Z", "note": "Washed face.", "weight": "fine", "id": "log_1787251682856_brze9q6n2"}, {"date": "2026-08-03T08:52:38.498Z", "note": "Everyone started saying that my skin is glowing and reduction in exisiting problems", "weight": "strong", "id": "log_1787251682856_mzpv1bcvd"}, {"date": "2026-08-03T08:55:33.071Z", "note": "Had yogurt.", "weight": "fine", "id": "log_1787251682856_x5i5xy5zr"}, {"date": "2026-08-03T09:22:27.337Z", "note": "Drank amla juice", "weight": "medium", "id": "log_1787251682856_gzky4uftz"}, {"date": "2026-08-03T09:22:41.696Z", "note": "Drank butter fruit juice and ate papaya", "weight": "medium", "id": "log_1787251682856_v3snuzvaj"}, {"date": "2026-08-03T09:33:06.521Z", "note": "Had a peaceful sleep", "weight": "medium", "id": "log_1787251682856_833n9h46i"}, {"date": "2026-08-03T10:18:43.948Z", "note": "I ate a little less instead of eating continuously", "weight": "fine", "id": "log_1787251682856_08mckllnc"}, {"date": "2026-08-03T13:09:09.110Z", "note": "Bought mask and used it to cover my face without any dust because of which I got appreciation from vijay bro and jerry", "weight": "strong", "id": "log_1787251682856_0pemnou9p"}, {"date": "2026-08-04T02:14:29.799Z", "note": "washed face, applied moisturizer and eye cream before sleeping.", "weight": "medium", "id": "log_1787251682856_4amz2shve"}, {"date": "2026-08-04T02:27:06.792Z", "note": "Had a peaceful sleep.", "weight": "medium", "id": "log_1787251682856_8p0q9viyx"}, {"date": "2026-08-04T05:35:08.850Z", "note": "Had bath and applied vitamin e oil", "weight": "medium", "id": "log_1787251682856_eydin81ji"}, {"date": "2026-08-04T05:36:01.256Z", "note": "Drank milk", "weight": "fine", "id": "log_1787251682856_sh3sz5kqh"}, {"date": "2026-08-04T05:36:11.337Z", "note": "Drank amla juice", "weight": "fine", "id": "log_1787251682856_xk8bshdn6"}, {"date": "2026-08-04T05:36:58.192Z", "note": "Ate papaya", "weight": "fine", "id": "log_1787251682856_w53nruj21"}, {"date": "2026-08-04T05:37:18.277Z", "note": "Ate cucumber", "weight": "fine", "id": "log_1787251682856_dwny2yguv"}, {"date": "2026-08-04T05:56:02.323Z", "note": "Drank 750 ml water", "weight": "fine", "id": "log_1787251682856_gjyky3bpw"}, {"date": "2026-08-04T06:48:18.136Z", "note": "My patu kutty Jarina told that my face tone is even", "weight": "strong", "id": "log_1787251682856_tfso84k1b"}, {"date": "2026-08-04T08:41:03.024Z", "note": "Drank coconut water and ate banana", "weight": "medium", "id": "log_1787251682856_jjvuol078"}, {"date": "2026-08-04T10:34:13.632Z", "note": "Took a nap", "weight": "medium", "id": "log_1787251682856_7sf4w0ufi"}, {"date": "2026-08-04T10:35:00.069Z", "note": "Washed face, did facial for pores, and under eye.", "weight": "strong", "id": "log_1787251682856_pgvteu7q5"}, {"date": "2026-08-04T11:01:36.229Z", "note": "Preetha and jarina told that my skin is glowing", "weight": "strong", "id": "log_1787251682856_y7cghjoaz"}, {"date": "2026-08-04T20:27:56.407Z", "note": "Jarina told that my skin is glowing", "weight": "strong", "id": "log_1787251682856_4mrapzqpf"}, {"date": "2026-08-05T06:50:29.979Z", "note": "Ate banana and papaya", "weight": "medium", "id": "log_1787251682856_7i420erb7"}, {"date": "2026-08-05T06:52:09.446Z", "note": "Drank 750 ml water and washed my face", "weight": "medium", "id": "log_1787251682856_65u1ehjhu"}, {"date": "2026-08-05T06:52:29.495Z", "note": "Applied moisturizer and under eye cream", "weight": "medium", "id": "log_1787251682856_xqk3bku6w"}, {"date": "2026-08-05T06:52:51.675Z", "note": "Wiped face with tissue", "weight": "fine", "id": "log_1787251682856_xp6ge4p7p"}, {"date": "2026-08-06T08:24:00.647Z", "note": "Had bath and applied moisturizer", "weight": "medium", "id": "log_1787251682856_1ew70tjbl"}, {"date": "2026-08-06T08:24:58.919Z", "note": "Under eye mask", "weight": "medium", "id": "log_1787251682856_v4krmqhwr"}, {"date": "2026-08-07T03:01:00.967Z", "note": "Facial", "weight": "strong", "id": "log_1787251682856_wrdeicxoc"}, {"date": "2026-08-07T11:11:08.876Z", "note": "Drank water 1 bottle", "weight": "fine", "id": "log_1787251682856_bao6yyagt"}, {"date": "2026-08-13T03:35:54.153Z", "note": "Had bath and applied moisturizer", "weight": "medium", "id": "log_1787251682856_l3bcvnkxj"}], "reflections": [{"date": "2026-08-07T03:00:08.948Z", "oldPatterns": "Eating junk\nSleeping late\nUsing phone alot", "newMoments": "Drinking water \nFacial\nDrinking amla juice", "nextCrack": "Drink 3 litres water if I'm not going out and 1.5 litres of water if I'm going out", "id": "ref_1787251682856_nj66"}, {"date": "2026-08-07T03:00:08.948Z", "oldPatterns": "Eating junk\nSleeping late\nUsing phone alot", "newMoments": "Drinking water \nFacial\nDrinking amla juice", "nextCrack": "Drink 3 litres water if I'm not going out and 1.5 litres of water if I'm going out", "id": "ref_1787252851501_7gcd"}], "habits": [{"text": "Have A Clean, Glowing, & Smooth Skin", "createdDate": "2026-07-30T10:27:39.528Z", "checks": [], "id": "habit_1787251682856_1s96"}], "goalDays": 12, "goalVision": "1. Wake up, go to the bath, and look at my skin with pride for all the efforts.\n2. Afternoon after bath or makeup, getting happy about myself for caring for my skin properly for a long time.\n3. Evening during photoshoots, looking at my skin, I will gain confidence able to smile cleanly, be able to speak with everyone with confidence, etc.", "goalActions": ["Have A Clean, Glowing, & Smooth Skin"], "goalSetDate": "2026-07-30T10:27:39.528Z", "updatedAt": "2026-08-19T16:32:46.813Z", "antiVision14Day": "I won't have my full voice; I will have no confidence; I will want to end the day as soon as possible because of discomfort and awkwardness caused by my ugly skin.", "dailyCrack": {"date": "2026-08-13", "whatItCanBe": "Drink 2 bottles of water", "howPlanning": "Fill the bottle as soon as its empty and you can drink only one bottle if you are going out", "achieved": true, "snoozedUntil": null}, "routineLoops": [], "targetEvent": "", "tasks": [], "targetEventTime": null, "achieved": true, "achievedAt": "2026-08-19T16:32:46.813Z", "targetActionLine": "", "targetEventName": "", "taggedEvent": "", "deletedLogIds": [], "deletedTaskIds": [], "deletedSubtaskIds": [], "deletedIdeaIds": [], "deletedHabitIds": [], "deletedRoutineLoopIds": [], "deletedReflectionIds": []}, {"id": "id_1787036210798", "type": "quick", "path": "habit", "behaviors": [], "feelings": [], "oldIdentity": "The version of me that hesitated and stayed in the old pattern", "oldEvidence": [], "antiVisionText": "Living beneath my potential and repeating the same excuses for another decade.", "newIdentity": "Uff, atlast I got all the documents and completed the loan process. Now I can start buying things immediately", "crackAction": "Uff, atlast the loan process is completed \ud83d\ude2e\u200d\ud83d\udca8", "actions": ["Uff, atlast the loan process is completed \ud83d\ude2e\u200d\ud83d\udca8"], "createdDate": "2026-08-18T06:56:50.798Z", "logs": [{"date": "2026-08-19T03:10:24.677Z", "note": "Took and sent the mutation record", "weight": "medium", "id": "log_1787251682856_u6m8bu6db"}, {"date": "2026-08-19T09:31:02.979Z", "subtaskId": "subtask_1787131842058_05jw", "taskId": "task_1787108935130_x1e9", "note": "Completed subtask: \"Activate for mom\" (Task: Activate repayment)", "weight": "fine", "id": "log_1787251682856_d7q1rjd5s"}, {"date": "2026-08-19T09:57:21.956Z", "taskId": "task_1787052980765_x3oc", "note": "Completed task: \"RTC (from 1980-2026 to be collected)\"", "weight": "strong", "id": "log_1787251682856_lkqd6m77s"}, {"date": "2026-08-19T09:58:48.074Z", "ideaId": "idea_1787074910200_4oc3", "subtaskId": null, "taskId": "task_1787053122470_22m4", "note": "Completed idea: \"Call to the number sent to Jarina\" (from Task: Tax paid receipt to be collected)", "weight": "fine", "id": "log_1787251682856_bimqjcebi"}, {"date": "2026-08-19T11:37:13.660Z", "ideaId": "idea_1787067039482_mq7x", "subtaskId": null, "taskId": "task_1787052955515_v839", "note": "Completed idea: \"Online sites\" (from Task: EC (from March of this year to till date to be collected))", "weight": "fine", "id": "log_1787251682856_18q359vl1"}, {"date": "2026-08-19T12:49:47.882Z", "ideaId": "idea_1787114602160_dw6w", "subtaskId": null, "taskId": "task_1787108935130_x1e9", "note": "Completed idea: \"Activate mom's\" (from Task: Activate repayment)", "weight": "fine", "id": "log_1787153864157_xdqtjzria"}, {"id": "log_1787171531613_ma4i17phf", "date": "2026-08-19T20:32:11.612Z", "note": "Completed idea: \"Landeed\" (from Task: EC (from March of this year to till date to be collected))", "weight": "fine", "taskId": "task_1787052955515_v839", "subtaskId": null, "ideaId": "idea_1787061989684_ft7c"}, {"id": "log_1787174357714_mogmypg5r", "date": "2026-08-19T21:19:17.714Z", "note": "All the tasks happened quickly today", "weight": "strong", "taskId": null, "subtaskId": null, "ideaId": null}], "reflections": [], "habits": [{"text": "Uff, atlast the loan process is completed \ud83d\ude2e\u200d\ud83d\udca8", "createdDate": "2026-08-18T06:56:50.798Z", "checks": [], "id": "habit_1787251682856_cn82"}], "goalDays": 30, "goalVision": "Morning: Waking up energized.\nAfternoon: Consistent and focused execution.\nEvening: Quiet pride in living my standard.", "goalActions": ["Uff, atlast the loan process is completed \ud83d\ude2e\u200d\ud83d\udca8"], "goalSetDate": "2026-08-18T06:56:50.798Z", "updatedAt": "2026-08-22T12:07:18.525Z", "targetEvent": "We are going to Wonderla as a family", "routineLoops": [{"id": "rl_1787058901376_xxzx", "taskId": null, "title": "Search how to get a document", "steps": ["Go to Google/Youtube/AI", "Search a document's name and add how to get it", "Check for information", "Find a new information", "Put it in practice"], "whatNext": "", "timeToResult": "Immediately", "outcome": "Pending", "effectiveness": "Medium", "iterationCount": 0, "runLogs": [], "lastExecuted": null, "flowViewMode": "linear", "createdDate": "2026-08-18T13:19:11.543Z", "updatedAt": "2026-08-19T10:04:55.748Z"}, {"id": "rl_1787075056558_v03u", "taskId": null, "title": "Documents", "steps": ["Use AI/Youtube/Google", "Use keywords to search a broker for a particular document", "Open each result", "Verify the quality of the result"], "whatNext": "", "timeToResult": "Same day", "outcome": "Pending", "effectiveness": "Very High", "iterationCount": 0, "runLogs": [], "lastExecuted": null, "flowViewMode": "linear", "createdDate": "2026-08-18T17:45:59.682Z", "updatedAt": "2026-08-19T10:04:55.748Z"}], "dailyCrack": null, "antiVision14Day": "If you continue without adding evidence for 14 days: \"The version of me that hesitated and stayed in the old pattern\" becomes 14x more deeply rooted. Your skin/habits stay neglected, snooze & hesitation compound, and you lose another 2 weeks to quiet regret.", "tasks": [{"id": "task_1787052955515_v839", "text": "EC (from March of this year to till date to be collected)", "doingNow": "", "whatNext": "", "nextTargetTime": "2026-08-21T19:35:00.000Z", "completed": false, "completedAt": null, "status": "in_process", "expanded": false, "ideas": [{"id": "idea_1787061989684_ft7c", "text": "Landeed", "completed": true, "completedAt": "2026-08-19T20:32:11.612Z", "createdDate": "2026-08-18T14:06:29.684Z"}, {"id": "idea_1787067039482_mq7x", "text": "Online sites", "completed": true, "completedAt": "2026-08-19T11:37:13.660Z", "createdDate": "2026-08-18T15:30:39.482Z"}], "subtasks": [], "createdDate": "2026-08-18T11:35:55.515Z", "updatedAt": "2026-08-20T19:35:53.865Z"}, {"id": "task_1787053122470_22m4", "text": "Tax paid receipt to be collected", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787067229347_skn0", "text": "Go to panchayat office", "completed": false, "completedAt": null, "createdDate": "2026-08-18T15:33:49.347Z"}, {"id": "idea_1787074910200_4oc3", "text": "Call to the number sent to Jarina", "completed": true, "completedAt": "2026-08-19T12:53:42.698Z", "createdDate": "2026-08-18T17:41:50.200Z"}], "subtasks": [{"id": "subtask_1787174243599_s0rh", "text": "Go to taverekere and give 500 to the panchayat accountant", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "ideas": [], "createdDate": "2026-08-19T21:17:23.599Z", "updatedAt": "2026-08-19T21:17:23.599Z"}], "createdDate": "2026-08-18T11:38:42.470Z", "updatedAt": "2026-08-18T17:41:50.200Z"}, {"id": "task_1787052980765_x3oc", "text": "RTC (from 1980-2026 to be collected)", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": true, "completedAt": "2026-08-19T09:57:21.956Z", "status": "completed", "expanded": false, "ideas": [{"id": "idea_1787074844127_18a5", "text": "Offline from known people", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:40:44.127Z"}, {"id": "idea_1787074876215_f28d", "text": "Any broker or agencies", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:41:16.215Z"}, {"id": "idea_1787074888495_u0b5", "text": "Use keywords to search for brokers on google", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:41:28.495Z"}, {"id": "idea_1787075052088_y4aa", "text": "Either online through keywords to search a broker or offline from Ramakrishnan", "completed": true, "completedAt": null, "createdDate": "2026-08-18T17:44:12.088Z"}], "subtasks": [], "createdDate": "2026-08-18T11:36:20.765Z", "updatedAt": "2026-08-18T17:44:12.088Z"}, {"id": "task_1787053098224_xij5", "text": "Court order to be collected", "doingNow": "Advocate has filed for the court order", "whatNext": "Will followup at 3:15pm", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "in_process", "expanded": false, "ideas": [{"id": "idea_1787074985508_en2p", "text": "Ramakrishnan", "completed": false, "completedAt": null, "createdDate": "2026-08-18T17:43:05.508Z"}], "subtasks": [], "createdDate": "2026-08-18T11:38:18.224Z", "updatedAt": "2026-08-18T17:43:05.508Z"}, {"id": "task_1787108935130_x1e9", "text": "Activate repayment", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787114557842_5mjd", "text": "Send the form in gmail by downloading it from the portal", "completed": false, "completedAt": null, "createdDate": "2026-08-19T04:42:37.842Z"}, {"id": "idea_1787114602160_dw6w", "text": "Activate mom's", "completed": true, "completedAt": "2026-08-19T12:49:47.882Z", "createdDate": "2026-08-19T04:43:22.160Z"}], "subtasks": [], "createdDate": "2026-08-19T03:08:55.130Z", "updatedAt": "2026-08-19T03:08:55.130Z"}, {"id": "task_1787108960906_8wfu", "text": "HSBC bank account opening", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [], "subtasks": [], "createdDate": "2026-08-19T03:09:20.907Z", "updatedAt": "2026-08-19T03:09:20.907Z"}, {"id": "task_1787108973940_rsr6", "text": "Send dad's adhaar card", "doingNow": "", "whatNext": "", "nextTargetTime": null, "completed": false, "completedAt": null, "status": "yet_to_start", "expanded": false, "ideas": [{"id": "idea_1787143707103_hmdg", "text": "When daddy is there ask his adhaar number and get his digital adhaar copy from online.", "completed": false, "completedAt": null, "createdDate": "2026-08-19T12:48:27.103Z"}], "subtasks": [], "createdDate": "2026-08-19T03:09:33.940Z", "updatedAt": "2026-08-19T03:09:33.940Z"}], "targetEventTime": null, "achieved": false, "achievedAt": null, "targetActionLine": "We are going to Wonderla as a family", "deletedLogIds": [], "targetEventName": "", "taggedEvent": "", "deletedTaskIds": [], "deletedSubtaskIds": [], "deletedIdeaIds": [], "deletedHabitIds": [], "deletedRoutineLoopIds": [], "deletedReflectionIds": [], "lastEvidenceCategory": "appreciation"}]};
     const DEF = { screen: "hub", identities: [], creating: null, currentId: null, deletedIds: [] };
 
     // ── DATA INTEGRITY UTILITY ──
@@ -2002,10 +2017,91 @@
 
     function getScreenFromUrl() {
       try {
-        const hash = (window.location.hash || '').replace('#', '').trim();
-        if (hash) return hash;
+        var hash = (window.location.hash || '').replace('#', '').trim();
+        if (hash) {
+          var qIdx = hash.indexOf('?');
+          return qIdx !== -1 ? hash.substring(0, qIdx) : hash;
+        }
       } catch (e) { }
       return null;
+    }
+
+    function handleDeepLinkRouting() {
+      try {
+        var params = {};
+        if (window.location.search) {
+          var sp = new URLSearchParams(window.location.search);
+          sp.forEach(function (val, key) { params[key] = val; });
+        }
+        if (window.location.hash) {
+          var hashStr = window.location.hash.replace(/^#/, '');
+          var qIdx = hashStr.indexOf('?');
+          if (qIdx !== -1) {
+            var hashParams = new URLSearchParams(hashStr.substring(qIdx + 1));
+            hashParams.forEach(function (val, key) { params[key] = val; });
+            var baseScr = hashStr.substring(0, qIdx);
+            if (baseScr) params.screen = baseScr;
+          } else if (hashStr) {
+            params.screen = hashStr;
+          }
+        }
+
+        var targetIdentityId = params.id || params.identityId;
+        var targetTaskId = params.taskId;
+        var targetSubtaskId = params.subtaskId;
+
+        if (targetTaskId || targetIdentityId) {
+          if (!targetIdentityId && targetTaskId && typeof S !== 'undefined' && Array.isArray(S.identities)) {
+            var foundId = S.identities.find(function (ident) {
+              return Array.isArray(ident.tasks) && ident.tasks.some(function (t) {
+                return t.id === targetTaskId || (Array.isArray(t.subtasks) && t.subtasks.some(function (st) { return st.id === targetTaskId; }));
+              });
+            });
+            if (foundId) targetIdentityId = foundId.id;
+          }
+
+          if (targetIdentityId && typeof S !== 'undefined') {
+            S.currentId = targetIdentityId;
+            S.screen = 'identity';
+          }
+
+          var activeId = (typeof cur === 'function' ? cur() : null);
+          if (activeId && Array.isArray(activeId.tasks) && targetTaskId) {
+            var matchingTask = activeId.tasks.find(function (t) {
+              return t.id === targetTaskId || (Array.isArray(t.subtasks) && t.subtasks.some(function (st) { return st.id === targetTaskId; }));
+            });
+            if (matchingTask) {
+              matchingTask.expanded = true;
+              matchingTask.timerExpanded = true;
+            }
+          }
+
+          if (typeof render === 'function') {
+            render();
+          }
+
+          if (targetTaskId) {
+            setTimeout(function () {
+              var targetEl = document.querySelector('[data-task-id="' + targetTaskId + '"]') || document.getElementById('task-card-' + targetTaskId);
+              if (!targetEl && targetSubtaskId) {
+                targetEl = document.querySelector('[data-subtask-id="' + targetSubtaskId + '"]');
+              }
+              if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.style.transition = 'box-shadow 0.4s, border-color 0.4s';
+                targetEl.style.boxShadow = '0 0 35px rgba(59,130,246,0.95), 0 0 18px rgba(245,158,11,0.85)';
+                targetEl.style.borderColor = '#60a5fa';
+                setTimeout(function () {
+                  targetEl.style.boxShadow = '';
+                  targetEl.style.borderColor = '';
+                }, 3500);
+              }
+            }, 350);
+          }
+        }
+      } catch (e) {
+        console.warn('Deep link routing error:', e);
+      }
     }
 
     function isLocalhost() {
@@ -2046,18 +2142,6 @@
      * ------------------------------------------------------------------------------- */
     function load() {
       try {
-        if (isLocalhost()) {
-          if (typeof EMBEDDED_INITIAL_DATA !== 'undefined' && EMBEDDED_INITIAL_DATA && Array.isArray(EMBEDDED_INITIAL_DATA.identities) && EMBEDDED_INITIAL_DATA.identities.length > 0) {
-            var localState = JSON.parse(JSON.stringify(EMBEDDED_INITIAL_DATA));
-            if (Array.isArray(localState.identities)) {
-              localState.identities = localState.identities.map(sanitizeIdentity).filter(Boolean);
-            }
-            localState.screen = getScreenFromUrl() || 'hub';
-            return localState;
-          }
-          return { ...DEF, screen: getScreenFromUrl() || 'hub' };
-        }
-
         var candidateKeys = [
           SK,
           SK + '_backup',
@@ -2260,12 +2344,6 @@
           S.lastActionDevice = DEVICE_ID;
         }
 
-        // GUARD 1: Localhost runs purely in-memory for testing.
-        // It does NOT save to localStorage or push to cloud.
-        if (typeof isLocalhost === 'function' && isLocalhost()) {
-          return;
-        }
-
         const data = JSON.stringify(S);
         localStorage.setItem(SK, data);
         localStorage.setItem(SK + '_backup', data);
@@ -2290,6 +2368,13 @@
             }
           }
         } catch (histErr) { /* localStorage quota — silently skip */ }
+
+        // GUARD 1: Localhost runs in Listen-Only Mode (reads from cloud, never writes to cloud)
+        if (typeof isLocalhost === 'function' && isLocalhost()) {
+          _syncStatus = 'synced';
+          updateSyncStatusUI();
+          return;
+        }
 
         // GUARD 2: Don't push to cloud if this was just a UI navigation / screen switch
         if (isUserAction === false) {
@@ -4565,6 +4650,7 @@
         + '&text=' + encodeURIComponent(title)
         + '&dates=' + encodeURIComponent(datesParam)
         + '&details=' + encodeURIComponent(details)
+        + (opts.url ? '&sprop=website:' + encodeURIComponent(opts.url) : '')
         + (userEmail ? '&authuser=' + encodeURIComponent(userEmail) : '');
 
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -4593,6 +4679,13 @@
           useDefault: true
         }
       };
+
+      if (eventOpts.url) {
+        payload.source = {
+          title: 'Cage Breaker: ' + eventOpts.title,
+          url: eventOpts.url
+        };
+      }
 
       function sendCalendarApiRequest(token, email) {
         fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
@@ -4710,6 +4803,9 @@
       if (!targetItem || !targetItem.nextTargetTime) return;
 
       var itemTitle = targetType === 'subtask' ? (targetItem.text + ' (' + task.text + ')') : task.text;
+      var baseUrl = window.location.href.split('#')[0].split('?')[0];
+      var deepLink = baseUrl + '#identity?id=' + id.id + '&taskId=' + task.id + (targetType === 'subtask' && targetItem ? ('&subtaskId=' + targetItem.id) : '');
+
       var detailsLines = [];
       detailsLines.push('📌 Task: ' + task.text);
       if (targetType === 'subtask') {
@@ -4721,12 +4817,17 @@
       if (targetItem.doingNow) {
         detailsLines.push('⚡ Current Status: ' + targetItem.doingNow);
       }
+      detailsLines.push('');
+      detailsLines.push('🔗 Direct Link to Task:');
+      detailsLines.push(deepLink);
+
       var details = detailsLines.join('\n');
 
       window.addEventToGoogleCalendarDirect({
         title: itemTitle,
         startIso: targetItem.nextTargetTime,
-        details: details
+        details: details,
+        url: deepLink
       });
     };
 
@@ -4747,6 +4848,9 @@
         hour: 'numeric', minute: '2-digit'
       });
 
+      var baseUrl = window.location.href.split('#')[0].split('?')[0];
+      var deepLink = baseUrl + '#identity?id=' + id.id + '&taskId=' + task.id + (targetType === 'subtask' && targetItem ? ('&subtaskId=' + targetItem.id) : '');
+
       var detailsLines = [];
       detailsLines.push('📌 Task: ' + task.text);
       if (targetType === 'subtask') {
@@ -4758,6 +4862,10 @@
       if (targetItem.doingNow) {
         detailsLines.push('⚡ Current Status: ' + targetItem.doingNow);
       }
+      detailsLines.push('');
+      detailsLines.push('🔗 Direct Link to Task:');
+      detailsLines.push(deepLink);
+
       var details = detailsLines.join('\n');
       var savedEmail = localStorage.getItem('gcal_account_email') || '';
 
@@ -4772,7 +4880,7 @@
         isHtml: true,
         message: 'Target time set for <strong>"' + esc(itemTitle) + '"</strong> at <strong>' + esc(formattedDate) + '</strong>.'
           + accountInfoHtml
-          + '<div style="font-size:11.5px;color:#94a3b8;margin-top:6px">Event will be added directly in the background with automatic reminders.</div>',
+          + '<div style="font-size:11.5px;color:#94a3b8;margin-top:6px">Event will include a direct link back to this task with automatic reminders.</div>',
         confirmText: '📅 Add to Google Calendar',
         confirmBg: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
         cancelText: 'No, thanks',
@@ -4780,7 +4888,8 @@
           window.addEventToGoogleCalendarDirect({
             title: itemTitle,
             startIso: isoStr,
-            details: details
+            details: details,
+            url: deepLink
           });
         }
       });
@@ -5075,9 +5184,9 @@
     };
 
     function getSavedEvidenceCategory() {
-      var id = getCurRef() || cur();
-      var cat = (id && id.lastEvidenceCategory) || localStorage.getItem('cb_evidence_category') || 'evidence';
-      if (!cat || cat === 'all') cat = 'evidence';
+      var id = (typeof getCurRef === 'function' ? getCurRef() : null) || (typeof cur === 'function' ? cur() : null);
+      var cat = (id && id.lastEvidenceCategory) || localStorage.getItem('cb_evidence_category') || (window.typeSelectorState && (window.typeSelectorState['idlog'] || window.typeSelectorState['default'])) || 'appreciation';
+      if (!cat || cat === 'all') cat = 'appreciation';
       return cat;
     }
 
@@ -5131,12 +5240,26 @@
     }
 
     window.setInlineCategory = function (cat) {
-      var id = getCurRef() || cur();
-      if (!cat || cat === 'all') cat = 'evidence';
+      var id = (typeof getCurRef === 'function' ? getCurRef() : null) || (typeof cur === 'function' ? cur() : null);
+      if (!cat || cat === 'all') cat = 'appreciation';
       try { localStorage.setItem('cb_evidence_category', cat); } catch (e) {}
+      if (!window.typeSelectorState) {
+        try {
+          window.typeSelectorState = JSON.parse(localStorage.getItem('cage_type_selector_state') || '{}');
+        } catch (e) {
+          window.typeSelectorState = {};
+        }
+      }
+      window.typeSelectorState = window.typeSelectorState || {};
+      window.typeSelectorState['default'] = cat;
+      window.typeSelectorState['idlog'] = cat;
+      window.typeSelectorState['plog'] = cat;
+      try {
+        localStorage.setItem('cage_type_selector_state', JSON.stringify(window.typeSelectorState));
+      } catch (e) {}
       if (id) {
         id.lastEvidenceCategory = cat;
-        save(true);
+        if (typeof save === 'function') save(true);
       }
       render();
     };
@@ -10388,12 +10511,26 @@
      *   - `DOMContentLoaded` check: Ensures DOM elements are fully constructed before
      *     initial mount, while providing immediate fallback if script runs post-DOMContentLoaded.
      * ------------------------------------------------------------------------------- */
+    window.addEventListener('hashchange', function () {
+      if (typeof handleDeepLinkRouting === 'function') {
+        handleDeepLinkRouting();
+      }
+    });
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () {
-        render();
+        if (typeof handleDeepLinkRouting === 'function') {
+          handleDeepLinkRouting();
+        } else {
+          render();
+        }
       });
     } else {
-      render();
+      if (typeof handleDeepLinkRouting === 'function') {
+        handleDeepLinkRouting();
+      } else {
+        render();
+      }
     }
 
   </script>
