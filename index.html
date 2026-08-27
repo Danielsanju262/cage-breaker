@@ -3143,34 +3143,44 @@
     // ═══════════════════════════════════════════════
     (function initModalScrollLockEngine() {
       function updateScrollLock() {
-        var hasModal = !!document.querySelector('.modal-overlay');
-        if (hasModal) {
-          if (!document.body.classList.contains('modal-locked')) {
-            document.body.classList.add('modal-locked');
-            document.documentElement.classList.add('modal-locked');
-          }
-        } else {
+        var hasModal = !!document.querySelector('.modal-overlay, #sync-modal-overlay, #quick-tag-event-modal-container, #update-format-modal-container, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal');
+        var isLocked = document.body ? document.body.classList.contains('modal-locked') : false;
+        if (hasModal && !isLocked && document.body && document.documentElement) {
+          document.body.classList.add('modal-locked');
+          document.documentElement.classList.add('modal-locked');
+        } else if (!hasModal && isLocked && document.body && document.documentElement) {
           document.body.classList.remove('modal-locked');
           document.documentElement.classList.remove('modal-locked');
         }
       }
 
-      var observer = new MutationObserver(function () {
-        updateScrollLock();
+      window.syncModalScrollLock = updateScrollLock;
+
+      var observer = new MutationObserver(function (mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+          if (mutations[i].type === 'childList') {
+            updateScrollLock();
+            break;
+          }
+        }
       });
 
-      if (document.body) {
-        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+      function startObserver() {
+        if (document.body) {
+          observer.observe(document.body, { childList: true });
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver);
       } else {
-        document.addEventListener('DOMContentLoaded', function () {
-          observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
-        });
+        startObserver();
       }
 
       // Prevent background touch scrolling on mobile while modal overlay is present
       document.addEventListener('touchmove', function (e) {
-        if (document.querySelector('.modal-overlay')) {
-          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal');
+        if (document.querySelector('.modal-overlay, #sync-modal-overlay, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal')) {
+          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal, .modal-body');
           if (!scrollable) {
             e.preventDefault();
           }
@@ -3179,8 +3189,8 @@
 
       // Prevent mouse wheel scrolling on background
       document.addEventListener('wheel', function (e) {
-        if (document.querySelector('.modal-overlay')) {
-          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal');
+        if (document.querySelector('.modal-overlay, #sync-modal-overlay, #ideas-pop-modal, #evidence-modal, #routine-loop-modal, #run-loop-modal')) {
+          var scrollable = e.target.closest('.modal-card, .modal-box, .modal-content, .gc-modal-card, .modal, .modal-body');
           if (!scrollable) {
             e.preventDefault();
           }
