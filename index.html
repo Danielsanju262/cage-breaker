@@ -155,6 +155,25 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Disable text selection on buttons, timers, countdowns, dropdown menus, section filters, and filter buttons */
+    button, .btn, .b, .bp, .bb, .bd, .bs, .bg, .bo, .bw, .br, .icon-btn, .tab-btn, .modal-close, .task-check-btn, [role="button"],
+    input[type="button"], input[type="submit"], input[type="reset"],
+    select, option, optgroup, .task-status-select, .task-dropdown-menu, .task-dropdown-menu *, .dropdown-menu, .dropdown-menu *, [class*="dropdown"],
+    .live-task-timer-box, .live-task-timer-box *, .live-target-countdown, .live-target-countdown *, .live-task-timer-text,
+    .collapsed-timer-bottom-row, .collapsed-timer-bottom-row *, .collapsed-timer-ttr-wrapper, .collapsed-timer-ttr-wrapper *,
+    .collapsed-timer-next-wrapper, .collapsed-timer-next-wrapper *, .task-card-collapsed-timer, .task-card-collapsed-timer *,
+    .subtasks-badge-pill, [class*="timer"], [class*="countdown"],
+    .ev-filter-section, .ev-filter-section > :not(input):not(textarea),
+    .ev-filter-pills, .ev-filter-pills *, .ev-filter-pill, .ev-filter-pill *,
+    .live-next-time-pill, .meta-pill, .loop-repeat-badge,
+    [class*="filter-pill"], [class*="filter-btn"], [class*="filter-tab"], [class*="filter-section"],
+    #sections-customizer-modal label, #sections-customizer-modal label * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+    }
+
     button:active, .b:active, .bg:active, .icard:active, .routine-loop-card:active {
       transform: scale(0.985);
       transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
@@ -241,18 +260,20 @@
      * ═══════════════════════════════════════════════════════════════════════════════ */
     .fade {
       opacity: 1;
+      transform: none;
+      animation: none;
     }
 
     .fade-screen {
-      animation: screenFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: opacity, transform;
+      animation: screenFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
     }
 
     @keyframes screenFadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0.85; }
+      to { opacity: 1; }
     }
 
     @keyframes breathK {
@@ -261,35 +282,19 @@
     }
 
     @keyframes timerHeartbeatGlow {
-      0% {
+      0%, 100% {
         transform: scale(1);
-        box-shadow: 0 0 12px var(--pulse-glow, rgba(245, 158, 11, 0.25)), inset 0 0 10px var(--pulse-glow, rgba(245, 158, 11, 0.15));
-        background: rgba(15, 23, 42, 0.7);
+        opacity: 0.85;
+        filter: brightness(0.88);
+        box-shadow: 0 0 12px var(--pulse-glow, rgba(56, 189, 248, 0.3)), inset 0 0 8px var(--pulse-glow, rgba(56, 189, 248, 0.15));
+        background: rgba(12, 18, 34, 0.85);
       }
-      12% {
-        transform: scale(1.03);
-        box-shadow: 0 0 24px var(--pulse-glow, rgba(245, 158, 11, 0.6)), inset 0 0 20px var(--pulse-glow, rgba(245, 158, 11, 0.35));
-        background: rgba(15, 23, 42, 0.9);
-      }
-      24% {
-        transform: scale(1);
-        box-shadow: 0 0 14px var(--pulse-glow, rgba(245, 158, 11, 0.3)), inset 0 0 12px var(--pulse-glow, rgba(245, 158, 11, 0.18));
-        background: rgba(15, 23, 42, 0.7);
-      }
-      36% {
-        transform: scale(1.04);
-        box-shadow: 0 0 30px var(--pulse-glow, rgba(245, 158, 11, 0.75)), inset 0 0 25px var(--pulse-glow, rgba(245, 158, 11, 0.45));
-        background: rgba(15, 23, 42, 0.95);
-      }
-      60% {
-        transform: scale(1);
-        box-shadow: 0 0 12px var(--pulse-glow, rgba(245, 158, 11, 0.25)), inset 0 0 10px var(--pulse-glow, rgba(245, 158, 11, 0.15));
-        background: rgba(15, 23, 42, 0.7);
-      }
-      100% {
-        transform: scale(1);
-        box-shadow: 0 0 12px var(--pulse-glow, rgba(245, 158, 11, 0.25)), inset 0 0 10px var(--pulse-glow, rgba(245, 158, 11, 0.15));
-        background: rgba(15, 23, 42, 0.7);
+      50% {
+        transform: scale(1.022);
+        opacity: 1;
+        filter: brightness(1.15);
+        box-shadow: 0 0 26px var(--pulse-glow, rgba(56, 189, 248, 0.75)), inset 0 0 16px var(--pulse-glow, rgba(56, 189, 248, 0.35));
+        background: rgba(15, 23, 42, 0.96);
       }
     }
 
@@ -300,10 +305,10 @@
       padding: 8px 26px;
       border-radius: 14px;
       border: 1.5px solid;
-      animation: timerHeartbeatGlow 2.2s infinite ease-in-out;
+      animation: timerHeartbeatGlow 3.6s infinite ease-in-out;
       cursor: pointer;
       user-select: none;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
       backdrop-filter: blur(8px);
     }
 
@@ -814,6 +819,10 @@
       cursor: pointer !important;
       user-select: none;
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex !important;
+      align-items: center !important;
+      vertical-align: middle !important;
+      line-height: 1.2 !important;
     }
 
     .subtasks-badge-pill:hover {
@@ -1154,14 +1163,21 @@
       }
       .collapsed-timer-bottom-row {
         flex-direction: column !important;
-        align-items: center !important;
-        gap: 10px !important;
+        align-items: stretch !important;
+        gap: 8px !important;
       }
       .collapsed-timer-ttr-wrapper {
         order: 1 !important;
-        justify-content: center !important;
-        width: auto !important;
+        width: 100% !important;
+        justify-content: stretch !important;
         margin-bottom: 0 !important;
+      }
+      .collapsed-timer-ttr-wrapper > div {
+        width: 100% !important;
+      }
+      .collapsed-timer-ttr-wrapper button {
+        width: 100% !important;
+        justify-content: flex-start !important;
       }
       .collapsed-timer-next-wrapper {
         order: 2 !important;
@@ -1587,6 +1603,10 @@
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius-md);
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
 
     .ev-search-input {
@@ -1597,6 +1617,11 @@
       outline: none;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
       width: 100%;
+      cursor: text !important;
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
     }
 
     .ev-search-input:focus {
@@ -1710,6 +1735,20 @@
       .mg-add-row {
         flex-direction: column;
         align-items: stretch;
+      }
+      .proof-logger-top-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        margin-bottom: 6px !important;
+      }
+      .proof-logger-days {
+        order: -1 !important;
+        margin-bottom: 2px !important;
+      }
+      .proof-logger-type-selector {
+        order: 1 !important;
+        width: 100% !important;
       }
     }
   </style>
@@ -1831,7 +1870,7 @@
       var appStyle = selType === 'appreciation' ? 'background:rgba(236,72,153,0.3);border:1px solid #ec4899;color:#f472b6' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8';
       var realStyle = selType === 'realisation' ? 'background:rgba(168,85,247,0.3);border:1px solid #a855f7;color:#c084fc' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8';
 
-      return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">'
+      return '<div class="proof-logger-type-selector" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">'
         + '<span style="font-size:11px;font-weight:700;color:#94a3b8">CATEGORY:</span>'
         + '<button type="button" onclick="setTypeSel(\'' + prefix + '\', \'evidence\')" style="font-size:11.5px;padding:4px 10px;border-radius:6px;font-weight:700;cursor:pointer;' + evStyle + '">Efforts</button>'
         + '<button type="button" onclick="setTypeSel(\'' + prefix + '\', \'appreciation\')" style="font-size:11.5px;padding:4px 10px;border-radius:6px;font-weight:700;cursor:pointer;' + appStyle + '">Appreciation</button>'
@@ -2995,6 +3034,58 @@
       } catch (e) { }
     }
 
+    function getPayloadSignature(state) {
+      if (!state) return '';
+      try {
+        var clean = {
+          screen: state.screen,
+          currentId: state.currentId,
+          deletedIds: state.deletedIds || [],
+          identities: (state.identities || []).map(function (id) {
+            return {
+              id: id.id,
+              newIdentity: id.newIdentity,
+              achieved: id.achieved,
+              type: id.type,
+              targetEvent: id.targetEvent,
+              targetEventName: id.targetEventName,
+              taggedEvent: id.taggedEvent,
+              targetEventDate: id.targetEventDate,
+              targetActionLine: id.targetActionLine,
+              tasks: (id.tasks || []).map(function (t) {
+                return {
+                  id: t.id,
+                  text: t.text,
+                  completed: t.completed,
+                  status: t.status,
+                  doingNow: t.doingNow,
+                  whatNext: t.whatNext,
+                  timeToResult: t.timeToResult,
+                  nextTargetTime: t.nextTargetTime,
+                  subtasks: (t.subtasks || []).map(function (st) {
+                    return { id: st.id, text: st.text, completed: st.completed, doingNow: st.doingNow, whatNext: st.whatNext, status: st.status };
+                  }),
+                  ideas: (t.ideas || []).map(function (idea) {
+                    return { id: idea.id, text: idea.text, completed: idea.completed };
+                  })
+                };
+              }),
+              routineLoops: (id.routineLoops || []).map(function (rl) {
+                return { id: rl.id, title: rl.title, iterationCount: rl.iterationCount, steps: (rl.steps || []).map(function (s) { return s.text || s; }) };
+              }),
+              logs: (id.logs || []).map(function (l) { return { id: l.id, note: l.note, date: l.date }; }),
+              habits: (id.habits || []).map(function (h) { return { id: h.id, text: h.text, checks: h.checks }; }),
+              reflections: (id.reflections || []).map(function (r) { return { id: r.id, note: r.note, date: r.date }; }),
+              dailyCrack: state.dailyCrack
+            };
+          })
+        };
+        return JSON.stringify(clean);
+      } catch (e) {
+        return JSON.stringify(state);
+      }
+    }
+
     function render(preserveScroll) {
       const a = $('#app');
       if (!a) return;
@@ -3004,6 +3095,12 @@
 
       var sy = shouldPreserve ? (rawY > 0 ? rawY : (window._modalSavedScrollY || window._lastKnownPageScrollY || 0)) : 0;
       var sx = shouldPreserve ? (rawX > 0 ? rawX : (window._modalSavedScrollX || window._lastKnownPageScrollX || 0)) : 0;
+
+      // Lock current height of app container before replacing innerHTML so page height never collapses and scroll position never jumps to top
+      var prevHeight = a.offsetHeight;
+      if (shouldPreserve && prevHeight > 0) {
+        a.style.minHeight = prevHeight + 'px';
+      }
 
       var activeId = document.activeElement ? document.activeElement.id : null;
       var selStart = null, selEnd = null;
@@ -3032,9 +3129,13 @@
         window.scrollTo(sx, sy);
         requestAnimationFrame(function () {
           window.scrollTo(sx, sy);
-          setTimeout(function () {
-            window.scrollTo(sx, sy);
-          }, 30);
+        });
+      }
+
+      // Smoothly clear locked minHeight after paint
+      if (shouldPreserve && prevHeight > 0) {
+        requestAnimationFrame(function () {
+          a.style.minHeight = '';
         });
       }
 
@@ -3447,28 +3548,63 @@
         .filter(i => i && i.id && !allDeleted.includes(i.id));
 
       if (cldIds.length === 0 && locIds.length > 0) {
-        return { ...DEF, ...loc, identities: locIds, deletedIds: allDeleted };
+        return { ...DEF, ...cld, ...loc, identities: locIds, deletedIds: allDeleted };
       }
       if (locIds.length === 0 && cldIds.length > 0) {
-        return { ...DEF, ...cld, identities: cldIds, deletedIds: allDeleted };
+        return { ...DEF, ...loc, ...cld, identities: cldIds, deletedIds: allDeleted };
       }
 
-      const map = new Map();
-      locIds.forEach(i => map.set(i.id, i));
+      // Determine which state has the newer ordering timestamp
+      const locOrderTime = (loc && (loc.identityOrderUpdatedAt || loc.lastActionTime || loc._updatedAt)) || 0;
+      const cldOrderTime = (cld && (cld.identityOrderUpdatedAt || cld.lastActionTime || cld._updatedAt)) || 0;
+      const preferredOrderList = (cldOrderTime > locOrderTime) ? cldIds : locIds;
+      const fallbackList = (cldOrderTime > locOrderTime) ? locIds : cldIds;
+
+      // 1. Build a merged map of every identity by ID
+      const mergedMap = new Map();
+      locIds.forEach(i => mergedMap.set(i.id, i));
       cldIds.forEach(i => {
-        if (!map.has(i.id)) {
-          map.set(i.id, i);
+        if (!mergedMap.has(i.id)) {
+          mergedMap.set(i.id, i);
         } else {
-          const existing = map.get(i.id);
+          const existing = mergedMap.get(i.id);
           const merged = mergeSingleIdentity(existing, i);
-          map.set(i.id, merged);
+          mergedMap.set(i.id, merged);
         }
       });
 
-      const mergedList = Array.from(map.values());
+      // 2. Assemble mergedList strictly following the newest ordering
+      const mergedList = [];
+      const addedSet = new Set();
+      preferredOrderList.forEach(i => {
+        if (mergedMap.has(i.id) && !addedSet.has(i.id)) {
+          mergedList.push(mergedMap.get(i.id));
+          addedSet.add(i.id);
+        }
+      });
+      fallbackList.forEach(i => {
+        if (mergedMap.has(i.id) && !addedSet.has(i.id)) {
+          mergedList.push(mergedMap.get(i.id));
+          addedSet.add(i.id);
+        }
+      });
+
       const resScr = (loc.screen && loc.screen !== 'welcome') ? loc.screen : (cld.screen || 'hub');
       const resId = loc.currentId || cld.currentId || (mergedList.length > 0 ? mergedList[0].id : null);
-      return { ...DEF, ...cld, ...loc, identities: mergedList, deletedIds: allDeleted, screen: resScr, currentId: resId };
+      const newestIdentityOrderTime = Math.max(locOrderTime, cldOrderTime);
+      const newestLastActionTime = Math.max(loc.lastActionTime || 0, cld.lastActionTime || 0);
+
+      return {
+        ...DEF,
+        ...cld,
+        ...loc,
+        identities: mergedList,
+        deletedIds: allDeleted,
+        identityOrderUpdatedAt: newestIdentityOrderTime,
+        lastActionTime: newestLastActionTime,
+        screen: resScr,
+        currentId: resId
+      };
     }
 
     function updateSyncStatusUI() {
@@ -3527,8 +3663,6 @@
                   var cloudIdentitiesCount = Array.isArray(parsed.identities) ? parsed.identities.length : 0;
 
                   // ── ANTI-WIPE GUARD ──
-                  // If incoming cloud data has dramatically fewer items than local, reject it
-                  // (it means another client pushed corrupted/empty data)
                   var localItemCount = countAllItems(S);
                   var cloudItemCount = countAllItems(parsed);
                   if (localItemCount > 5 && cloudItemCount < localItemCount * 0.5) {
@@ -3537,11 +3671,12 @@
                     return;
                   }
 
-                  var oldLocalStr = JSON.stringify(S);
+                  var oldPayloadSig = getPayloadSignature(S);
                   var merged = mergeStates(S, parsed);
-                  var newLocalStr = JSON.stringify(merged);
+                  var newPayloadSig = getPayloadSignature(merged);
 
-                  if (oldLocalStr === newLocalStr && currentIdentitiesCount > 0) {
+                  if (oldPayloadSig === newPayloadSig && currentIdentitiesCount > 0) {
+                    S = merged;
                     _syncStatus = 'synced'; updateSyncStatusUI();
                     return;
                   }
@@ -3588,7 +3723,7 @@
       clearTimeout(syncTimeout);
       syncTimeout = setTimeout(function () {
         pushToCloud();
-      }, 1500); // 1.5 second debounce after typing stops
+      }, 1000); // 1.0 second debounce after typing stops
     }
 
     window.pushToCloud = async function () {
@@ -3631,7 +3766,7 @@
 
             // ── LAST-ACTION-WINS CHECK ──
             // If another device performed a newer action more recently than our local last action,
-            // DO NOT OVERWRITE! Pull and adopt the newer cloud state instead!
+            // pull and adopt the newer cloud state before applying any local changes!
             if (cloudDevice && cloudDevice !== DEVICE_ID && cloudLastActionTime > S.lastActionTime) {
               console.log('[CageBreaker Sync] Cloud has newer action from another device (' + cloudLastActionTime + ' vs local ' + S.lastActionTime + '). Pulling instead of pushing.');
               await window.pullFromCloud();
@@ -3690,6 +3825,7 @@
           lastActionTime: S.lastActionTime || Date.now(),
           lastActionDevice: DEVICE_ID,
           lastActionDesc: S.lastActionDesc || 'user_action',
+          identityOrderUpdatedAt: S.identityOrderUpdatedAt || Date.now(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
@@ -3727,6 +3863,7 @@
                 if (data.lastActionTime) S.lastActionTime = data.lastActionTime;
                 if (data.lastActionDevice) S.lastActionDevice = data.lastActionDevice;
                 if (data.lastActionDesc) S.lastActionDesc = data.lastActionDesc;
+                if (data.identityOrderUpdatedAt) S.identityOrderUpdatedAt = data.identityOrderUpdatedAt;
 
                 if (!isLocalhost()) {
                   var dataStr = JSON.stringify(S);
@@ -3736,20 +3873,13 @@
                 }
                 _syncStatus = 'synced'; updateSyncStatusUI();
 
-                // ── CONFIDENCE CHECK ──
-                // Only enable pushing if the merged state has meaningful data
                 var mergedItemCount = countAllItems(S);
                 if (mergedItemCount > 0 || cloudIdentitiesCount > 0) {
                   _initialSyncDone = true;
                 } else {
-                  console.warn('[CageBreaker SAFEGUARD] pullFromCloud: merged state is empty. Delaying _initialSyncDone.');
-                  // Fallback: enable after 10s timeout so app doesn't get stuck
                   setTimeout(function () {
-                    if (!_initialSyncDone) {
-                      _initialSyncDone = true;
-                      console.warn('[CageBreaker] _initialSyncDone forced after 10s timeout.');
-                    }
-                  }, 10000);
+                    if (!_initialSyncDone) _initialSyncDone = true;
+                  }, 5000);
                 }
                 var activeTag = document.activeElement ? document.activeElement.tagName : '';
                 var hasModal = !!document.querySelector('.modal-overlay');
@@ -3761,14 +3891,7 @@
             }
           }
         }
-        // ── CONFIDENCE CHECK for when cloud doc doesn't exist or no adoption needed ──
-        var localItemCount = countAllItems(S);
-        if (localItemCount > 0) {
-          _initialSyncDone = true;
-        } else {
-          // Local is empty AND cloud had nothing — safe to enable (nothing to lose)
-          _initialSyncDone = true;
-        }
+        _initialSyncDone = true;
       } catch (err) {
         console.warn('[CageBreaker Firebase] Pull error:', err);
         _syncStatus = 'error'; updateSyncStatusUI();
@@ -3781,12 +3904,13 @@
       _syncStatus = 'syncing'; updateSyncStatusUI();
       // ALWAYS pull from cloud FIRST
       await pullFromCloud();
-      // Only push if this device has pending local actions newer than cloud
+      // Only push if this device has pending local actions newer than cloud AND not on localhost
       if (typeof isLocalhost === 'function' && !isLocalhost()) {
-        if (S.lastActionDevice === DEVICE_ID && S.lastActionTime) {
+        if (S && S.identities && S.identities.length > 0 && S.lastActionDevice === DEVICE_ID && S.lastActionTime) {
           await pushToCloud();
         }
       }
+      _syncStatus = 'synced'; updateSyncStatusUI();
     };
 
     // Auto-start Firebase Realtime Listener & Initial Sync on App Load
@@ -5496,7 +5620,12 @@
 
       var moved = S.identities.splice(fromIdx, 1)[0];
       S.identities.splice(toIdx, 0, moved);
-      save(true);
+      if (moved) moved.updatedAt = new Date().toISOString();
+      S.identityOrderUpdatedAt = Date.now();
+      S.lastActionTime = Date.now();
+      S.lastActionDevice = DEVICE_ID;
+      S.lastActionDesc = 'reorder_identities';
+      save(true, true);
       render(true);
     };
 
@@ -5523,8 +5652,14 @@
       var temp = S.identities[idx];
       S.identities[idx] = S.identities[swapIdx];
       S.identities[swapIdx] = temp;
+      if (S.identities[idx]) S.identities[idx].updatedAt = new Date().toISOString();
+      if (S.identities[swapIdx]) S.identities[swapIdx].updatedAt = new Date().toISOString();
+      S.identityOrderUpdatedAt = Date.now();
+      S.lastActionTime = Date.now();
+      S.lastActionDevice = DEVICE_ID;
+      S.lastActionDesc = 'move_identity_order';
 
-      save(true);
+      save(true, true);
       render(true);
     };
 
@@ -5582,47 +5717,46 @@
         const logged = loggedToday(id);
         const days = daysOld(id);
         return `<div class="icard ${logged ? 'done' : 'needs'}" id="identity-card-${id.id}" data-identity-id="${id.id}" onclick="openIdentity('${id.id}')" ondragover="onIdentityDragOver(event, '${id.id}')" ondragleave="onIdentityDragLeave(event, '${id.id}')" ondrop="onIdentityDrop(event, '${id.id}')" ondragend="onIdentityDragEnd(event)" style="cursor:pointer;position:relative;transition:all 0.2s ease">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div style="display:flex;align-items:flex-start;gap:8px;flex:1">
-            <span class="identity-drag-handle" draggable="true" ondragstart="event.stopPropagation();onIdentityDragStart(event, '${id.id}')" ontouchstart="event.stopPropagation();onIdentityTouchStart(event, '${id.id}')" ontouchmove="onIdentityTouchMove(event)" ontouchend="onIdentityTouchEnd(event)" onclick="event.stopPropagation()" style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:2px 4px;margin-top:2px;line-height:1;transition:color 0.2s;flex-shrink:0" title="Drag to reorder identity" onmouseenter="this.style.color='#f59e0b'" onmouseleave="this.style.color='#64748b'">⠿</span>
-            <div style="flex:1;padding-right:4px">
-              <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                ${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:700">HABIT</span>' : ''}
-                ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:800">🏆 ACHIEVED</span>' : ''}
-                ${(id.targetEventName || id.taggedEvent) ? `<button onclick="event.stopPropagation();openQuickTagEventModal('${id.id}')" style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Click to edit Tagged Event">Do it Before: "${e(id.targetEventName || id.taggedEvent)}"</button>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:8px">
+          <span class="sm" style="color:#cbd5e1;font-weight:600">Day ${days}${streak > 1 ? ' | ' + streak + '-day streak' : ''}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="b bp bs" onclick="event.stopPropagation();openIdentity('${id.id}')" style="font-size:11.5px;padding:4px 12px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;font-weight:700;border-radius:6px">
+              ${id.achieved ? 'View Achieved Card →' : (logged ? 'Open Card →' : 'Practice Today →')}
+            </button>
+            <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
+              <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
+              <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
+                <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#4ade80'};font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">
+                  ${id.achieved ? 'Re-open' : 'Achieve'}
+                </button>
+                <button onclick="event.stopPropagation();closeAllTaskMenus();editIdentityFromHub('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(251,191,36,0.15)'" onmouseleave="this.style.background='none'">
+                  Edit
+                </button>
+                <button onclick="event.stopPropagation();closeAllTaskMenus();delFromHub('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(239,68,68,0.2)'" onmouseleave="this.style.background='none'">
+                  Delete
+                </button>
               </div>
-
-              <h3 style="font-size:16px;font-weight:700;color:#f8fafc;line-height:1.45;margin-bottom:6px">
-                <a href="javascript:void(0)" onclick="event.stopPropagation();openIdentity('${id.id}')" style="color:inherit;text-decoration:none;transition:color 0.2s" onmouseenter="this.style.color='#38bdf8'" onmouseleave="this.style.color='inherit'">
-                  👤 ${e(id.newIdentity || '')}
-                </a>
-              </h3>
-
-              ${(id.targetActionLine || id.targetEvent) ? `<p style="font-size:12.5px;color:#fbbf24;margin-bottom:6px;font-weight:600"><em>"${e(id.targetActionLine || id.targetEvent)}"</em></p>` : ''}
-              ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
-              ${renderTargetEventCountdown(id)}
-            </div>
-          </div>
-          <div style="position:relative;display:inline-block;flex-shrink:0" onclick="event.stopPropagation()">
-            <button class="bg" onclick="toggleTaskMenu('identity-menu-${id.id}', event)" style="font-size:16px;line-height:1;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>
-            <div id="identity-menu-${id.id}" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:125px;overflow:hidden">
-              <button onclick="event.stopPropagation();closeAllTaskMenus();toggleAchievedIdentity('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:${id.achieved ? '#93c5fd' : '#4ade80'};font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">
-                ${id.achieved ? 'Re-open' : 'Achieve'}
-              </button>
-              <button onclick="event.stopPropagation();closeAllTaskMenus();editIdentityFromHub('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(251,191,36,0.15)'" onmouseleave="this.style.background='none'">
-                Edit
-              </button>
-              <button onclick="event.stopPropagation();closeAllTaskMenus();delFromHub('${id.id}')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='rgba(239,68,68,0.2)'" onmouseleave="this.style.background='none'">
-                Delete
-              </button>
             </div>
           </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:8px">
-          <span class="sm" style="color:#cbd5e1;font-weight:600">${counts.evidence} Ev | ${counts.appreciation} App | ${counts.realisation} Real | Day ${days}${streak > 1 ? ' | ' + streak + '-day streak' : ''}</span>
-          <button class="b bp bs" onclick="event.stopPropagation();openIdentity('${id.id}')" style="font-size:11.5px;padding:4px 12px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;font-weight:700;border-radius:6px">
-            ${id.achieved ? 'View Achieved Card →' : (logged ? 'Open Card →' : 'Practice Today →')}
-          </button>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span class="identity-drag-handle" draggable="true" ondragstart="event.stopPropagation();onIdentityDragStart(event, '${id.id}')" ontouchstart="event.stopPropagation();onIdentityTouchStart(event, '${id.id}')" ontouchmove="onIdentityTouchMove(event)" ontouchend="onIdentityTouchEnd(event)" onclick="event.stopPropagation()" style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:2px 4px;margin-top:2px;line-height:1;transition:color 0.2s;flex-shrink:0" title="Drag to reorder identity" onmouseenter="this.style.color='#f59e0b'" onmouseleave="this.style.color='#64748b'">⠿</span>
+          <div style="flex:1;min-width:0">
+            <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              ${id.type === 'quick' ? '<span style="font-size:10px;background:rgba(245,158,11,.2);color:#fbbf24;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:700">HABIT</span>' : ''}
+              ${id.achieved ? '<span style="font-size:10px;background:rgba(234,179,8,.2);color:#fde047;padding:2px 7px;border-radius:4px;font-style:normal;font-family:system-ui;font-weight:800">🏆 ACHIEVED</span>' : ''}
+              ${(id.targetEventName || id.taggedEvent) ? `<button onclick="event.stopPropagation();openQuickTagEventModal('${id.id}')" style="font-size:11.5px;font-weight:700;padding:3px 9px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="Click to edit Tagged Event">Do it Before: "${e(id.targetEventName || id.taggedEvent)}"</button>` : ''}
+            </div>
+
+            <h3 style="font-size:16px;font-weight:700;color:#f8fafc;line-height:1.45;margin-bottom:6px">
+              <a href="javascript:void(0)" onclick="event.stopPropagation();openIdentity('${id.id}')" style="color:inherit;text-decoration:none;transition:color 0.2s" onmouseenter="this.style.color='#38bdf8'" onmouseleave="this.style.color='inherit'">
+                👤 ${e(id.newIdentity || '')}
+              </a>
+            </h3>
+
+            ${isIdentityIncomplete(id) ? `<button onclick="event.stopPropagation();openUpdateFormatModal('${id.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:800;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;gap:4px">⚠️ Incomplete 2-Part Format — Click to Update</button>` : ''}
+            ${renderTargetEventCountdown(id)}
+          </div>
         </div>
       </div>`;
       }
@@ -6197,8 +6331,12 @@
 
       var moved = id.tasks.splice(fromIdx, 1)[0];
       id.tasks.splice(toIdx, 0, moved);
+      if (moved) moved.updatedAt = new Date().toISOString();
       id.updatedAt = new Date().toISOString();
-      save(true);
+      S.lastActionTime = Date.now();
+      S.lastActionDevice = DEVICE_ID;
+      S.lastActionDesc = 'move_task';
+      save(true, true);
       render();
     };
 
@@ -6683,10 +6821,12 @@
 
       var menuPosStyle = 'position:absolute;left:0;right:0;top:calc(100% + 4px);width:100%;min-width:100%;max-width:100%;background:#0f172a;border:1px solid rgba(255,255,255,0.25);border-radius:8px;box-shadow:0 16px 36px rgba(0,0,0,0.95);z-index:9999;box-sizing:border-box;overflow:hidden;padding:3px;transform-origin:top center;';
 
-      var html = '<div style="position:relative;display:inline-flex;flex-direction:column;flex-shrink:0;vertical-align:middle">';
+      var labelPrefixHtml = (contextPrefix === 'banner') ? '<span style="font-size:12.5px;font-weight:700;color:#38bdf8;margin-right:6px;flex-shrink:0">Can be done:</span>' : '';
+      var html = '<div style="position:relative;display:inline-flex;flex-direction:column;flex-shrink:0;vertical-align:middle;width:auto">';
       html += '<button type="button" class="bg" onclick="toggleTaskMenu(\'' + menuId + '\', event)" style="' + styleStr + '" title="Time to result: ' + esc(displayLabel) + '">';
+      html += labelPrefixHtml;
       html += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center">' + esc(displayLabel) + '</span>';
-      html += '<span style="font-size:9px;opacity:0.7;margin-left:2px">▾</span>';
+      html += '<span style="font-size:9px;opacity:0.7;margin-left:4px;flex-shrink:0">▾</span>';
       html += '</button>';
       html += '<div id="' + menuId + '" class="task-dropdown-menu" style="' + menuPosStyle + '">';
       
@@ -7798,13 +7938,12 @@
         var activeSubtaskId = (taskHighestCd && taskHighestCd.source === 'subtask' && taskHighestCd.item) ? taskHighestCd.item.id : '';
         var timerClickHandler = "event.stopPropagation();openNextTimePickerModal('" + activeTargetType + "', '" + activeParentTaskId + "', '" + activeSubtaskId + "')";
         var ttrDropdownHtml = '<div class="collapsed-timer-ttr-wrapper" onclick="event.stopPropagation()">'
-          + '<span style="font-size:13px;font-weight:700;color:#cbd5e1;white-space:nowrap">Can be done:</span>'
-          + renderTimeToResultSelect(activeTargetType, activeParentTaskId, activeSubtaskId, activeItem.timeToResult || 'Not yet decided', 'font-size:13px;font-weight:700;padding:7px 14px;border-radius:8px;border:1px solid rgba(59,130,246,0.4);background:#0f172a;color:#93c5fd;cursor:pointer;min-width:115px;box-sizing:border-box;', 'banner')
+          + renderTimeToResultSelect(activeTargetType, activeParentTaskId, activeSubtaskId, activeItem.timeToResult || 'Not yet decided', 'font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid rgba(59,130,246,0.4);background:#0f172a;color:#93c5fd;cursor:pointer;min-width:140px;box-sizing:border-box;min-height:36px;height:36px;display:inline-flex;align-items:center;', 'banner')
           + '</div>';
 
-        var nextInputHtml = '<div class="collapsed-timer-next-wrapper" style="background:' + mainNextBg + ';padding:7px 14px;border-radius:8px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box">'
-          + '<span style="font-size:13px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0">Next:</span>'
-          + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" placeholder="What next..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);' + nextUpdateCall + '" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:13px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(curWhatNext) + '</textarea>'
+        var nextInputHtml = '<div class="collapsed-timer-next-wrapper" style="background:' + mainNextBg + ';padding:6px 12px;border-radius:8px;border:1px solid ' + mainNextBorder + ';box-sizing:border-box;min-height:36px;height:36px;display:flex;align-items:center;gap:8px">'
+          + '<span style="font-size:12.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0">Next:</span>'
+          + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="What next..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);' + nextUpdateCall + '" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12.5px;outline:none;padding:0;margin:0;resize:none;overflow:hidden;line-height:20px;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(curWhatNext) + '</textarea>'
           + '</div>';
 
         var timerStatusAndNextHtml = '<div class="collapsed-timer-bottom-row" onclick="event.stopPropagation()">'
@@ -7846,7 +7985,10 @@
           + '<button class="task-check-btn checked" style="flex-shrink:0" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="Mark pending">'
           + '✓'
           + '</button>'
-          + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:14.5px;font-weight:500;cursor:pointer;line-height:1.35;white-space:normal;word-break:break-word;overflow-wrap:anywhere;display:block;flex:1;min-width:0;text-decoration:line-through;color:#94a3b8">' + e(task.text) + '</span>'
+          + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
+          + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:14.5px;font-weight:500;cursor:pointer;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;text-decoration:line-through;color:#94a3b8">' + e(task.text) + '</span>'
+          + (subtasks.length > 0 ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
+          + '</div>'
           + '</div>'
           + '<div class="task-card-header-right" style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
           + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeTaskStatus(\'' + task.id + '\', this.value)" style="font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;border:1px solid ' + statusBorder + ';background:' + statusBg + ';color:' + statusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
@@ -7882,9 +8024,9 @@
         + (task.completed ? '✓' : '')
         + '</button>'
         + (mainIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + mainIdeasButtonHtml + '</div>') : '')
-        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0">'
+        + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
         + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
-        + (subtasks.length > 0 ? ('<span class="subtasks-badge-pill" style="font-size:11px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:2px 7px;border-radius:6px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-block" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
+        + (subtasks.length > 0 ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
         + '</div>'
         + '</div>'
         + '<div class="task-card-header-right">'
@@ -8173,9 +8315,9 @@
 
       // TOP CARD: PROOF LOGGER
       var topLevelAndMotivationCardHtml = '<div class="c cy" style="padding:18px 20px;background:linear-gradient(135deg,rgba(16,24,44,0.94),rgba(10,14,26,0.98));border:1.5px solid rgba(245,158,11,0.45);border-left:4px solid #f59e0b;border-radius:14px;margin-bottom:18px;box-shadow:0 8px 25px rgba(0,0,0,0.35);display:flex;flex-direction:column;justify-content:space-between">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">'
+        + '<div class="proof-logger-top-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">'
         + renderTypeSelector('idlog')
-        + '<span style="font-size:11px;color:#9ca3af">Day ' + days + (streak > 1 ? ' | ' + streak + '-day streak' : '') + '</span>'
+        + '<span class="proof-logger-days" style="font-size:12.5px;font-weight:800;color:#e2e8f0;letter-spacing:0.2px">Day ' + days + (streak > 1 ? ' | ' + streak + '-day streak' : '') + '</span>'
         + '</div>'
         + '<div style="margin-top:2px;padding-top:10px;border-top:1px solid rgba(245,158,11,0.22)">'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
@@ -10433,7 +10575,7 @@
 
       return '<div class="routine-loop-card" id="loop-card-' + rl.id + '">'
         + '<div class="routine-loop-top" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
-        + '<h4 class="routine-loop-title" style="font-size:15px;font-weight:700;color:#f8fafc;margin:0">🔁 ' + e(rl.title || 'Routine Loop ' + (idx + 1)) + '</h4>'
+        + '<h4 class="routine-loop-title" style="font-size:15px;font-weight:700;color:#f8fafc;margin:0">' + e(rl.title || 'Routine Loop ' + (idx + 1)) + '</h4>'
         + '<div class="routine-loop-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
         + runLogsButtonHtml
         + '<div style="position:relative;display:inline-block">'
@@ -10490,7 +10632,7 @@
         var iterCount = rl.iterationCount || 0;
         return '<div class="ev-item" style="padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,0.02);border:1px solid #28334e;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
           + '<div style="flex:1;min-width:0;padding-right:10px">'
-          + '<div style="font-weight:600;color:#f9fafb;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">🔁 ' + e(rl.title)
+          + '<div style="font-weight:600;color:#f9fafb;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + e(rl.title)
           + '</div>'
           + '<div class="sm" style="color:#9ca3af;font-size:11px;margin-top:2px">' + stepsCount + ' steps · ' + (rl.timeToResult ? e(rl.timeToResult) : 'No time set') + ' · ' + iterCount + ' runs · ' + (iterCount > 0 ? e(rl.outcome || 'Positive') : 'Not run yet') + '</div>'
           + '</div>'
@@ -10826,7 +10968,7 @@
         // Routine Loop context
         + '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px">'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<span style="font-size:13px;font-weight:700;color:#fbbf24">🔁 ' + e(rl.title) + '</span>'
+        + '<span style="font-size:13px;font-weight:700;color:#fbbf24">' + e(rl.title) + '</span>'
         + '<span class="routine-loops-count" style="font-size:10px;color:#fbbf24">Cycle #' + nextCycleNum + '</span>'
         + '</div>'
         + (rl.whatNext ? '<div style="font-size:12px;color:#fef3c7;margin-top:6px;line-height:1.4"><strong style="color:#fbbf24">Current Focus:</strong> "' + e(rl.whatNext) + '"</div>' : '')
