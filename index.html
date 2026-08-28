@@ -7384,7 +7384,7 @@
         createdDate: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      task.subtasks.push(newSub);
+      task.subtasks.unshift(newSub);
       task.updatedAt = new Date().toISOString();
 
       save(true);
@@ -8064,7 +8064,7 @@
 
       var subtasksListHtml = '';
       if (sortedSubtasks.length > 0) {
-        subtasksListHtml = '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">'
+        subtasksListHtml = '<div style="display:flex;flex-direction:column;gap:8px">'
           + sortedSubtasks.map(function (item) {
               var st = item.st;
               var stIdeas = Array.isArray(st.ideas) ? st.ideas : [];
@@ -8186,7 +8186,7 @@
       }
 
       var addSubtaskBarHtml = !task.completed ? (
-        '<div style="display:flex;gap:6px;align-items:center;margin-top:8px">'
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:' + (sortedSubtasks.length > 0 ? '10px' : '0') + '">'
         + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
         + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11px;padding:6px 12px;background:#3b82f6;color:#fff;font-weight:700;white-space:nowrap">+ Add Subtask</button>'
         + '</div>'
@@ -8198,8 +8198,8 @@
       var subtasksContainerHtml = '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '">'
         + '<div class="subtasks-inner">'
         + '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:' + subtasksContainerBg + ';border:' + subtasksContainerBorder + ';border-radius:10px">'
-        + subtasksListHtml
         + addSubtaskBarHtml
+        + subtasksListHtml
         + '</div>'
         + '</div>'
         + '</div>';
