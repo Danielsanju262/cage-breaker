@@ -764,11 +764,16 @@
       grid-template-rows: 1fr;
       opacity: 1;
       transform: translateY(0);
+      overflow: visible;
     }
 
     .subtasks-inner {
       overflow: hidden;
       min-height: 0;
+    }
+
+    .subtasks-wrapper.expanded > .subtasks-inner {
+      overflow: visible;
     }
 
     /* Routine Loop Run Logs Smooth Accordion */
@@ -3191,6 +3196,10 @@
         if (parentCard) {
           parentCard.style.zIndex = '';
         }
+        var subtaskItem = m.closest('.subtask-card-item, .subtask-card-row');
+        if (subtaskItem) {
+          subtaskItem.style.zIndex = '';
+        }
       });
     };
 
@@ -3212,6 +3221,11 @@
         if (parentCard) {
           parentCard.style.zIndex = '600';
           parentCard.style.position = 'relative';
+        }
+        var subtaskItem = menu.closest('.subtask-card-item, .subtask-card-row');
+        if (subtaskItem) {
+          subtaskItem.style.zIndex = '650';
+          subtaskItem.style.position = 'relative';
         }
       }
     };
@@ -6379,6 +6393,147 @@
       render();
     };
 
+    window.subtaskDragInfo = null;
+
+    window.onSubtaskDragStart = function (e, taskId, stIdx) {
+      window.subtaskDragInfo = { taskId: taskId, idx: stIdx };
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', taskId + '_' + stIdx);
+      }
+      var row = document.getElementById('subtask-row-' + taskId + '-' + stIdx);
+      if (row) row.style.opacity = '0.45';
+    };
+
+    window.onSubtaskDragOver = function (e, taskId, toIdx) {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      var drag = window.subtaskDragInfo;
+      if (drag && drag.taskId === taskId && drag.idx !== toIdx) {
+        var row = document.getElementById('subtask-row-' + taskId + '-' + toIdx);
+        if (row) {
+          row.style.borderTop = '2px solid #38bdf8';
+          row.style.boxShadow = '0 0 12px rgba(56,189,248,0.5)';
+        }
+      }
+    };
+
+    window.onSubtaskDragLeave = function (e, taskId, toIdx) {
+      var row = document.getElementById('subtask-row-' + taskId + '-' + toIdx);
+      if (row) {
+        row.style.borderTop = '';
+        row.style.boxShadow = '';
+      }
+    };
+
+    window.onSubtaskDrop = function (e, taskId, toIdx) {
+      e.preventDefault();
+      var fromIdx = window.subtaskDragInfo ? window.subtaskDragInfo.idx : null;
+      var fromTaskId = window.subtaskDragInfo ? window.subtaskDragInfo.taskId : null;
+      if (fromIdx === null && e.dataTransfer) {
+        var parts = (e.dataTransfer.getData('text/plain') || '').split('_');
+        if (parts.length === 2) {
+          fromTaskId = parts[0];
+          fromIdx = parseInt(parts[1], 10);
+        }
+      }
+      var row = document.getElementById('subtask-row-' + taskId + '-' + toIdx);
+      if (row) {
+        row.style.borderTop = '';
+        row.style.boxShadow = '';
+      }
+      if (fromTaskId === taskId && fromIdx !== null && !isNaN(fromIdx) && fromIdx !== toIdx) {
+        window.moveSubtask(taskId, fromIdx, toIdx);
+      }
+      window.subtaskDragInfo = null;
+    };
+
+    window.onSubtaskDragEnd = function (e) {
+      window.subtaskDragInfo = null;
+      document.querySelectorAll('.subtask-card-item').forEach(function (el) {
+        el.style.opacity = '';
+        el.style.borderTop = '';
+        el.style.boxShadow = '';
+      });
+    };
+
+    window.subtaskTouchInfo = null;
+
+    window.onSubtaskTouchStart = function (e, taskId, stIdx) {
+      window.subtaskTouchInfo = { taskId: taskId, fromIdx: stIdx, currentTargetIdx: null };
+      var row = document.getElementById('subtask-row-' + taskId + '-' + stIdx);
+      if (row) {
+        row.style.opacity = '0.5';
+        row.style.borderColor = '#38bdf8';
+      }
+    };
+
+    window.onSubtaskTouchMove = function (e) {
+      if (!window.subtaskTouchInfo) return;
+      if (e.touches && e.touches.length > 0) {
+        var touch = e.touches[0];
+        var el = document.elementFromPoint(touch.clientX, touch.clientY);
+        var targetRow = el ? el.closest('.subtask-card-item') : null;
+
+        document.querySelectorAll('.subtask-card-item').forEach(function (c) {
+          c.style.borderTop = '';
+          c.style.boxShadow = '';
+        });
+
+        if (targetRow) {
+          var rowTaskId = targetRow.getAttribute('data-subtask-task-id');
+          var targetIdx = parseInt(targetRow.getAttribute('data-subtask-idx'), 10);
+          if (rowTaskId === window.subtaskTouchInfo.taskId && !isNaN(targetIdx) && targetIdx !== window.subtaskTouchInfo.fromIdx) {
+            window.subtaskTouchInfo.currentTargetIdx = targetIdx;
+            targetRow.style.borderTop = '2px solid #38bdf8';
+            targetRow.style.boxShadow = '0 0 12px rgba(56,189,248,0.5)';
+            if (e.cancelable) e.preventDefault();
+          }
+        }
+      }
+    };
+
+    window.onSubtaskTouchEnd = function (e) {
+      if (!window.subtaskTouchInfo) return;
+      var taskId = window.subtaskTouchInfo.taskId;
+      var fromIdx = window.subtaskTouchInfo.fromIdx;
+      var toIdx = window.subtaskTouchInfo.currentTargetIdx;
+
+      document.querySelectorAll('.subtask-card-item').forEach(function (c) {
+        c.style.opacity = '';
+        c.style.borderColor = '';
+        c.style.borderTop = '';
+        c.style.boxShadow = '';
+      });
+
+      window.subtaskTouchInfo = null;
+
+      if (taskId && fromIdx !== null && toIdx !== null && !isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
+        window.moveSubtask(taskId, fromIdx, toIdx);
+      }
+    };
+
+    window.moveSubtask = function (taskId, fromIdx, toIdx) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+      var t = id.tasks.find(function (task) { return task.id === taskId; });
+      if (!t || !Array.isArray(t.subtasks)) return;
+      if (fromIdx < 0 || fromIdx >= t.subtasks.length || toIdx < 0 || toIdx >= t.subtasks.length) return;
+
+      var moved = t.subtasks.splice(fromIdx, 1)[0];
+      t.subtasks.splice(toIdx, 0, moved);
+      if (moved) moved.updatedAt = new Date().toISOString();
+      t.subtaskOrderUpdatedAt = Date.now();
+      t.updatedAt = new Date().toISOString();
+      id.taskOrderUpdatedAt = Date.now();
+      id.updatedAt = new Date().toISOString();
+      S.lastActionTime = Date.now();
+      S.lastActionDevice = DEVICE_ID;
+      S.lastActionDesc = 'move_subtask';
+      save(true, true);
+      render();
+    };
+
     window.moveSubtaskOrder = function (taskId, subtaskId, direction) {
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
@@ -6391,20 +6546,7 @@
       var targetIdx = direction === 'up' ? idx - 1 : idx + 1;
       if (targetIdx < 0 || targetIdx >= t.subtasks.length) return;
 
-      var temp = t.subtasks[idx];
-      t.subtasks[idx] = t.subtasks[targetIdx];
-      t.subtasks[targetIdx] = temp;
-
-      t.subtaskOrderUpdatedAt = Date.now();
-      t.updatedAt = new Date().toISOString();
-      id.taskOrderUpdatedAt = Date.now();
-      id.updatedAt = new Date().toISOString();
-      S.lastActionTime = Date.now();
-      S.lastActionDevice = DEVICE_ID;
-      S.lastActionDesc = 'move_subtask_order';
-
-      save(true, true);
-      render();
+      window.moveSubtask(taskId, idx, targetIdx);
     };
 
     window.toggleSectionVisibility = function (sectionKey) {
@@ -6856,6 +6998,27 @@
       } else {
         render(true);
       }
+
+      // Keep viewport anchored directly on the clicked task card during and after accordion transitions
+      function keepTaskCardInView() {
+        var el = document.querySelector('[data-task-id="' + taskId + '"]');
+        if (!el) return;
+        var navEl = document.querySelector('.nav');
+        var navHeight = navEl ? (navEl.offsetHeight + 14) : 64;
+        var rect = el.getBoundingClientRect();
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+
+        if (rect.top < navHeight || rect.top > (vh - 100)) {
+          var targetY = window.pageYOffset + rect.top - navHeight;
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: 'smooth'
+          });
+        }
+      }
+
+      setTimeout(keepTaskCardInView, 40);
+      setTimeout(keepTaskCardInView, 340);
     };
 
     window.toggleTaskIdeas = window.toggleTaskExpanded;
@@ -7894,9 +8057,10 @@
               );
 
               if (isSubCompleted) {
-                return '<div class="subtask-card-row" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:8px;' + subShadow + '">'
+                return '<div id="subtask-row-' + task.id + '-' + item.origIdx + '" data-subtask-task-id="' + task.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item subtask-card-row" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:8px;' + subShadow + '" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
                   + '<div class="subtask-card-row-left" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
                   + subtaskBulkCheckHtml
+                  + '<span style="cursor:grab;user-select:none;font-size:16px;color:#64748b;padding:2px 3px;line-height:1;touch-action:none;display:inline-flex;align-items:center;flex-shrink:0" title="Drag to reorder subtask" draggable="true" ondragstart="onSubtaskDragStart(event, \'' + task.id + '\', ' + item.origIdx + ')" ontouchstart="onSubtaskTouchStart(event, \'' + task.id + '\', ' + item.origIdx + ')" ontouchmove="onSubtaskTouchMove(event)" ontouchend="onSubtaskTouchEnd(event)" ontouchcancel="onSubtaskTouchEnd(event)">⠿</span>'
                   + '<button class="task-check-btn checked" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="Mark pending">'
                   + '✓'
                   + '</button>'
@@ -7910,9 +8074,7 @@
                   + '</select>'
                   + '<div class="subtask-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
                   + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-                  + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
-                  + (item.origIdx > 0 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'up\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▲ Move Up</button>') : '')
-                  + (item.origIdx < subtasks.length - 1 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'down\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▼ Move Down</button>') : '')
+                  + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:1000;min-width:115px;overflow:hidden">'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
@@ -7922,10 +8084,11 @@
                   + '</div>';
               }
 
-              return '<div style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:4px;' + subShadow + '">'
+              return '<div id="subtask-row-' + task.id + '-' + item.origIdx + '" data-subtask-task-id="' + task.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item" style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:4px;' + subShadow + '" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
                 + '<div class="subtask-card-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;width:100%">'
                 + '<div class="subtask-card-row-left" style="display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0">'
                 + subtaskBulkCheckHtml
+                + '<span style="cursor:grab;user-select:none;font-size:16px;color:#64748b;padding:2px 3px;line-height:1;touch-action:none;display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px" title="Drag to reorder subtask" draggable="true" ondragstart="onSubtaskDragStart(event, \'' + task.id + '\', ' + item.origIdx + ')" ontouchstart="onSubtaskTouchStart(event, \'' + task.id + '\', ' + item.origIdx + ')" ontouchmove="onSubtaskTouchMove(event)" ontouchend="onSubtaskTouchEnd(event)" ontouchcancel="onSubtaskTouchEnd(event)">⠿</span>'
                 + '<button class="task-check-btn ' + (isSubDone ? 'checked' : '') + '" style="width:18px;height:18px;font-size:10px;flex-shrink:0;margin-top:2px" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="' + (isSubDone ? 'Mark pending' : 'Mark completed') + '">'
                 + (isSubDone ? '✓' : '')
                 + '</button>'
@@ -7942,9 +8105,7 @@
                 + '</select>'
                 + '<div class="subtask-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
                 + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
-                + (item.origIdx > 0 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'up\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▲ Move Up</button>') : '')
-                + (item.origIdx < subtasks.length - 1 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'down\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▼ Move Down</button>') : '')
+                + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:1000;min-width:115px;overflow:hidden">'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
