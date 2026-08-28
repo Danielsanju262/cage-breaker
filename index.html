@@ -7416,6 +7416,7 @@
       var parentTask = targetObj.parentTask;
       var ideas = Array.isArray(item.ideas) ? item.ideas : [];
       var activeIdeasCount = ideas.filter(function (i) { return !i.completed; }).length;
+      var completedIdeasCount = ideas.filter(function (i) { return !!i.completed; }).length;
       var totalIdeasCount = ideas.length;
 
       var modal = document.getElementById('ideas-pop-modal');
@@ -7476,7 +7477,7 @@
         + '<div style="display:flex;align-items:center;gap:10px">'
         + '<span style="font-size:22px;color:#fbbf24">💡</span>'
         + '<div>'
-        + '<div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#fbbf24;text-transform:uppercase">' + (isSubtask ? ('SUBTASK IDEAS · Task: ' + e(parentTask.text)) : 'MAIN TASK ACTION IDEAS') + ' (' + ideas.length + ')</div>'
+        + '<div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#fbbf24;text-transform:uppercase">' + (isSubtask ? ('SUBTASK IDEAS · Task: ' + e(parentTask.text)) : 'MAIN TASK ACTION IDEAS') + ' (' + (totalIdeasCount > 0 ? (completedIdeasCount + '/' + totalIdeasCount) : '0') + ')</div>'
         + '<h3 style="font-size:16px;color:#f3f4f6;margin-top:2px;font-weight:600">"' + e(item.text) + '"</h3>'
         + counterSubtextHtml
         + '</div>'
@@ -7784,7 +7785,7 @@
 
     function renderTaskCard(task, tIdx) {
       var mainIdeas = Array.isArray(task.ideas) ? task.ideas : [];
-      var mainActiveIdeas = mainIdeas.filter(function (i) { return !i.completed; }).length;
+      var mainCompletedIdeas = mainIdeas.filter(function (i) { return !!i.completed; }).length;
       var mainTotalIdeas = mainIdeas.length;
       var subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
       var subtasksDoneCount = task.completed ? subtasks.length : subtasks.filter(function (st) { return st.completed; }).length;
@@ -7836,7 +7837,7 @@
           + sortedSubtasks.map(function (item) {
               var st = item.st;
               var stIdeas = Array.isArray(st.ideas) ? st.ideas : [];
-              var stActiveIdeas = stIdeas.filter(function (i) { return !i.completed; }).length;
+              var stCompletedIdeas = stIdeas.filter(function (i) { return !!i.completed; }).length;
               var stTotalIdeas = stIdeas.length;
               var isSubDone = st.completed || task.completed;
               var isEditingSub = window.editingSubtaskKey === (task.id + '_' + st.id);
@@ -7887,8 +7888,8 @@
               var subtaskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isSubBulkSelected ? 'checked' : '') + ' onchange="toggleSubtaskBulkSelect(\'' + task.id + '\', \'' + st.id + '\', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select subtask for bulk delete" />') : '';
 
               var subIdeasButtonHtml = isSubCompleted ? '' : (
-                '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
-                + '💡 ' + (stTotalIdeas > 0 ? (stActiveIdeas === 0 ? stTotalIdeas : (stActiveIdeas + '/' + stTotalIdeas)) : '+')
+                '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stCompletedIdeas === stTotalIdeas ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stCompletedIdeas === stTotalIdeas ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stCompletedIdeas === stTotalIdeas ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
+                + '💡 ' + (stTotalIdeas > 0 ? (stCompletedIdeas + '/' + stTotalIdeas) : '+')
                 + '</button>'
               );
 
@@ -8068,8 +8069,8 @@
       var timerCardClass = hasActiveTimer ? (' task-card-has-timer' + (isTimerExpanded ? ' task-card-timer-expanded' : '')) : '';
 
       var mainIdeasButtonHtml = (isTaskCompleted || task.completed || curStatus === 'completed') ? '' : (
-        '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
-        + '💡 ' + (mainTotalIdeas > 0 ? (mainActiveIdeas === 0 ? mainTotalIdeas : (mainActiveIdeas + '/' + mainTotalIdeas)) : '+')
+        '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
+        + '💡 ' + (mainTotalIdeas > 0 ? (mainCompletedIdeas + '/' + mainTotalIdeas) : '+')
         + '</button>'
       );
 
