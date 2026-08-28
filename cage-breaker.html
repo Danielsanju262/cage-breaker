@@ -2113,7 +2113,7 @@
       id.link = id.identityLink;
       id.url = id.identityLink;
       id.lastEvidenceCategory = id.lastEvidenceCategory || 'evidence';
-      id.achievedVaultExpanded = !!id.achievedVaultExpanded;
+      id.achievedVaultExpanded = false;
       id.hiddenSections = (id.hiddenSections && typeof id.hiddenSections === 'object') ? id.hiddenSections : {};
       id.achieved = !!id.achieved;
       id.achievedAt = id.achievedAt || null;
@@ -2410,6 +2410,8 @@
         var targetTaskId = params.taskId;
         var targetSubtaskId = params.subtaskId;
 
+        collapseAllExpandedStates(S);
+
         if (targetTaskId || targetIdentityId) {
           if (!targetIdentityId && targetTaskId && typeof S !== 'undefined' && Array.isArray(S.identities)) {
             var foundId = S.identities.find(function (ident) {
@@ -2458,6 +2460,10 @@
               }
             }, 350);
           }
+        } else {
+          if (typeof render === 'function') {
+            render();
+          }
         }
       } catch (e) {
         console.warn('Deep link routing error:', e);
@@ -2500,6 +2506,33 @@
      *   - `save(immediate, isUserAction)`: Differentiates pure navigation vs data mutations
      *     so navigating tabs doesn't pollute action timestamps or trigger unneeded cloud writes.
      * ------------------------------------------------------------------------------- */
+    function collapseAllExpandedStates(targetState) {
+      var st = targetState || (typeof S !== 'undefined' ? S : null);
+      if (st && Array.isArray(st.identities)) {
+        st.identities.forEach(function (id) {
+          if (!id) return;
+          id.achievedVaultExpanded = false;
+          if (Array.isArray(id.tasks)) {
+            id.tasks.forEach(function (t) {
+              if (!t) return;
+              t.expanded = false;
+              t.timerExpanded = false;
+            });
+          }
+        });
+      }
+      window.achievedVaultExpanded = false;
+      window.expandedLoopRunLogs = {};
+      if (typeof window.closeAllTaskMenus === 'function') {
+        window.closeAllTaskMenus();
+      }
+      window.bulkLogState = null;
+      window.bulkTaskState = null;
+      window.bulkSubtaskState = null;
+      return st;
+    }
+    window.collapseAllExpandedStates = collapseAllExpandedStates;
+
     function load() {
       try {
         var candidateKeys = [
@@ -2554,19 +2587,7 @@
         }
 
         var res = bestState || { ...DEF };
-        if (Array.isArray(res.identities)) {
-          res.identities.forEach(function (id) {
-            id.achievedVaultExpanded = false;
-            if (Array.isArray(id.tasks)) {
-              id.tasks.forEach(function (t) {
-                t.expanded = false;
-                t.timerExpanded = false;
-              });
-            }
-          });
-        }
-        window.expandedLoopRunLogs = {};
-        window.achievedVaultExpanded = false;
+        collapseAllExpandedStates(res);
 
         const urlScr = getScreenFromUrl();
         if (urlScr) {
@@ -3542,6 +3563,10 @@
           const sSubOrder = (secTask && secTask.subtaskOrderUpdatedAt) ? secTask.subtaskOrderUpdatedAt : sTime;
           const preferSecSubtasks = (sSubOrder > pSubOrder);
 
+          var localTask = (i1 && Array.isArray(i1.tasks)) ? i1.tasks.find(function (lt) { return lt && (lt.id === key || lt.text === key); }) : null;
+          var localExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.expanded : false;
+          var localTimerExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.timerExpanded : false;
+
           mergedTasks.push(sanitizeTask({
             ...secTask,
             ...t,
@@ -3552,11 +3577,21 @@
             status: newest.status,
             timeToResult: newest.timeToResult || 'Immediately',
             nextTargetTime: newest.nextTargetTime,
+            expanded: localExpanded,
+            timerExpanded: localTimerExpanded,
             ideas: mergeTaskIdeas(t.ideas, secTask.ideas, deletedIdeaSet),
             subtasks: mergeTaskSubtasks(t.subtasks, secTask.subtasks, deletedSubtaskSet, deletedIdeaSet, preferSecSubtasks)
           }, deletedSubtaskSet, deletedIdeaSet));
         } else {
-          mergedTasks.push(sanitizeTask(t, deletedSubtaskSet, deletedIdeaSet));
+          var localTask = (i1 && Array.isArray(i1.tasks)) ? i1.tasks.find(function (lt) { return lt && (lt.id === key || lt.text === key); }) : null;
+          var localExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.expanded : false;
+          var localTimerExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.timerExpanded : false;
+
+          mergedTasks.push(sanitizeTask({
+            ...t,
+            expanded: localExpanded,
+            timerExpanded: localTimerExpanded
+          }, deletedSubtaskSet, deletedIdeaSet));
         }
       });
 
@@ -3566,13 +3601,22 @@
         const key = t.id || t.text;
         if (!processedTaskKeys.has(key)) {
           processedTaskKeys.add(key);
-          mergedTasks.push(sanitizeTask(t, deletedSubtaskSet, deletedIdeaSet));
+          var localTask = (i1 && Array.isArray(i1.tasks)) ? i1.tasks.find(function (lt) { return lt && (lt.id === key || lt.text === key); }) : null;
+          var localExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.expanded : false;
+          var localTimerExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.timerExpanded : false;
+
+          mergedTasks.push(sanitizeTask({
+            ...t,
+            expanded: localExpanded,
+            timerExpanded: localTimerExpanded
+          }, deletedSubtaskSet, deletedIdeaSet));
         }
       });
 
       return {
         ...secondary,
         ...primary,
+        achievedVaultExpanded: false,
         dailyCrack: mergedDailyCrack,
         deletedLogIds: mergedDeletedLogIds,
         deletedTaskIds: mergedDeletedTaskIds,
@@ -3735,6 +3779,9 @@
 
                   var oldPayloadSig = getPayloadSignature(S);
                   var merged = mergeStates(S, parsed);
+                  if (typeof _initialSyncDone === 'undefined' || !_initialSyncDone) {
+                    collapseAllExpandedStates(merged);
+                  }
                   var newPayloadSig = getPayloadSignature(merged);
 
                   if (oldPayloadSig === newPayloadSig && currentIdentitiesCount > 0) {
@@ -3922,6 +3969,9 @@
 
               if (shouldAdoptCloud) {
                 S = mergeStates(S, parsed);
+                if (typeof _initialSyncDone === 'undefined' || !_initialSyncDone) {
+                  collapseAllExpandedStates(S);
+                }
                 if (data.lastActionTime) S.lastActionTime = data.lastActionTime;
                 if (data.lastActionDevice) S.lastActionDevice = data.lastActionDevice;
                 if (data.lastActionDesc) S.lastActionDesc = data.lastActionDesc;
@@ -8872,6 +8922,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      collapseAllExpandedStates(S);
       if (typeof initFirebaseSync === 'function') initFirebaseSync();
       render();
 
@@ -11455,6 +11506,7 @@
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () {
+        collapseAllExpandedStates(S);
         if (typeof handleDeepLinkRouting === 'function') {
           handleDeepLinkRouting();
         } else {
@@ -11462,6 +11514,7 @@
         }
       });
     } else {
+      collapseAllExpandedStates(S);
       if (typeof handleDeepLinkRouting === 'function') {
         handleDeepLinkRouting();
       } else {
