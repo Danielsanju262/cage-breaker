@@ -6797,6 +6797,34 @@
       if (!task) return;
 
       var willExpand = !task.expanded;
+
+      // Close any open dropdown menus
+      window.closeAllTaskMenus();
+
+      // Rule: Only one task can have its subtasks expanded at a time.
+      // When opening one task's subtasks, close all other tasks' subtasks.
+      if (willExpand) {
+        id.tasks.forEach(function (t) {
+          if (t.id !== taskId) {
+            t.expanded = false;
+            var otherWrapper = document.getElementById('subtasks-wrapper-' + t.id);
+            if (otherWrapper) {
+              otherWrapper.classList.remove('expanded');
+            }
+            var otherCard = document.querySelector('[data-task-id="' + t.id + '"]');
+            if (otherCard) {
+              var otherPill = otherCard.querySelector('.subtasks-badge-pill');
+              if (otherPill) {
+                otherPill.title = 'Click to expand subtasks';
+                otherPill.style.color = '#94a3b8';
+                otherPill.style.background = 'rgba(255,255,255,0.05)';
+                otherPill.style.borderColor = 'rgba(255,255,255,0.1)';
+              }
+            }
+          }
+        });
+      }
+
       task.expanded = willExpand;
       task.updatedAt = new Date().toISOString();
       id.updatedAt = new Date().toISOString();
