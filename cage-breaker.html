@@ -3299,13 +3299,16 @@
       return Array.from(map.values());
     }
 
-    function mergeTaskSubtasks(subtasks1, subtasks2, deletedSubtaskSet, deletedIdeaSet) {
+    function mergeTaskSubtasks(subtasks1, subtasks2, deletedSubtaskSet, deletedIdeaSet, preferSubtasks2) {
       var arr1 = Array.isArray(subtasks1) ? subtasks1 : [];
       var arr2 = Array.isArray(subtasks2) ? subtasks2 : [];
       var delSubSet = deletedSubtaskSet || new Set();
       var delIdeaSet = deletedIdeaSet || new Set();
-      var map = new Map();
 
+      var preferredList = preferSubtasks2 ? arr2 : arr1;
+      var secondaryList = preferSubtasks2 ? arr1 : arr2;
+
+      var map = new Map();
       [...arr1, ...arr2].forEach(function (st) {
         if (!st) return;
         var sanitized = sanitizeSubtask(st, delIdeaSet);
@@ -3334,7 +3337,27 @@
           }
         }
       });
-      return Array.from(map.values());
+
+      var ordered = [];
+      var added = new Set();
+      preferredList.forEach(function (st) {
+        if (!st) return;
+        var key = st.id || st.text;
+        if (map.has(key) && !added.has(key)) {
+          ordered.push(map.get(key));
+          added.add(key);
+        }
+      });
+      secondaryList.forEach(function (st) {
+        if (!st) return;
+        var key = st.id || st.text;
+        if (map.has(key) && !added.has(key)) {
+          ordered.push(map.get(key));
+          added.add(key);
+        }
+      });
+
+      return ordered;
     }
 
     function mergeSingleIdentity(i1, i2) {
@@ -3461,8 +3484,16 @@
         }
       });
 
+      // ── TASK ORDER DETERMINATION ──
+      // Check explicit taskOrderUpdatedAt timestamps so whichever device rearranged tasks takes precedence
+      const t1TaskOrder = (i1 && i1.taskOrderUpdatedAt) ? i1.taskOrderUpdatedAt : (new Date(i1.updatedAt || i1.createdDate || 0).getTime());
+      const t2TaskOrder = (i2 && i2.taskOrderUpdatedAt) ? i2.taskOrderUpdatedAt : (new Date(i2.updatedAt || i2.createdDate || 0).getTime());
+
+      const primaryTasksSource = (t2TaskOrder >= t1TaskOrder) ? i2 : i1;
+      const secondaryTasksSource = (t2TaskOrder >= t1TaskOrder) ? i1 : i2;
+
       const secondaryTaskMap = new Map();
-      (secondary.tasks || []).forEach(t => {
+      (secondaryTasksSource.tasks || []).forEach(t => {
         if (t && (t.id || t.text)) {
           secondaryTaskMap.set(t.id || t.text, t);
         }
@@ -3471,7 +3502,7 @@
       const mergedTasks = [];
       const processedTaskKeys = new Set();
 
-      (primary.tasks || []).forEach(t => {
+      (primaryTasksSource.tasks || []).forEach(t => {
         if (!t) return;
         if (t.id && deletedTaskSet.has(t.id)) return;
         const key = t.id || t.text;
@@ -3482,6 +3513,11 @@
           const pTime = new Date(t.updatedAt || t.createdDate || 0).getTime();
           const sTime = new Date(secTask.updatedAt || secTask.createdDate || 0).getTime();
           const newest = pTime >= sTime ? t : secTask;
+
+          const pSubOrder = (t && t.subtaskOrderUpdatedAt) ? t.subtaskOrderUpdatedAt : pTime;
+          const sSubOrder = (secTask && secTask.subtaskOrderUpdatedAt) ? secTask.subtaskOrderUpdatedAt : sTime;
+          const preferSecSubtasks = (sSubOrder > pSubOrder);
+
           mergedTasks.push(sanitizeTask({
             ...secTask,
             ...t,
@@ -3493,14 +3529,14 @@
             timeToResult: newest.timeToResult || 'Immediately',
             nextTargetTime: newest.nextTargetTime,
             ideas: mergeTaskIdeas(t.ideas, secTask.ideas, deletedIdeaSet),
-            subtasks: mergeTaskSubtasks(t.subtasks, secTask.subtasks, deletedSubtaskSet, deletedIdeaSet)
+            subtasks: mergeTaskSubtasks(t.subtasks, secTask.subtasks, deletedSubtaskSet, deletedIdeaSet, preferSecSubtasks)
           }, deletedSubtaskSet, deletedIdeaSet));
         } else {
           mergedTasks.push(sanitizeTask(t, deletedSubtaskSet, deletedIdeaSet));
         }
       });
 
-      (secondary.tasks || []).forEach(t => {
+      (secondaryTasksSource.tasks || []).forEach(t => {
         if (!t) return;
         if (t.id && deletedTaskSet.has(t.id)) return;
         const key = t.id || t.text;
@@ -3521,6 +3557,7 @@
         deletedHabitIds: mergedDeletedHabitIds,
         deletedRoutineLoopIds: mergedDeletedRoutineLoopIds,
         deletedReflectionIds: mergedDeletedReflectionIds,
+        taskOrderUpdatedAt: Math.max(t1TaskOrder, t2TaskOrder),
         logs: mergedLogs,
         habits: mergedHabits,
         reflections: mergedReflections,
@@ -3555,8 +3592,9 @@
       }
 
       // Determine which state has the newer ordering timestamp
-      const locOrderTime = (loc && (loc.identityOrderUpdatedAt || loc.lastActionTime || loc._updatedAt)) || 0;
-      const cldOrderTime = (cld && (cld.identityOrderUpdatedAt || cld.lastActionTime || cld._updatedAt)) || 0;
+      // MUST compare ONLY explicit identityOrderUpdatedAt or lastActionTime — NEVER _updatedAt!
+      const locOrderTime = (loc && loc.identityOrderUpdatedAt) ? loc.identityOrderUpdatedAt : ((loc && loc.lastActionTime) || 0);
+      const cldOrderTime = (cld && cld.identityOrderUpdatedAt) ? cld.identityOrderUpdatedAt : ((cld && cld.lastActionTime) || 0);
       const preferredOrderList = (cldOrderTime > locOrderTime) ? cldIds : locIds;
       const fallbackList = (cldOrderTime > locOrderTime) ? locIds : cldIds;
 
@@ -6332,10 +6370,39 @@
       var moved = id.tasks.splice(fromIdx, 1)[0];
       id.tasks.splice(toIdx, 0, moved);
       if (moved) moved.updatedAt = new Date().toISOString();
+      id.taskOrderUpdatedAt = Date.now();
       id.updatedAt = new Date().toISOString();
       S.lastActionTime = Date.now();
       S.lastActionDevice = DEVICE_ID;
       S.lastActionDesc = 'move_task';
+      save(true, true);
+      render();
+    };
+
+    window.moveSubtaskOrder = function (taskId, subtaskId, direction) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+      var t = id.tasks.find(function (task) { return task.id === taskId; });
+      if (!t || !Array.isArray(t.subtasks)) return;
+
+      var idx = t.subtasks.findIndex(function (st) { return String(st.id) === String(subtaskId); });
+      if (idx === -1) return;
+
+      var targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= t.subtasks.length) return;
+
+      var temp = t.subtasks[idx];
+      t.subtasks[idx] = t.subtasks[targetIdx];
+      t.subtasks[targetIdx] = temp;
+
+      t.subtaskOrderUpdatedAt = Date.now();
+      t.updatedAt = new Date().toISOString();
+      id.taskOrderUpdatedAt = Date.now();
+      id.updatedAt = new Date().toISOString();
+      S.lastActionTime = Date.now();
+      S.lastActionDevice = DEVICE_ID;
+      S.lastActionDesc = 'move_subtask_order';
+
       save(true, true);
       render();
     };
@@ -7815,6 +7882,8 @@
                   + '<div class="subtask-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
                   + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
                   + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+                  + (item.origIdx > 0 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'up\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▲ Move Up</button>') : '')
+                  + (item.origIdx < subtasks.length - 1 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'down\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▼ Move Down</button>') : '')
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
@@ -7845,6 +7914,8 @@
                 + '<div class="subtask-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
                 + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
                 + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+                + (item.origIdx > 0 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'up\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▲ Move Up</button>') : '')
+                + (item.origIdx < subtasks.length - 1 ? ('<button onclick="event.stopPropagation();closeAllTaskMenus();moveSubtaskOrder(\'' + task.id + '\', \'' + st.id + '\', \'down\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#93c5fd;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(59,130,246,0.15)\'" onmouseleave="this.style.background=\'none\'">▼ Move Down</button>') : '')
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
