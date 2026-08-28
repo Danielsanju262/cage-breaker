@@ -1596,11 +1596,21 @@
     .task-dropdown-menu button,
     .task-dropdown-menu a {
       transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-top: none !important;
+      border-radius: 0 !important;
     }
 
-    .task-dropdown-menu button:hover,
-    .task-dropdown-menu a:hover {
-      transform: translateX(2px);
+    .task-dropdown-menu button:last-child,
+    .task-dropdown-menu a:last-child {
+      border-bottom: none !important;
+    }
+
+    .task-dropdown-menu[id*="ttr-menu"] button {
+      border-bottom: none !important;
+      border-radius: 5px !important;
     }
 
     /* Evidence Vault filter section & pills */
@@ -6999,22 +7009,22 @@
         render(true);
       }
 
-      // Keep viewport anchored directly on the clicked task card during and after accordion transitions
+      // Keep viewport anchored so the task title is centered in the middle of the screen
       function keepTaskCardInView() {
         var el = document.querySelector('[data-task-id="' + taskId + '"]');
         if (!el) return;
-        var navEl = document.querySelector('.nav');
-        var navHeight = navEl ? (navEl.offsetHeight + 14) : 64;
-        var rect = el.getBoundingClientRect();
+        var headerEl = el.querySelector('.task-card-header-row') || el;
+        var headerRect = headerEl.getBoundingClientRect();
         var vh = window.innerHeight || document.documentElement.clientHeight;
 
-        if (rect.top < navHeight || rect.top > (vh - 100)) {
-          var targetY = window.pageYOffset + rect.top - navHeight;
-          window.scrollTo({
-            top: Math.max(0, targetY),
-            behavior: 'smooth'
-          });
-        }
+        var headerHeight = headerRect.height || 40;
+        var middleOffset = Math.max(70, (vh / 2) - (headerHeight / 2));
+        var targetY = window.pageYOffset + headerRect.top - middleOffset;
+
+        window.scrollTo({
+          top: Math.max(0, targetY),
+          behavior: 'smooth'
+        });
       }
 
       setTimeout(keepTaskCardInView, 40);
@@ -7049,8 +7059,12 @@
       }
     };
 
-    window.handleTaskTitleClick = function (taskId, evt) {
-      if (evt && evt.stopPropagation) evt.stopPropagation();
+    window.handleTaskCardClick = function (taskId, evt) {
+      if (evt && evt.target) {
+        if (evt.target.closest('button, select, textarea, input, .task-title, .subtask-title, .task-dropdown-menu, .subtask-dropdown-menu, .live-task-timer-box, [draggable="true"], .subtasks-container, .auto-expand-input, .task-menu-wrapper, .subtask-menu-wrapper, .task-inputs-container, .subtask-inputs-container')) {
+          return;
+        }
+      }
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
       var task = id.tasks.find(function (t) { return t.id === taskId; });
@@ -7058,12 +7072,16 @@
 
       var cd = getItemTimerStatus(task);
       var hasActiveTimer = cd && !task.completed;
-
-      if (hasActiveTimer) {
+      if (hasActiveTimer && !task.timerExpanded && !task.expanded) {
         window.toggleTimerCardExpand(taskId, evt);
         return;
       }
       window.toggleTaskExpanded(taskId);
+    };
+
+    window.handleTaskTitleClick = function (taskId, evt) {
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      window.startEditTask(taskId);
     };
 
     window.renderTimeToResultSelect = function (targetType, taskId, subtaskId, currentVal, customStyle, contextPrefix) {
@@ -8064,7 +8082,7 @@
                   + '<button class="task-check-btn checked" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="Mark pending">'
                   + '✓'
                   + '</button>'
-                  + '<span style="font-size:12.5px;font-weight:500;color:#94a3b8;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.35;display:block;flex:1;min-width:0;text-decoration:line-through">' + e(st.text) + '</span>'
+                  + '<span class="subtask-title" onclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:12.5px;font-weight:500;cursor:pointer;color:#94a3b8;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.35;display:block;flex:1;min-width:0;text-decoration:line-through" title="Click to edit subtask">' + e(st.text) + '</span>'
                   + '</div>'
                   + '<div class="subtask-card-row-right" style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
                   + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeSubtaskStatus(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="font-size:10px;font-weight:700;padding:2px 5px;border-radius:5px;border:1px solid ' + subStatusBorder + ';background:' + subStatusBg + ';color:' + subStatusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
@@ -8076,7 +8094,6 @@
                   + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
                   + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:1000;min-width:115px;overflow:hidden">'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
-                  + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
                   + '</div>'
                   + '</div>'
@@ -8093,7 +8110,7 @@
                 + (isSubDone ? '✓' : '')
                 + '</button>'
                 + (subIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + subIdeasButtonHtml + '</div>') : '')
-                + '<span style="font-size:13px;font-weight:500;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:block;flex:1;min-width:0;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(st.text) + '</span>'
+                + '<span class="subtask-title" onclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:13px;font-weight:500;cursor:pointer;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:block;flex:1;min-width:0;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit subtask">' + e(st.text) + '</span>'
                 + '</div>'
                 + '<div class="subtask-card-row-right" style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;white-space:nowrap">'
                 + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
@@ -8107,7 +8124,6 @@
                 + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
                 + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:1000;min-width:115px;overflow:hidden">'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
-                + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
                 + '</div>'
                 + '</div>'
@@ -8236,7 +8252,7 @@
       );
 
       if (isTaskCompleted) {
-        return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card task-done' + timerCardClass + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+        return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card task-done' + timerCardClass + '" style="' + taskCardStyle + '" onclick="handleTaskCardClick(\'' + task.id + '\', event)" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
           + '<div class="task-card-details">'
           + '<div class="task-card-details-inner">'
           + '<div class="task-card-header-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%">'
@@ -8247,7 +8263,7 @@
           + '✓'
           + '</button>'
           + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
-          + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:14.5px;font-weight:500;cursor:pointer;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;text-decoration:line-through;color:#94a3b8">' + e(task.text) + '</span>'
+          + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:14.5px;font-weight:500;cursor:pointer;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;text-decoration:line-through;color:#94a3b8" title="Click to edit task title">' + e(task.text) + '</span>'
           + (subtasks.length > 0 ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
           + '</div>'
           + '</div>'
@@ -8261,7 +8277,6 @@
           + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:14px;line-height:1;padding:3px 6px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
           + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
           + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
-          + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
           + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
           + '</div>'
           + '</div>'
@@ -8273,7 +8288,7 @@
           + '</div>';
       }
 
-      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card ' + (task.completed ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card ' + (task.completed ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" onclick="handleTaskCardClick(\'' + task.id + '\', event)" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + collapsedTimerHtml
         + '<div class="task-card-details">'
         + '<div class="task-card-details-inner">'
@@ -8286,7 +8301,7 @@
         + '</button>'
         + (mainIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + mainIdeasButtonHtml + '</div>') : '')
         + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
-        + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '">' + e(task.text) + '</span>'
+        + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit task title">' + e(task.text) + '</span>'
         + (subtasks.length > 0 ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
         + '</div>'
         + '</div>'
@@ -8302,7 +8317,6 @@
         + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:14px;line-height:1;padding:4px 7px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
         + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
-        + '<button onclick="event.stopPropagation();closeAllTaskMenus();startEditTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">Edit</button>'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
         + '</div>'
         + '</div>'
