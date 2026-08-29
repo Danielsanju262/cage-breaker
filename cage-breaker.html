@@ -8067,6 +8067,76 @@
       renderIdeasModalContent();
     };
 
+    window.focusTaskFromSearch = function (taskId, subtaskId, event) {
+      if (event && typeof event.stopPropagation === 'function') {
+        event.stopPropagation();
+      }
+      var hadSearch = !!(window.taskSearchQuery || '').trim();
+      if (hadSearch) {
+        window.taskSearchQuery = '';
+        var searchInput = document.getElementById('task-search-input');
+        if (searchInput) searchInput.value = '';
+      }
+
+      var id = getCurRef() || cur();
+      if (id && Array.isArray(id.tasks)) {
+        var t = id.tasks.find(function (task) { return task.id === taskId; });
+        if (t) {
+          if (subtaskId) {
+            t.expanded = true;
+          } else {
+            t.expanded = false;
+          }
+        }
+      }
+
+      render(true);
+
+      setTimeout(function () {
+        var targetEl = null;
+        if (subtaskId) {
+          targetEl = document.querySelector('[data-subtask-task-id="' + taskId + '"][data-subtask-id="' + subtaskId + '"]') ||
+                     document.getElementById('subtask-row-' + taskId + '-' + subtaskId) ||
+                     document.querySelector('[data-task-id="' + taskId + '"]');
+        } else {
+          targetEl = document.querySelector('[data-task-id="' + taskId + '"]');
+        }
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetEl.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
+          var origBoxShadow = targetEl.style.boxShadow;
+          targetEl.style.boxShadow = '0 0 24px rgba(59,130,246,0.65)';
+          setTimeout(function () {
+            targetEl.style.boxShadow = origBoxShadow;
+          }, 1400);
+        }
+      }, 70);
+    };
+
+    window.handleTaskTitleClick = function (taskId, event) {
+      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      if ((window.taskSearchQuery || '').trim()) {
+        window.focusTaskFromSearch(taskId, null, event);
+        return;
+      }
+      startEditTask(taskId);
+    };
+
+    window.handleSubtaskTitleClick = function (taskId, subtaskId, event) {
+      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      if ((window.taskSearchQuery || '').trim()) {
+        window.focusTaskFromSearch(taskId, subtaskId, event);
+        return;
+      }
+      startEditSubtask(taskId, subtaskId);
+    };
+
+    window.handleTaskCardClick = function (taskId, event) {
+      if ((window.taskSearchQuery || '').trim()) {
+        window.focusTaskFromSearch(taskId, null, event);
+      }
+    };
+
     window.deleteModalIdea = function (ideaId) {
       var targetObj = getActiveIdeasTargetObj();
       if (!targetObj) return;
@@ -8277,10 +8347,17 @@
       var subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
       var subtasksDoneCount = task.completed ? subtasks.length : subtasks.filter(function (st) { return st.completed; }).length;
       var searchQuery = (window.taskSearchQuery || '').trim().toLowerCase();
-      var hasMatchingSubtask = !!searchQuery && subtasks.some(function (st) {
-        return (st.text || '').toLowerCase().indexOf(searchQuery) !== -1 || (st.whatNext || st.nextAction || '').toLowerCase().indexOf(searchQuery) !== -1;
-      });
-      var isExpanded = !!task.expanded || hasMatchingSubtask;
+      var hasSearch = !!searchQuery;
+
+      function checkSubtaskMatch(st) {
+        if (!hasSearch) return true;
+        return (st.text || '').toLowerCase().indexOf(searchQuery) !== -1 ||
+               (st.whatNext || st.nextAction || '').toLowerCase().indexOf(searchQuery) !== -1 ||
+               (st.doingNow || '').toLowerCase().indexOf(searchQuery) !== -1;
+      }
+
+      var hasMatchingSubtask = hasSearch && subtasks.some(checkSubtaskMatch);
+      var isExpanded = hasSearch ? hasMatchingSubtask : !!task.expanded;
       var isEditingTask = window.editingTaskId === task.id;
 
       var subtaskPillColor = (subtasksDoneCount === subtasks.length && subtasks.length > 0) ? '#4ede80' : (isExpanded ? '#93c5fd' : '#94a3b8');
@@ -8320,10 +8397,17 @@
       var mainNextBg = taskItemCd ? taskItemCd.bg : 'rgba(15,23,42,0.6)';
       var mainNextLabelColor = taskItemCd ? taskItemCd.color : '#fbbf24';
 
-      var sortedSubtasks = subtasks.map(function (st, origIdx) {
+      var displayedSubtasks = subtasks.map(function (st, origIdx) {
         return { st: st, origIdx: origIdx };
       });
-      sortedSubtasks.sort(function (a, b) {
+
+      if (hasSearch && hasMatchingSubtask) {
+        displayedSubtasks = displayedSubtasks.filter(function (item) {
+          return checkSubtaskMatch(item.st);
+        });
+      }
+
+      displayedSubtasks.sort(function (a, b) {
         var aDone = a.st.completed || task.completed;
         var bDone = b.st.completed || task.completed;
         if (aDone === bDone) return a.origIdx - b.origIdx;
@@ -8331,9 +8415,9 @@
       });
 
       var subtasksListHtml = '';
-      if (sortedSubtasks.length > 0) {
+      if (displayedSubtasks.length > 0) {
         subtasksListHtml = '<div style="display:flex;flex-direction:column;gap:8px">'
-          + sortedSubtasks.map(function (item) {
+          + displayedSubtasks.map(function (item) {
               var st = item.st;
               var stIdeas = Array.isArray(st.ideas) ? st.ideas : [];
               var stCompletedIdeas = stIdeas.filter(function (i) { return !!i.completed; }).length;
@@ -8348,32 +8432,29 @@
                   + '</div>';
               }
 
-              var curSubStatus = st.status || (isSubDone ? 'completed' : 'yet_to_start');
-              var isSubCompleted = !!(isSubDone || curSubStatus === 'completed');
+              var curSubStatus = st.status || (st.completed ? 'completed' : 'yet_to_start');
               var subStatusColor = curSubStatus === 'completed' ? '#4ede80' : (curSubStatus === 'in_process' ? '#60a5fa' : '#94a3b8');
-              var subStatusBg = curSubStatus === 'completed' ? 'rgba(74,222,128,0.15)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.15)' : 'rgba(148,163,184,0.1)');
-              var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
+              var subStatusBg = curSubStatus === 'completed' ? 'rgba(74,222,128,0.12)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.12)' : 'rgba(148,163,184,0.08)');
+              var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.35)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.35)' : 'rgba(148,163,184,0.25)');
 
-              var stTimerCd = getItemTimerStatus(st) || taskHighestCd;
-              var stStatusBorder = stTimerCd ? stTimerCd.border : 'rgba(147,197,253,0.25)';
-              var stStatusBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
-              var stStatusLabelColor = stTimerCd ? stTimerCd.color : '#60a5fa';
+              var stItemCd = getItemTimerStatus(st);
+              var stTimerCd = stItemCd;
 
-              var stNextBorder = stTimerCd ? stTimerCd.border : 'rgba(251,191,36,0.25)';
-              var stNextBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
-              var stNextLabelColor = stTimerCd ? stTimerCd.color : '#fbbf24';
+              var subDoingBorder = stTimerCd ? stTimerCd.border : 'rgba(147,197,253,0.25)';
+              var subDoingBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
+              var subDoingLabelColor = stTimerCd ? stTimerCd.color : '#60a5fa';
 
-              var subtaskInputsHtml = (!isSubDone && curSubStatus === 'in_process') ? (
-                '<div class="subtask-inputs-container">'
-                + '<div class="subtask-input-box" style="background:' + stStatusBg + ';border:1px solid ' + stStatusBorder + '">'
-                + '<span style="font-size:10.5px;font-weight:700;color:' + stStatusLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:1px">Status:</span>'
-                + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateSubtaskDoingNow(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.doingNow || '') + '</textarea>'
-                + '</div>'
-                + '<span class="subtask-input-arrow">➔</span>'
-                + '<div class="subtask-input-box" style="background:' + stNextBg + ';border:1px solid ' + stNextBorder + '">'
-                + '<span style="font-size:10.5px;font-weight:700;color:' + stNextLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:1px">Next:</span>'
-                + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:1px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.whatNext || '') + '</textarea>'
-                + renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime)
+              var subNextBorder = stTimerCd ? stTimerCd.border : 'rgba(251,191,36,0.25)';
+              var subNextBg = stTimerCd ? stTimerCd.bg : 'rgba(15,23,42,0.6)';
+              var subNextLabelColor = stTimerCd ? stTimerCd.color : '#fbbf24';
+
+              var isSubCompleted = isSubDone || curSubStatus === 'completed';
+
+              var subtaskInputsHtml = !isSubCompleted ? (
+                '<div class="subtask-inputs-container" style="display:flex;gap:6px;align-items:center;margin-top:4px">'
+                + '<div style="display:flex;align-items:center;gap:6px;flex:1;background:' + subNextBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + subNextBorder + '">'
+                + '<span style="font-size:11px;font-weight:700;color:' + subNextLabelColor + ';white-space:nowrap">Next:</span>'
+                + '<textarea rows="1" class="auto-expand-input" data-min-h="20px" placeholder="What next for this subtask..." onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateSubtaskWhatNext(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:11.5px;outline:none;padding:0;margin:0;resize:none;overflow:hidden;line-height:20px;font-family:inherit;height:20px;min-height:20px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(st.whatNext || st.nextAction || '') + '</textarea>'
                 + '</div>'
                 + '</div>'
               ) : '';
@@ -8393,14 +8474,14 @@
               );
 
               if (isSubCompleted) {
-                return '<div id="subtask-row-' + task.id + '-' + item.origIdx + '" data-subtask-task-id="' + task.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item subtask-card-row" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:8px;' + subShadow + '" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
+                return '<div id="subtask-row-' + task.id + '-' + st.id + '" data-subtask-task-id="' + task.id + '" data-subtask-id="' + st.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item subtask-card-row" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:8px;' + subShadow + '" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
                   + '<div class="subtask-card-row-left" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
                   + subtaskBulkCheckHtml
                   + '<span style="cursor:grab;user-select:none;font-size:16px;color:#64748b;padding:2px 3px;line-height:1;touch-action:none;display:inline-flex;align-items:center;flex-shrink:0" title="Drag to reorder subtask" draggable="true" ondragstart="onSubtaskDragStart(event, \'' + task.id + '\', ' + item.origIdx + ')" ontouchstart="onSubtaskTouchStart(event, \'' + task.id + '\', ' + item.origIdx + ')" ontouchmove="onSubtaskTouchMove(event)" ontouchend="onSubtaskTouchEnd(event)" ontouchcancel="onSubtaskTouchEnd(event)">⠿</span>'
                   + '<button class="task-check-btn checked" style="width:18px;height:18px;font-size:10px;flex-shrink:0" onclick="toggleSubtask(\'' + task.id + '\', \'' + st.id + '\')" title="Mark pending">'
                   + '✓'
                   + '</button>'
-                  + '<span class="subtask-title" onclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:12.5px;font-weight:500;cursor:pointer;color:#94a3b8;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.35;display:block;flex:1;min-width:0;text-decoration:line-through" title="Click to edit subtask">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
+                  + '<span class="subtask-title" onclick="handleSubtaskTitleClick(\'' + task.id + '\', \'' + st.id + '\', event)" style="font-size:12.5px;font-weight:500;cursor:pointer;color:#94a3b8;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.35;display:block;flex:1;min-width:0;text-decoration:line-through" title="Click to edit subtask">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
                   + '</div>'
                   + '<div class="subtask-card-row-right" style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
                   + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeSubtaskStatus(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="font-size:10px;font-weight:700;padding:2px 5px;border-radius:5px;border:1px solid ' + subStatusBorder + ';background:' + subStatusBg + ';color:' + subStatusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
@@ -8420,7 +8501,7 @@
                   + '</div>';
               }
 
-              return '<div id="subtask-row-' + task.id + '-' + item.origIdx + '" data-subtask-task-id="' + task.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item" style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:4px;' + subShadow + '" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
+              return '<div id="subtask-row-' + task.id + '-' + st.id + '" data-subtask-task-id="' + task.id + '" data-subtask-id="' + st.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item" style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:4px;' + subShadow + '" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
                 + '<div class="subtask-card-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;width:100%">'
                 + '<div class="subtask-card-row-left" style="display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0">'
                 + subtaskBulkCheckHtml
@@ -8429,7 +8510,7 @@
                 + (isSubDone ? '✓' : '')
                 + '</button>'
                 + (subIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + subIdeasButtonHtml + '</div>') : '')
-                + '<span class="subtask-title" onclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:13px;font-weight:500;cursor:pointer;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:block;flex:1;min-width:0;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit subtask">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
+                + '<span class="subtask-title" onclick="handleSubtaskTitleClick(\'' + task.id + '\', \'' + st.id + '\', event)" style="font-size:13px;font-weight:500;cursor:pointer;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:block;flex:1;min-width:0;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit subtask">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
                 + '</div>'
                 + '<div class="subtask-card-row-right" style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;white-space:nowrap">'
                 + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
@@ -8456,64 +8537,29 @@
       }
 
       var addSubtaskBarHtml = !task.completed ? (
-        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:' + (sortedSubtasks.length > 0 ? '10px' : '0') + '">'
-        + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
-        + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11px;padding:6px 12px;background:#3b82f6;color:#fff;font-weight:700;white-space:nowrap">+ Add Subtask</button>'
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:' + (displayedSubtasks.length > 0 ? '10px' : '0') + '">'
+        + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:7px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
+        + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11.5px;padding:7px 12px;background:#2563eb;color:#fff;font-weight:700">+ Add Subtask</button>'
         + '</div>'
       ) : '';
 
-      var subtasksContainerBorder = taskHighestCd ? ('1px solid ' + taskHighestCd.border) : '1px solid rgba(255,255,255,0.08)';
-      var subtasksContainerBg = taskHighestCd ? taskHighestCd.bg : 'rgba(15,23,42,0.6)';
-
-      var subtasksContainerHtml = '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '">'
-        + '<div class="subtasks-inner">'
-        + '<div class="subtasks-container" style="margin-top:12px;padding:12px 14px;background:' + subtasksContainerBg + ';border:' + subtasksContainerBorder + ';border-radius:10px">'
+      var subtasksContainerHtml = (
+        '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '">'
+        + '<div class="subtasks-inner" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08)">'
         + addSubtaskBarHtml
         + subtasksListHtml
         + '</div>'
         + '</div>'
-        + '</div>';
+      );
 
-      var mainTaskInputsHtml = (!task.completed && curStatus === 'in_process') ? (
-        '<div class="task-inputs-container">'
-        + '<div class="task-input-box" style="background:' + mainStatusBg + ';border:1px solid ' + mainStatusBorder + '">'
-        + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Status:</span>'
-        + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.doingNow || '') + '</textarea>'
-        + '</div>'
-        + '<span class="task-input-arrow">➔</span>'
-        + '<div class="task-input-box" style="background:' + mainNextBg + ';border:1px solid ' + mainNextBorder + '">'
-        + '<span style="font-size:11.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Next:</span>'
-        + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.whatNext || '') + '</textarea>'
-        + (!task.nextTargetTime ? renderNextTimePill('task', task.id, null, null) : '')
-        + '</div>'
-        + '</div>'
-      ) : '';
+      var hasActiveTimer = (taskHighestCd && taskHighestCd.hasTarget && !task.completed);
+      var isTimerExpanded = hasActiveTimer && (window.expandedTimerTaskId === task.id || isExpanded);
 
-      var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
-      var isTaskBulkSelected = Array.isArray(window.bulkTaskState && window.bulkTaskState.selectedTasks) && window.bulkTaskState.selectedTasks.includes(task.id);
-      var taskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isTaskBulkSelected ? 'checked' : '') + ' onchange="toggleTaskBulkSelect(\'' + task.id + '\', this.checked)" style="width:17px;height:17px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select task for bulk delete" />') : '';
-
-      var taskCardStyle = 'margin-bottom:12px;transition:box-shadow 0.25s, border-color 0.25s;';
-      if (isTaskBulkSelected) {
-        taskCardStyle += 'border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);';
-      } else if (taskHighestCd) {
-        taskCardStyle += 'border-color:' + taskHighestCd.border + ';box-shadow:0 0 20px ' + taskHighestCd.glow + ';';
-        if (taskHighestCd.status === 'overdue') {
-          taskCardStyle += 'background:rgba(239,68,68,0.08);';
-        }
-      } else if (isExpanded) {
-        taskCardStyle += 'border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1);';
-      }
-
-      var isTaskCompleted = !!(task.completed || curStatus === 'completed');
-      var hasActiveTimer = taskHighestCd && !task.completed;
-      var isTimerExpanded = !!task.timerExpanded;
       var collapsedTimerHtml = '';
       if (hasActiveTimer) {
-        var timerDisplayText = taskHighestCd.timerText || taskHighestCd.text;
-        var activeItem = (taskHighestCd && taskHighestCd.item) || task;
-        var isSubActive = taskHighestCd && taskHighestCd.source === 'subtask' && taskHighestCd.item;
-
+        var activeItem = (taskHighestCd.source === 'subtask' && taskHighestCd.item) ? taskHighestCd.item : task;
+        var timerDisplayText = (taskHighestCd.days > 0 ? (taskHighestCd.days + 'd ') : '') + taskHighestCd.text;
+        var isSubActive = (taskHighestCd.source === 'subtask');
         var curDoingNow = (isSubActive ? activeItem.doingNow : task.doingNow) || (task.doingNow || '');
         var curWhatNext = (isSubActive ? activeItem.whatNext : task.whatNext) || (task.whatNext || '');
 
@@ -8530,10 +8576,9 @@
           + '</div>'
         ) : '';
 
-        var activeTargetType = (taskHighestCd && taskHighestCd.source === 'subtask') ? 'subtask' : 'task';
+        var activeTargetType = (taskHighestCd.source === 'subtask') ? 'subtask' : 'task';
         var activeParentTaskId = task.id;
-        var activeSubtaskId = (taskHighestCd && taskHighestCd.source === 'subtask' && taskHighestCd.item) ? taskHighestCd.item.id : '';
-        var timerClickHandler = "event.stopPropagation();openNextTimePickerModal('" + activeTargetType + "', '" + activeParentTaskId + "', '" + activeSubtaskId + "')";
+        var activeSubtaskId = (taskHighestCd.source === 'subtask') ? activeItem.id : '';
         var ttrDropdownHtml = '<div class="collapsed-timer-ttr-wrapper" onclick="event.stopPropagation()">'
           + renderTimeToResultSelect(activeTargetType, activeParentTaskId, activeSubtaskId, activeItem.timeToResult || 'Not yet decided', 'font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid rgba(59,130,246,0.4);background:#0f172a;color:#93c5fd;cursor:pointer;min-width:140px;box-sizing:border-box;min-height:36px;height:36px;display:inline-flex;align-items:center;', 'banner')
           + '</div>';
@@ -8568,6 +8613,7 @@
           + '</div>'
           + '<span class="task-title" style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3;text-align:center;margin-bottom:8px">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
           + subtaskContextHtml
+          + (subtasks.length > 0 ? ('<div style="display:flex;align-items:center;justify-content:center;width:100%;margin-top:2px;margin-bottom:6px"><span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + subtaskPillColor + ';background:' + subtaskPillBg + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + subtaskPillBorder + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks (' + subtasksDoneCount + ' of ' + subtasks.length + ' completed)" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span></div>') : '')
           + timerStatusAndNextHtml
           + '</div>'
           + '</div>';
@@ -8575,49 +8621,42 @@
 
       var timerCardClass = hasActiveTimer ? (' task-card-has-timer' + (isTimerExpanded ? ' task-card-timer-expanded' : '')) : '';
 
-      var mainIdeasButtonHtml = (isTaskCompleted || task.completed || curStatus === 'completed') ? '' : (
+      var mainIdeasButtonHtml = (task.completed || curStatus === 'completed') ? '' : (
         '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
         + '💡 ' + (mainTotalIdeas > 0 ? (mainCompletedIdeas + '/' + mainTotalIdeas) : '+')
         + '</button>'
       );
 
-      if (isTaskCompleted) {
-        return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card task-done' + timerCardClass + '" style="' + taskCardStyle + '" onclick="handleTaskCardClick(\'' + task.id + '\', event)" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
-          + '<div class="task-card-details">'
-          + '<div class="task-card-details-inner">'
-          + '<div class="task-card-header-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%">'
-          + '<div class="task-card-header-left" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
-          + taskBulkCheckHtml
-          + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:2px 4px;line-height:1;touch-action:none;display:inline-flex;align-items:center;flex-shrink:0" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
-          + '<button class="task-check-btn checked" style="flex-shrink:0" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="Mark pending">'
-          + '✓'
-          + '</button>'
-          + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
-          + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:14.5px;font-weight:500;cursor:pointer;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;text-decoration:line-through;color:#94a3b8" title="Click to edit task title">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
-          + subtasksBadgeHtml
-          + '</div>'
-          + '</div>'
-          + '<div class="task-card-header-right" style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-          + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeTaskStatus(\'' + task.id + '\', this.value)" style="font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;border:1px solid ' + statusBorder + ';background:' + statusBg + ';color:' + statusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
-          + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1">Yet to Start</option>'
-          + '<option value="in_process" style="background:#111827;color:#60a5fa">In Process</option>'
-          + '<option value="completed" style="background:#111827;color:#4ede80" selected>Completed</option>'
-          + '</select>'
-          + '<div class="task-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
-          + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:14px;line-height:1;padding:3px 6px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
-          + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
-          + '<button onclick="event.stopPropagation();closeAllTaskMenus();openNextTimePickerModal(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">⏳ Target Time</button>'
-          + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
-          + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
-          + '</div>'
-          + '</div>'
-          + '</div>'
-          + '</div>'
-          + subtasksContainerHtml
-          + '</div>'
-          + '</div>'
-          + '</div>';
+      var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
+      var isTaskBulkSelected = Array.isArray(window.bulkTaskState && window.bulkTaskState.selectedTasks) && window.bulkTaskState.selectedTasks.includes(task.id);
+      var taskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isTaskBulkSelected ? 'checked' : '') + ' onchange="toggleTaskBulkSelect(\'' + task.id + '\', this.checked)" style="width:17px;height:17px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select task for bulk delete" />') : '';
+
+      var taskCardStyle = 'margin-bottom:12px;transition:box-shadow 0.25s, border-color 0.25s;';
+      if (isTaskBulkSelected) {
+        taskCardStyle += 'border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);';
+      } else if (taskHighestCd) {
+        taskCardStyle += 'border-color:' + taskHighestCd.border + ';box-shadow:0 0 20px ' + taskHighestCd.glow + ';';
+        if (taskHighestCd.status === 'overdue') {
+          taskCardStyle += 'background:rgba(239,68,68,0.08);';
+        }
+      } else if (isExpanded) {
+        taskCardStyle += 'border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1);';
       }
+
+      var mainTaskInputsHtml = (!task.completed && curStatus === 'in_process') ? (
+        '<div class="task-inputs-container">'
+        + '<div class="task-input-box" style="background:' + mainStatusBg + ';border:1px solid ' + mainStatusBorder + '">'
+        + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Status:</span>'
+        + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateTaskDoingNow(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.doingNow || '') + '</textarea>'
+        + '</div>'
+        + '<span class="task-input-arrow">➔</span>'
+        + '<div class="task-input-box" style="background:' + mainNextBg + ';border:1px solid ' + mainNextBorder + '">'
+        + '<span style="font-size:11.5px;font-weight:700;color:' + mainNextLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Next:</span>'
+        + '<textarea rows="1" class="auto-expand-input" data-min-h="22px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateTaskWhatNext(\'' + task.id + '\', this.value)" style="flex:1;background:transparent;border:none;color:#f8fafc;font-size:12px;outline:none;padding:2px 0;margin:0;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;height:22px;min-height:22px;word-break:break-word;white-space:pre-wrap;box-sizing:border-box">' + esc(task.whatNext || '') + '</textarea>'
+        + (!task.nextTargetTime ? renderNextTimePill('task', task.id, null, null) : '')
+        + '</div>'
+        + '</div>'
+      ) : '';
 
       return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card ' + (task.completed ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" onclick="handleTaskCardClick(\'' + task.id + '\', event)" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + collapsedTimerHtml
@@ -8631,7 +8670,7 @@
         + (task.completed ? '✓' : '')
         + '</button>'
         + (mainIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + mainIdeasButtonHtml + '</div>') : '')
-        + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
+        + '<div class="task-title-wrap" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;line-height:1.45">'
         + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit task title">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
         + subtasksBadgeHtml
         + '</div>'
