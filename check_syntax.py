@@ -39,9 +39,52 @@ for filepath in target_files:
                 i += 1
                 continue
             
-            # Handle line comments
-            if not in_str and ch == '/' and i+1 < len(line) and line[i+1] == '/':
-                break
+            # Handle line comments and block comments
+            if not in_str and ch == '/' and i+1 < len(line):
+                if line[i+1] == '/':
+                    break
+                elif line[i+1] == '*':
+                    # Simple inline block comment skip
+                    end_bc = line.find('*/', i+2)
+                    if end_bc != -1:
+                        i = end_bc + 2
+                        continue
+
+            # Handle regex literals (e.g. /[abc]/g after (, =, :, ,, [, !, return, etc.)
+            if not in_str and ch == '/':
+                # Check if preceding non-whitespace character indicates a regex literal context
+                prev_text = line[:i].rstrip()
+                if not prev_text or prev_text[-1] in '=(:[,!&|?{};+~':
+                    # Parse until end of regex literal
+                    r_idx = i + 1
+                    in_char_class = False
+                    r_escape = False
+                    found_end = False
+                    while r_idx < len(line):
+                        r_ch = line[r_idx]
+                        if r_escape:
+                            r_escape = False
+                            r_idx += 1
+                            continue
+                        if r_ch == '\\':
+                            r_escape = True
+                            r_idx += 1
+                            continue
+                        if r_ch == '[' and not in_char_class:
+                            in_char_class = True
+                        elif r_ch == ']' and in_char_class:
+                            in_char_class = False
+                        elif r_ch == '/' and not in_char_class:
+                            found_end = True
+                            r_idx += 1
+                            # consume flags
+                            while r_idx < len(line) and line[r_idx].isalpha():
+                                r_idx += 1
+                            break
+                        r_idx += 1
+                    if found_end:
+                        i = r_idx
+                        continue
             
             # Handle strings
             if ch == '`':
