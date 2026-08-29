@@ -2796,6 +2796,54 @@
       return window.isScreenChanging ? 'fade-screen' : 'fade';
     }
 
+    // Global Scroll vs Tap/Click Interceptor: ensures scrolling never accidentally triggers clicks on touched elements
+    (function () {
+      var _touchStartX = 0;
+      var _touchStartY = 0;
+      var _isTouchScrolling = false;
+      var _touchScrollEndTime = 0;
+
+      window.addEventListener('touchstart', function (e) {
+        if (e.touches && e.touches[0]) {
+          _touchStartX = e.touches[0].clientX;
+          _touchStartY = e.touches[0].clientY;
+          _isTouchScrolling = false;
+        }
+      }, { passive: true, capture: true });
+
+      window.addEventListener('touchmove', function (e) {
+        if (e.touches && e.touches[0]) {
+          var dx = Math.abs(e.touches[0].clientX - _touchStartX);
+          var dy = Math.abs(e.touches[0].clientY - _touchStartY);
+          if (dx > 7 || dy > 7) {
+            _isTouchScrolling = true;
+          }
+        }
+      }, { passive: true, capture: true });
+
+      window.addEventListener('touchend', function () {
+        if (_isTouchScrolling) {
+          _touchScrollEndTime = Date.now();
+          setTimeout(function () {
+            _isTouchScrolling = false;
+          }, 140);
+        }
+      }, { passive: true, capture: true });
+
+      window.addEventListener('touchcancel', function () {
+        _isTouchScrolling = false;
+      }, { passive: true, capture: true });
+
+      // Intercept clicks during capture phase if a touch scroll was just occurring
+      document.addEventListener('click', function (e) {
+        if (_isTouchScrolling || (Date.now() - _touchScrollEndTime < 120)) {
+          e.stopPropagation();
+          e.preventDefault();
+          return false;
+        }
+      }, true);
+    })();
+
     function go(scr) {
       clearTimers();
       S.screen = scr;
@@ -5856,13 +5904,41 @@
     };
 
     window.identityTouchFromId = null;
+    var _idTouchStartX = 0;
+    var _idTouchStartY = 0;
+    var _idTouchActive = false;
+    var _idTouchTimer = null;
+
     window.onIdentityTouchStart = function (e, id) {
+      if (e.touches && e.touches[0]) {
+        _idTouchStartX = e.touches[0].clientX;
+        _idTouchStartY = e.touches[0].clientY;
+      }
+      _idTouchActive = false;
       window.identityTouchFromId = id;
+      if (_idTouchTimer) clearTimeout(_idTouchTimer);
+      _idTouchTimer = setTimeout(function () {
+        _idTouchActive = true;
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch (err) {} }
+      }, 180);
     };
+
     window.onIdentityTouchMove = function (e) {
       if (!window.identityTouchFromId) return;
       var touch = e.touches[0];
       if (!touch) return;
+      var dx = Math.abs(touch.clientX - _idTouchStartX);
+      var dy = Math.abs(touch.clientY - _idTouchStartY);
+
+      if (!_idTouchActive) {
+        if (dx > 8 || dy > 8) {
+          if (_idTouchTimer) clearTimeout(_idTouchTimer);
+          window.identityTouchFromId = null;
+          return;
+        }
+        return;
+      }
+
       var targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
       var card = targetEl ? targetEl.closest('.icard[data-identity-id]') : null;
       document.querySelectorAll('.icard').forEach(function (c) {
@@ -5872,12 +5948,16 @@
       if (card && card.getAttribute('data-identity-id') !== String(window.identityTouchFromId)) {
         card.style.borderTop = '2px solid #f59e0b';
         card.style.boxShadow = '0 0 16px rgba(245,158,11,0.6)';
+        if (e.cancelable) e.preventDefault();
       }
     };
+
     window.onIdentityTouchEnd = function (e) {
+      if (_idTouchTimer) clearTimeout(_idTouchTimer);
       if (!window.identityTouchFromId) return;
+      var wasActive = _idTouchActive;
       var touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
-      if (touch) {
+      if (wasActive && touch) {
         var targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
         var card = targetEl ? targetEl.closest('.icard[data-identity-id]') : null;
         if (card) {
@@ -5888,6 +5968,7 @@
         }
       }
       window.identityTouchFromId = null;
+      _idTouchActive = false;
       document.querySelectorAll('.icard').forEach(function (c) {
         c.style.opacity = '';
         c.style.borderTop = '';
@@ -6462,21 +6543,49 @@
 
     window.taskTouchFromIdx = null;
     window.taskTouchCurrentTargetIdx = null;
+    var _taskTouchStartX = 0;
+    var _taskTouchStartY = 0;
+    var _taskTouchActive = false;
+    var _taskTouchTimer = null;
 
     window.onTaskTouchStart = function (e, idx) {
+      if (e.touches && e.touches[0]) {
+        _taskTouchStartX = e.touches[0].clientX;
+        _taskTouchStartY = e.touches[0].clientY;
+      }
+      _taskTouchActive = false;
       window.taskTouchFromIdx = idx;
       window.taskTouchCurrentTargetIdx = null;
-      var card = document.getElementById('task-card-' + idx);
-      if (card) {
-        card.style.opacity = '0.5';
-        card.style.borderColor = '#3b82f6';
-      }
+      if (_taskTouchTimer) clearTimeout(_taskTouchTimer);
+      _taskTouchTimer = setTimeout(function () {
+        _taskTouchActive = true;
+        var card = document.getElementById('task-card-' + idx);
+        if (card) {
+          card.style.opacity = '0.6';
+          card.style.borderColor = '#3b82f6';
+          if (navigator.vibrate) { try { navigator.vibrate(30); } catch (err) {} }
+        }
+      }, 180);
     };
 
     window.onTaskTouchMove = function (e) {
       if (window.taskTouchFromIdx === null) return;
       if (e.touches && e.touches.length > 0) {
         var touch = e.touches[0];
+        var dx = Math.abs(touch.clientX - _taskTouchStartX);
+        var dy = Math.abs(touch.clientY - _taskTouchStartY);
+
+        // If moved before holding 180ms, it is a scroll gesture -> cancel drag
+        if (!_taskTouchActive) {
+          if (dx > 8 || dy > 8) {
+            if (_taskTouchTimer) clearTimeout(_taskTouchTimer);
+            window.taskTouchFromIdx = null;
+            window.taskTouchCurrentTargetIdx = null;
+            return;
+          }
+          return;
+        }
+
         var el = document.elementFromPoint(touch.clientX, touch.clientY);
         var card = el ? el.closest('.task-card') : null;
 
@@ -6498,8 +6607,10 @@
     };
 
     window.onTaskTouchEnd = function (e) {
+      if (_taskTouchTimer) clearTimeout(_taskTouchTimer);
       var fromIdx = window.taskTouchFromIdx;
       var toIdx = window.taskTouchCurrentTargetIdx;
+      var wasActive = _taskTouchActive;
 
       document.querySelectorAll('.task-card').forEach(function (c) {
         c.style.opacity = '';
@@ -6510,8 +6621,9 @@
 
       window.taskTouchFromIdx = null;
       window.taskTouchCurrentTargetIdx = null;
+      _taskTouchActive = false;
 
-      if (fromIdx !== null && toIdx !== null && !isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
+      if (wasActive && fromIdx !== null && toIdx !== null && !isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
         window.moveTask(fromIdx, toIdx);
       }
     };
@@ -6598,20 +6710,46 @@
     };
 
     window.subtaskTouchInfo = null;
+    var _subtaskTouchStartX = 0;
+    var _subtaskTouchStartY = 0;
+    var _subtaskTouchActive = false;
+    var _subtaskTouchTimer = null;
 
     window.onSubtaskTouchStart = function (e, taskId, stIdx) {
-      window.subtaskTouchInfo = { taskId: taskId, fromIdx: stIdx, currentTargetIdx: null };
-      var row = document.getElementById('subtask-row-' + taskId + '-' + stIdx);
-      if (row) {
-        row.style.opacity = '0.5';
-        row.style.borderColor = '#38bdf8';
+      if (e.touches && e.touches[0]) {
+        _subtaskTouchStartX = e.touches[0].clientX;
+        _subtaskTouchStartY = e.touches[0].clientY;
       }
+      _subtaskTouchActive = false;
+      window.subtaskTouchInfo = { taskId: taskId, fromIdx: stIdx, currentTargetIdx: null };
+      if (_subtaskTouchTimer) clearTimeout(_subtaskTouchTimer);
+      _subtaskTouchTimer = setTimeout(function () {
+        _subtaskTouchActive = true;
+        var row = document.getElementById('subtask-row-' + taskId + '-' + stIdx);
+        if (row) {
+          row.style.opacity = '0.6';
+          row.style.borderColor = '#38bdf8';
+          if (navigator.vibrate) { try { navigator.vibrate(30); } catch (err) {} }
+        }
+      }, 180);
     };
 
     window.onSubtaskTouchMove = function (e) {
       if (!window.subtaskTouchInfo) return;
       if (e.touches && e.touches.length > 0) {
         var touch = e.touches[0];
+        var dx = Math.abs(touch.clientX - _subtaskTouchStartX);
+        var dy = Math.abs(touch.clientY - _subtaskTouchStartY);
+
+        if (!_subtaskTouchActive) {
+          if (dx > 8 || dy > 8) {
+            if (_subtaskTouchTimer) clearTimeout(_subtaskTouchTimer);
+            window.subtaskTouchInfo = null;
+            return;
+          }
+          return;
+        }
+
         var el = document.elementFromPoint(touch.clientX, touch.clientY);
         var targetRow = el ? el.closest('.subtask-card-item') : null;
 
@@ -6634,10 +6772,12 @@
     };
 
     window.onSubtaskTouchEnd = function (e) {
+      if (_subtaskTouchTimer) clearTimeout(_subtaskTouchTimer);
       if (!window.subtaskTouchInfo) return;
       var taskId = window.subtaskTouchInfo.taskId;
       var fromIdx = window.subtaskTouchInfo.fromIdx;
       var toIdx = window.subtaskTouchInfo.currentTargetIdx;
+      var wasActive = _subtaskTouchActive;
 
       document.querySelectorAll('.subtask-card-item').forEach(function (c) {
         c.style.opacity = '';
@@ -6647,8 +6787,9 @@
       });
 
       window.subtaskTouchInfo = null;
+      _subtaskTouchActive = false;
 
-      if (taskId && fromIdx !== null && toIdx !== null && !isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
+      if (wasActive && taskId && fromIdx !== null && toIdx !== null && !isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
         window.moveSubtask(taskId, fromIdx, toIdx);
       }
     };
@@ -7191,7 +7332,12 @@
 
     window.handleTaskCardClick = function (taskId, evt) {
       if (evt && evt.target) {
-        if (evt.target.closest('button, select, textarea, input, .task-title, .subtask-title, .task-dropdown-menu, .subtask-dropdown-menu, .live-task-timer-box, [draggable="true"], .subtasks-container, .auto-expand-input, .task-menu-wrapper, .subtask-menu-wrapper, .task-inputs-container, .subtask-inputs-container')) {
+        if (evt.target.closest('button, select, textarea, input, .task-title, .subtask-title, .task-dropdown-menu, .subtask-dropdown-menu, .live-task-timer-box, [draggable="true"], .subtasks-container, .auto-expand-input, .task-menu-wrapper, .subtask-menu-wrapper, .task-inputs-container, .subtask-inputs-container, .subtasks-wrapper, .subtask-card-item, .task-notes-container, .evidence-logs-container')) {
+          return;
+        }
+        var isHeaderRow = evt.target.closest('.task-card-header-row');
+        var isCollapsedTimer = evt.target.closest('.task-card-collapsed-timer');
+        if (!isHeaderRow && !isCollapsedTimer) {
           return;
         }
       }
