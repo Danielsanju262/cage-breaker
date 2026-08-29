@@ -3054,8 +3054,7 @@
     function getCurRef() {
       if (!S || !Array.isArray(S.identities)) return null;
       const found = S.identities.find(i => i && i.id === S.currentId);
-      if (!found) return null;
-      return sanitizeIdentity(found);
+      return found || null;
     }
 
     function updateAppTitleAndHeader() {
@@ -5135,13 +5134,74 @@
       return !!(cd && cd.status === 'overdue');
     }
 
+    var _timerLongPressTimeout = null;
+    var _timerLongPressTriggered = false;
+    var _timerTouchStartX = 0;
+    var _timerTouchStartY = 0;
+
+    window.onTimerPressStart = function (targetType, parentTaskId, subtaskId, event) {
+      if (event && event.button !== undefined && event.button !== 0) return;
+      _timerLongPressTriggered = false;
+      if (event && event.touches && event.touches[0]) {
+        _timerTouchStartX = event.touches[0].clientX;
+        _timerTouchStartY = event.touches[0].clientY;
+      }
+      if (_timerLongPressTimeout) clearTimeout(_timerLongPressTimeout);
+      _timerLongPressTimeout = setTimeout(function () {
+        _timerLongPressTriggered = true;
+        if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) {} }
+        openNextTimePickerModal(targetType, parentTaskId, subtaskId);
+      }, 450);
+    };
+
+    window.onTimerPressMove = function (event) {
+      if (!_timerLongPressTimeout) return;
+      if (event && event.touches && event.touches[0]) {
+        var dx = Math.abs(event.touches[0].clientX - _timerTouchStartX);
+        var dy = Math.abs(event.touches[0].clientY - _timerTouchStartY);
+        if (dx > 10 || dy > 10) {
+          clearTimeout(_timerLongPressTimeout);
+          _timerLongPressTimeout = null;
+        }
+      }
+    };
+
+    window.onTimerPressCancel = function () {
+      if (_timerLongPressTimeout) {
+        clearTimeout(_timerLongPressTimeout);
+        _timerLongPressTimeout = null;
+      }
+    };
+
+    window.handleTimerClick = function (parentTaskId, event) {
+      if (event) event.stopPropagation();
+      if (_timerLongPressTriggered) {
+        if (event && event.preventDefault) event.preventDefault();
+        _timerLongPressTriggered = false;
+        return;
+      }
+      toggleTimerCardExpand(parentTaskId, event);
+    };
+
     function renderNextTimePill(targetType, parentTaskId, subtaskId, currentTargetTime) {
       var cd = getNextHoursCountdown(currentTargetTime);
-      var clickHandler = "event.stopPropagation();openNextTimePickerModal('" + targetType + "', '" + parentTaskId + "', '" + (subtaskId || '') + "')";
 
       if (cd) {
-        return '<button class="live-next-time-pill" data-target-time="' + (currentTargetTime || '') + '" onclick="' + clickHandler + '" style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:' + cd.bg + ';border:1px solid ' + cd.border + ';color:' + cd.color + ';cursor:pointer;white-space:nowrap;margin-left:auto;align-self:center;flex-shrink:0" title="Click to edit or clear target time">' + cd.text + '</button>';
+        var stId = subtaskId || '';
+        return '<button class="live-next-time-pill" data-target-time="' + (currentTargetTime || '') + '"'
+          + ' onmousedown="event.stopPropagation();onTimerPressStart(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + stId + '\', event)"'
+          + ' onmouseup="event.stopPropagation();onTimerPressCancel()"'
+          + ' onmouseleave="onTimerPressCancel()"'
+          + ' ontouchstart="event.stopPropagation();onTimerPressStart(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + stId + '\', event)"'
+          + ' ontouchmove="onTimerPressMove(event)"'
+          + ' ontouchend="onTimerPressCancel()"'
+          + ' ontouchcancel="onTimerPressCancel()"'
+          + ' oncontextmenu="event.preventDefault();event.stopPropagation();openNextTimePickerModal(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + stId + '\')"'
+          + ' onclick="handleTimerClick(\'' + parentTaskId + '\', event)"'
+          + ' style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:' + cd.bg + ';border:1px solid ' + cd.border + ';color:' + cd.color + ';cursor:pointer;white-space:nowrap;margin-left:auto;align-self:center;flex-shrink:0"'
+          + ' title="Click to toggle view • Long press to edit/clear target time">' + cd.text + '</button>';
       } else {
+        var clickHandler = "event.stopPropagation();openNextTimePickerModal('" + targetType + "', '" + parentTaskId + "', '" + (subtaskId || '') + "')";
         return '<button onclick="' + clickHandler + '" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;cursor:pointer;white-space:nowrap;margin-left:auto;align-self:center;flex-shrink:0" title="Set Target Wait Time">+ Set Time</button>';
       }
     }
@@ -5576,12 +5636,31 @@
     window.saveCustomNextTargetTime = function (targetType, parentTaskId, subtaskId, addToCalendar) {
       var input = document.getElementById('custom-next-time-input');
       var val = input ? input.value : '';
-      var isoStr = val ? new Date(val).toISOString() : null;
+      if (!val) {
+        if (input) {
+          input.style.borderColor = '#ef4444';
+          input.focus();
+        }
+        var errEl = document.getElementById('modal-time-error');
+        if (!errEl && input && input.parentNode) {
+          input.parentNode.insertAdjacentHTML('beforeend', '<div id="modal-time-error" style="color:#f87171;font-size:11.5px;font-weight:600;margin-top:6px">⚠️ Please select a target date and time first.</div>');
+        }
+        return;
+      }
+      var targetDate = new Date(val);
+      if (isNaN(targetDate.getTime())) {
+        if (input) {
+          input.style.borderColor = '#ef4444';
+          input.focus();
+        }
+        return;
+      }
+      var isoStr = targetDate.toISOString();
       applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr, addToCalendar !== false);
     };
 
     function applyNextTargetTime(targetType, parentTaskId, subtaskId, isoStr, addToCalendar) {
-      var id = getCurRef() || cur();
+      var id = getCurRef();
       if (!id || !Array.isArray(id.tasks)) return;
 
       var task = id.tasks.find(function (t) { return t.id === parentTaskId; });
@@ -5592,6 +5671,7 @@
 
       targetItem.nextTargetTime = isoStr;
       targetItem.updatedAt = new Date().toISOString();
+      task.updatedAt = new Date().toISOString();
       id.updatedAt = new Date().toISOString();
       save(true);
       closeNextTimePickerModal();
@@ -6761,7 +6841,7 @@
         updatedAt: new Date().toISOString()
       };
 
-      id.tasks.push(newTask);
+      id.tasks.unshift(newTask);
       id.updatedAt = new Date().toISOString();
       save(true);
       render();
@@ -8143,6 +8223,7 @@
                   + '<div class="subtask-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
                   + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
                   + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:1000;min-width:115px;overflow:hidden">'
+                  + '<button onclick="event.stopPropagation();closeAllTaskMenus();openNextTimePickerModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">⏳ Target Time</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                   + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
                   + '</div>'
@@ -8173,6 +8254,7 @@
                 + '<div class="subtask-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
                 + '<button class="bg" onclick="toggleTaskMenu(\'subtask-menu-' + task.id + '_' + st.id + '\', event)" style="font-size:12px;line-height:1;padding:2px 5px;border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
                 + '<div id="subtask-menu-' + task.id + '_' + st.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:1000;min-width:115px;overflow:hidden">'
+                + '<button onclick="event.stopPropagation();closeAllTaskMenus();openNextTimePickerModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">⏳ Target Time</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
                 + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
                 + '</div>'
@@ -8255,7 +8337,7 @@
           : 'updateTaskWhatNext(\'' + task.id + '\', this.value)';
 
         var subtaskContextHtml = isSubActive ? (
-          '<div style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);padding:3px 10px;border-radius:12px;font-size:11.5px;color:#93c5fd;font-weight:600;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center">'
+          '<div style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);padding:3px 10px;border-radius:12px;font-size:11.5px;color:#93c5fd;font-weight:600;margin-bottom:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center">'
           + '<span style="font-size:12px">🎯 Subtask:</span> ' + esc(activeItem.text)
           + '</div>'
         ) : '';
@@ -8280,15 +8362,25 @@
 
         collapsedTimerHtml = '<div class="task-card-collapsed-timer" onclick="toggleTimerCardExpand(\'' + task.id + '\', event)" style="cursor:pointer">'
           + '<div class="task-card-collapsed-timer-inner" style="display:flex;flex-direction:column;align-items:center;text-align:center">'
-          + '<span class="task-title" style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3;text-align:center">' + e(task.text) + '</span>'
-          + subtaskContextHtml
-          + '<div style="display:flex;align-items:center;justify-content:center;margin:14px 0 8px;width:100%">'
-          + '<div class="live-task-timer-box" data-task-id="' + task.id + '" onclick="' + timerClickHandler + '" title="Click to edit or change target time" style="border-color:' + taskHighestCd.color + ';--pulse-glow:' + taskHighestCd.glow + ';box-shadow:0 0 16px ' + taskHighestCd.glow + ', inset 0 0 14px ' + taskHighestCd.glow + '">'
+          + '<div style="display:flex;align-items:center;justify-content:center;margin:0 0 10px;width:100%">'
+          + '<div class="live-task-timer-box" data-task-id="' + task.id + '"'
+          + ' onmousedown="event.stopPropagation();onTimerPressStart(\'' + activeTargetType + '\', \'' + activeParentTaskId + '\', \'' + activeSubtaskId + '\', event)"'
+          + ' onmouseup="event.stopPropagation();onTimerPressCancel()"'
+          + ' onmouseleave="onTimerPressCancel()"'
+          + ' ontouchstart="event.stopPropagation();onTimerPressStart(\'' + activeTargetType + '\', \'' + activeParentTaskId + '\', \'' + activeSubtaskId + '\', event)"'
+          + ' ontouchmove="onTimerPressMove(event)"'
+          + ' ontouchend="onTimerPressCancel()"'
+          + ' ontouchcancel="onTimerPressCancel()"'
+          + ' oncontextmenu="event.preventDefault();event.stopPropagation();openNextTimePickerModal(\'' + activeTargetType + '\', \'' + activeParentTaskId + '\', \'' + activeSubtaskId + '\')"'
+          + ' onclick="handleTimerClick(\'' + task.id + '\', event)"'
+          + ' title="Click to toggle view • Long press to edit/clear target time"'
+          + ' style="border-color:' + taskHighestCd.color + ';--pulse-glow:' + taskHighestCd.glow + ';box-shadow:0 0 16px ' + taskHighestCd.glow + ', inset 0 0 14px ' + taskHighestCd.glow + ';cursor:pointer">'
           + '<span class="live-task-timer-text" data-task-id="' + task.id + '" style="font-size:36px;font-weight:900;letter-spacing:0.5px;color:' + taskHighestCd.color + ';text-shadow:0 0 24px ' + taskHighestCd.glow + ';line-height:1.1;text-align:center">' + timerDisplayText + '</span>'
           + '</div>'
           + '</div>'
+          + '<span class="task-title" style="font-size:15px;font-weight:700;color:#e2e8f0;word-break:break-word;line-height:1.3;text-align:center;margin-bottom:8px">' + e(task.text) + '</span>'
+          + subtaskContextHtml
           + timerStatusAndNextHtml
-          + (subtasks.length > 0 ? ('<div style="display:flex;align-items:center;justify-content:center;width:100%;margin-top:4px;font-size:11px;color:#94a3b8"><span class="subtasks-badge-pill" style="font-size:11px;color:#94a3b8;cursor:pointer;display:inline-block" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks">' + subtasksDoneCount + '/' + subtasks.length + ' subtasks</span></div>') : '')
           + '</div>'
           + '</div>';
       }
@@ -8314,7 +8406,6 @@
           + '</button>'
           + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
           + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:14.5px;font-weight:500;cursor:pointer;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;text-decoration:line-through;color:#94a3b8" title="Click to edit task title">' + e(task.text) + '</span>'
-          + (subtasks.length > 0 ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
           + '</div>'
           + '</div>'
           + '<div class="task-card-header-right" style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
@@ -8326,6 +8417,7 @@
           + '<div class="task-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
           + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:14px;line-height:1;padding:3px 6px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
           + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+          + '<button onclick="event.stopPropagation();closeAllTaskMenus();openNextTimePickerModal(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">⏳ Target Time</button>'
           + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
           + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
           + '</div>'
@@ -8352,7 +8444,6 @@
         + (mainIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + mainIdeasButtonHtml + '</div>') : '')
         + '<div class="task-title-wrap" style="flex:1;min-width:0;line-height:1.45">'
         + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit task title">' + e(task.text) + '</span>'
-        + (subtasks.length > 0 ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + (isExpanded ? '#93c5fd' : '#94a3b8') + ';background:' + (isExpanded ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)') + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + (isExpanded ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)') + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>') : '')
         + '</div>'
         + '</div>'
         + '<div class="task-card-header-right">'
@@ -8366,6 +8457,7 @@
         + '<div class="task-menu-wrapper" style="position:relative;display:inline-block;flex-shrink:0">'
         + '<button class="bg" onclick="toggleTaskMenu(\'' + task.id + '\', event)" style="font-size:14px;line-height:1;padding:4px 7px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;cursor:pointer" title="More options">⋮</button>'
         + '<div id="task-menu-' + task.id + '" class="task-dropdown-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:#0f172a;border:1px solid rgba(255,255,255,0.22);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.8);z-index:100;min-width:115px;overflow:hidden">'
+        + '<button onclick="event.stopPropagation();closeAllTaskMenus();openNextTimePickerModal(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#fbbf24;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(251,191,36,0.15)\'" onmouseleave="this.style.background=\'none\'">⏳ Target Time</button>'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();startTaskBulkSelect(\'task\', \'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(56,189,248,0.15)\'" onmouseleave="this.style.background=\'none\'">Select</button>'
         + '<button onclick="event.stopPropagation();closeAllTaskMenus();deleteTask(\'' + task.id + '\')" style="width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#f87171;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseleave="this.style.background=\'none\'">Delete</button>'
         + '</div>'
