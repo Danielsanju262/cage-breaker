@@ -6075,6 +6075,7 @@
     }
 
     window.openIdentity = function (id) {
+      window.taskSearchQuery = '';
       S.currentId = id;
       save();
       go('identity');
@@ -8246,7 +8247,11 @@
       var mainTotalIdeas = mainIdeas.length;
       var subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
       var subtasksDoneCount = task.completed ? subtasks.length : subtasks.filter(function (st) { return st.completed; }).length;
-      var isExpanded = !!task.expanded;
+      var searchQuery = (window.taskSearchQuery || '').trim().toLowerCase();
+      var hasMatchingSubtask = !!searchQuery && subtasks.some(function (st) {
+        return (st.text || '').toLowerCase().indexOf(searchQuery) !== -1 || (st.whatNext || st.nextAction || '').toLowerCase().indexOf(searchQuery) !== -1;
+      });
+      var isExpanded = !!task.expanded || hasMatchingSubtask;
       var isEditingTask = window.editingTaskId === task.id;
 
       var curStatus = task.status || (task.completed ? 'completed' : 'yet_to_start');
@@ -8617,6 +8622,18 @@
         + '</div>';
     }
 
+    window.taskSearchQuery = window.taskSearchQuery || '';
+
+    window.handleTaskSearchInput = function (val) {
+      window.taskSearchQuery = val;
+      render(true);
+    };
+
+    window.clearTaskSearch = function () {
+      window.taskSearchQuery = '';
+      render(true);
+    };
+
     function renderTasksAndLoopsSection(id) {
       if (!id) return '';
       var tasks = Array.isArray(id.tasks) ? id.tasks : [];
@@ -8642,9 +8659,51 @@
           return aDone ? 1 : -1;
         });
 
-        var tasksListHtml = sortedTasks.length > 0
-          ? sortedTasks.map(function (item) { return renderTaskCard(item.task, item.origIdx); }).join('')
-          : '<div style="text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.3);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 4px 0">No tasks created yet for this identity.</p><p class="h" style="font-size:12px;color:#64748b;margin:0">Add your first task below to plan and execute milestones.</p></div>';
+        var searchQuery = (window.taskSearchQuery || '').trim().toLowerCase();
+
+        var searchBarHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;position:relative">'
+          + '<div style="position:relative;flex:1;display:flex;align-items:center">'
+          + '<span style="position:absolute;left:10px;font-size:13px;color:#64748b;pointer-events:none">🔍</span>'
+          + '<input type="text" id="task-search-input" value="' + esc(window.taskSearchQuery || '') + '" placeholder="Search tasks, subtasks, or next actions..." oninput="handleTaskSearchInput(this.value)" onkeydown="if(event.key===\'Escape\')clearTaskSearch()" style="width:100%;box-sizing:border-box;background:#0b1329;border:1px solid ' + (searchQuery ? 'rgba(59,130,246,0.6)' : 'rgba(255,255,255,0.12)') + ';color:#f8fafc;padding:8px 30px 8px 32px;border-radius:8px;font-size:12.5px;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor=\'#3b82f6\'" onblur="if(!window.taskSearchQuery)this.style.borderColor=\'rgba(255,255,255,0.12)\'" />'
+          + (window.taskSearchQuery ? ('<button onclick="clearTaskSearch()" style="position:absolute;right:8px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:2px 6px;line-height:1" title="Clear search (Esc)">✕</button>') : '')
+          + '</div>'
+          + '</div>';
+
+        var filteredSortedTasks = sortedTasks.filter(function (item) {
+          if (!searchQuery) return true;
+          var t = item.task;
+          var taskText = (t.text || '').toLowerCase();
+          var taskNext = (t.whatNext || t.nextAction || '').toLowerCase();
+          var taskNotes = (t.notes || '').toLowerCase();
+          if (taskText.indexOf(searchQuery) !== -1 || taskNext.indexOf(searchQuery) !== -1 || taskNotes.indexOf(searchQuery) !== -1) {
+            return true;
+          }
+          if (Array.isArray(t.subtasks)) {
+            return t.subtasks.some(function (st) {
+              var stText = (st.text || '').toLowerCase();
+              var stNext = (st.whatNext || st.nextAction || '').toLowerCase();
+              return stText.indexOf(searchQuery) !== -1 || stNext.indexOf(searchQuery) !== -1;
+            });
+          }
+          return false;
+        });
+
+        var searchResultsBadgeHtml = '';
+        if (searchQuery) {
+          searchResultsBadgeHtml = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;margin-bottom:12px;font-size:12px;color:#93c5fd">'
+            + '<span>🔍 Found <strong>' + filteredSortedTasks.length + '</strong> matching task' + (filteredSortedTasks.length === 1 ? '' : 's') + ' for "<strong>' + esc(window.taskSearchQuery) + '</strong>"</span>'
+            + '<button onclick="clearTaskSearch()" style="background:none;border:none;color:#38bdf8;font-size:11.5px;font-weight:700;cursor:pointer;text-decoration:underline">Clear</button>'
+            + '</div>';
+        }
+
+        var tasksListHtml = '';
+        if (filteredSortedTasks.length > 0) {
+          tasksListHtml = filteredSortedTasks.map(function (item) { return renderTaskCard(item.task, item.origIdx); }).join('');
+        } else if (searchQuery) {
+          tasksListHtml = '<div style="text-align:center;padding:24px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.25);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 8px 0">No tasks or subtasks match "<strong>' + esc(window.taskSearchQuery) + '</strong>".</p><button class="b bp bs" onclick="clearTaskSearch()" style="font-size:11.5px;padding:5px 12px;background:#2563eb;color:#fff;font-weight:700">Clear Search</button></div>';
+        } else {
+          tasksListHtml = '<div style="text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.3);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 4px 0">No tasks created yet for this identity.</p><p class="h" style="font-size:12px;color:#64748b;margin:0">Add your first task below to plan and execute milestones.</p></div>';
+        }
 
         var addTaskBarHtml = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">'
           + '<input type="text" id="new-task-text" placeholder="Add a new task / milestone (e.g. Build MVP Prototype)..." style="flex:1;min-width:200px;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px" onkeydown="if(event.key===\'Enter\')addTask()" />'
@@ -8676,7 +8735,9 @@
           + '</div>'
           + (isTaskBulkActive ? '<button onclick="toggleTaskBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid rgba(239,68,68,0.5);color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">Cancel Selection</button>' : '')
           + '</div>'
+          + searchBarHtml
           + addTaskBarHtml
+          + searchResultsBadgeHtml
           + bulkTaskActionBarHtml
           + tasksListHtml
           + '</div>';
