@@ -94,7 +94,6 @@
      *   - `touch-action: pan-x pan-y`: Prevents 300ms double-tap browser delay on mobile.
      * ═══════════════════════════════════════════════════════════════════════════════ */
     html {
-      scroll-behavior: smooth;
       -webkit-text-size-adjust: 100%;
       background-color: var(--bg-app);
       color-scheme: dark;
@@ -103,6 +102,7 @@
       -webkit-overflow-scrolling: touch;
       touch-action: pan-x pan-y;
       -ms-touch-action: pan-x pan-y;
+      overscroll-behavior-y: none;
     }
 
     body {
@@ -122,6 +122,7 @@
       -webkit-tap-highlight-color: transparent;
       touch-action: pan-x pan-y;
       -ms-touch-action: pan-x pan-y;
+      overscroll-behavior-y: none;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════════
@@ -3052,6 +3053,103 @@
           if (touchStartX <= 35 && deltaX > 60 && Math.abs(deltaY) < 45 && duration < 450) {
             window.handleBackAction();
           }
+        }
+      }, { passive: true });
+    })();
+
+    // Kinetic Smooth Momentum Scrolling Engine (Google / YouTube / Instagram smoothness)
+    (function initKineticSmoothScroll() {
+      var isScrolling = false;
+      var targetY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      var currentY = targetY;
+      var minDelta = 0.4;
+      var easeFactor = 0.14; // Snappy, buttery smooth ease-out lerp
+      var speedMultiplier = 1.18; // Brisk, responsive momentum speed
+
+      function getMaxScroll() {
+        return Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight,
+          document.body.offsetHeight,
+          document.documentElement.offsetHeight
+        ) - window.innerHeight;
+      }
+
+      function clamp(val, min, max) {
+        return Math.max(min, Math.min(max, val));
+      }
+
+      function isScrollableElement(el) {
+        while (el && el !== document.body && el !== document.documentElement) {
+          if (el.scrollHeight > el.clientHeight + 4) {
+            var o = window.getComputedStyle(el).overflowY;
+            if (o === 'auto' || o === 'scroll') return true;
+          }
+          el = el.parentElement;
+        }
+        return false;
+      }
+
+      function tick() {
+        if (!isScrolling) return;
+
+        var diff = targetY - currentY;
+        if (Math.abs(diff) < minDelta) {
+          currentY = targetY;
+          window.scrollTo(window.pageXOffset, currentY);
+          isScrolling = false;
+          return;
+        }
+
+        currentY += diff * easeFactor;
+        window.scrollTo(window.pageXOffset, Math.round(currentY * 10) / 10);
+        requestAnimationFrame(tick);
+      }
+
+      window.addEventListener('wheel', function (e) {
+        // Skip if wheeling inside an open modal or an inner scrollable box (e.g. textarea, dropdown)
+        var modal = document.querySelector('.modal-overlay:not([style*="display: none"]), .modal-backdrop');
+        if (modal && modal.contains(e.target)) return;
+        if (isScrollableElement(e.target)) return;
+        if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+        e.preventDefault();
+
+        var currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
+        if (!isScrolling) {
+          currentY = currentScroll;
+          targetY = currentScroll;
+        }
+
+        var delta = e.deltaY;
+        if (e.deltaMode === 1) delta *= 38;
+        else if (e.deltaMode === 2) delta *= window.innerHeight;
+
+        var maxS = getMaxScroll();
+        targetY = clamp(targetY + delta * speedMultiplier, 0, maxS);
+
+        if (!isScrolling) {
+          isScrolling = true;
+          requestAnimationFrame(tick);
+        }
+      }, { passive: false });
+
+      function syncScroll() {
+        if (!isScrolling) {
+          currentY = window.pageYOffset || document.documentElement.scrollTop || 0;
+          targetY = currentY;
+        }
+      }
+
+      window.addEventListener('scroll', syncScroll, { passive: true });
+      window.addEventListener('touchstart', function () {
+        isScrolling = false;
+        syncScroll();
+      }, { passive: true });
+      window.addEventListener('mousedown', function (e) {
+        if (e.clientX >= document.documentElement.clientWidth - 16) {
+          isScrolling = false;
+          syncScroll();
         }
       }, { passive: true });
     })();
