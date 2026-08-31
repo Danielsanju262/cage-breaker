@@ -3423,16 +3423,18 @@
             var stTime = new Date(st.updatedAt || st.createdDate || 0).getTime();
             var exTime = new Date(existing.updatedAt || existing.createdDate || 0).getTime();
             var newest = (stTime >= exTime) ? st : existing;
+            var oldest = (stTime >= exTime) ? existing : st;
             map.set(key, sanitizeSubtask({
-              ...existing,
-              ...st,
-              doingNow: (st.doingNow && st.doingNow.trim()) ? st.doingNow : (existing.doingNow || ''),
-              whatNext: (st.whatNext && st.whatNext.trim()) ? st.whatNext : (existing.whatNext || ''),
+              ...oldest,
+              ...newest,
+              doingNow: (newest.doingNow && newest.doingNow.trim()) ? newest.doingNow : (oldest.doingNow || ''),
+              whatNext: (newest.whatNext && newest.whatNext.trim()) ? newest.whatNext : (oldest.whatNext || ''),
               completed: newest.completed,
               completedAt: newest.completedAt,
               status: newest.status,
-              timeToResult: newest.timeToResult || 'Immediately',
-              nextTargetTime: newest.nextTargetTime,
+              timeToResult: newest.timeToResult || oldest.timeToResult || 'Not yet decided',
+              nextTargetTime: newest.nextTargetTime !== undefined ? newest.nextTargetTime : oldest.nextTargetTime,
+              updatedAt: newest.updatedAt || oldest.updatedAt,
               ideas: mergeTaskIdeas(existing.ideas, st.ideas, delIdeaSet)
             }, delIdeaSet));
           }
@@ -3614,6 +3616,7 @@
           const pTime = new Date(t.updatedAt || t.createdDate || 0).getTime();
           const sTime = new Date(secTask.updatedAt || secTask.createdDate || 0).getTime();
           const newest = pTime >= sTime ? t : secTask;
+          const oldest = pTime >= sTime ? secTask : t;
 
           const pSubOrder = (t && t.subtaskOrderUpdatedAt) ? t.subtaskOrderUpdatedAt : pTime;
           const sSubOrder = (secTask && secTask.subtaskOrderUpdatedAt) ? secTask.subtaskOrderUpdatedAt : sTime;
@@ -3624,15 +3627,16 @@
           var localTimerExpanded = (typeof _initialSyncDone !== 'undefined' && _initialSyncDone && localTask) ? !!localTask.timerExpanded : false;
 
           mergedTasks.push(sanitizeTask({
-            ...secTask,
-            ...t,
-            doingNow: (t.doingNow && t.doingNow.trim()) ? t.doingNow : (secTask.doingNow || ''),
-            whatNext: (t.whatNext && t.whatNext.trim()) ? t.whatNext : (secTask.whatNext || ''),
+            ...oldest,
+            ...newest,
+            doingNow: (newest.doingNow && newest.doingNow.trim()) ? newest.doingNow : (oldest.doingNow || ''),
+            whatNext: (newest.whatNext && newest.whatNext.trim()) ? newest.whatNext : (oldest.whatNext || ''),
             completed: newest.completed,
             completedAt: newest.completedAt,
             status: newest.status,
-            timeToResult: newest.timeToResult || 'Immediately',
-            nextTargetTime: newest.nextTargetTime,
+            timeToResult: newest.timeToResult || oldest.timeToResult || 'Not yet decided',
+            nextTargetTime: newest.nextTargetTime !== undefined ? newest.nextTargetTime : oldest.nextTargetTime,
+            updatedAt: newest.updatedAt || oldest.updatedAt,
             expanded: localExpanded,
             timerExpanded: localTimerExpanded,
             ideas: mergeTaskIdeas(t.ideas, secTask.ideas, deletedIdeaSet),
@@ -5363,8 +5367,8 @@
         + (opts.url ? '&sprop=website:' + encodeURIComponent(opts.url) : '')
         + (userEmail ? '&authuser=' + encodeURIComponent(userEmail) : '');
 
-      // Open Google Calendar directly inside the app window
-      window.location.href = url;
+      // Open Google Calendar in a new tab so the user remains in the Cage Breaker application
+      window.open(url, '_blank');
     };
 
     window.addEventToGoogleCalendarDirect = function (eventOpts, onComplete) {
@@ -5763,11 +5767,17 @@
       var targetItem = targetType === 'subtask' ? (task.subtasks || []).find(function (s) { return s.id === subtaskId; }) : task;
       if (!targetItem) return;
 
+      var nowIso = new Date().toISOString();
       targetItem.nextTargetTime = isoStr;
-      targetItem.updatedAt = new Date().toISOString();
-      task.updatedAt = new Date().toISOString();
-      id.updatedAt = new Date().toISOString();
-      save(true);
+      targetItem.updatedAt = nowIso;
+      task.updatedAt = nowIso;
+      id.updatedAt = nowIso;
+      if (typeof S !== 'undefined' && S) {
+        S.lastActionTime = Date.now();
+        S.lastActionDevice = DEVICE_ID;
+        S.lastActionDesc = 'set_target_time';
+      }
+      save(true, true);
       closeNextTimePickerModal();
       render(true);
 
@@ -6996,43 +7006,118 @@
     window.editingTaskId = null;
     window.editingTaskIdeaKey = null; // format: "taskId_ideaId"
 
-    window.focusNewTaskInput = function () {
-      var inp = document.getElementById('new-task-text');
-      if (inp) {
-        inp.focus();
-        inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.openAddTaskModal = function () {
+      if (window.saveCurrentScrollPosition) window.saveCurrentScrollPosition();
+      var id = getCurRef() || cur();
+      if (!id) return;
+
+      var modal = document.getElementById('add-task-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'add-task-modal';
+        document.body.appendChild(modal);
       }
+      modal.className = 'modal-overlay';
+      modal.onclick = function (e) {
+        if (e.target === modal) window.closeAddTaskModal();
+      };
+
+      var identityTitle = (id.newIdentity || 'Current Identity').trim();
+
+      modal.innerHTML = '<div class="modal" style="max-width:440px;padding:22px;background:#0b1329;border:1px solid rgba(59,130,246,0.35);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,0.85)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+        + '<h3 style="margin:0;font-size:16px;font-weight:800;color:#60a5fa;display:flex;align-items:center;gap:6px">📌 Add New Task / Milestone</h3>'
+        + '<button class="modal-close" onclick="window.closeAddTaskModal()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1">✕</button>'
+        + '</div>'
+        + '<div style="margin-bottom:16px">'
+        + '<label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px">TASK TITLE / MILESTONE:</label>'
+        + '<textarea id="modal-new-task-input" rows="3" placeholder="e.g. Build MVP Prototype, Collect Legal Documents..." style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:10px 12px;border-radius:8px;font-size:13.5px;line-height:1.45;outline:none;resize:vertical" oninput="var err=document.getElementById(\'modal-task-error\');if(err)err.style.display=\'none\';this.style.borderColor=\'#334155\';" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();window.submitAddTaskModal();}"></textarea>'
+        + '<div id="modal-task-error" style="color:#f87171;font-size:11.5px;font-weight:600;margin-top:6px;display:none">⚠️ Please enter a task title.</div>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:flex-end;gap:8px">'
+        + '<button type="button" class="bg" onclick="window.closeAddTaskModal()" style="font-size:12px;padding:8px 14px;border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;border-radius:6px;cursor:pointer">Cancel</button>'
+        + '<button type="button" class="b bp bs" id="modal-submit-add-task-btn" onclick="window.submitAddTaskModal()" style="font-size:12px;padding:8px 18px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:700;border-radius:6px;cursor:pointer">+ Add Task</button>'
+        + '</div>'
+        + '</div>';
+
+      setTimeout(function () {
+        var inp = document.getElementById('modal-new-task-input');
+        if (inp) {
+          inp.focus();
+        }
+      }, 50);
+
+      modal.onkeydown = function (e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          window.closeAddTaskModal();
+        }
+      };
     };
 
-    window.addTask = function () {
-      var textInp = document.getElementById('new-task-text');
-      var textVal = textInp ? textInp.value.trim() : '';
-      if (!textVal) {
-        if (textInp) textInp.focus();
+    window.closeAddTaskModal = function () {
+      var modal = document.getElementById('add-task-modal');
+      if (modal) modal.remove();
+    };
+
+    window.submitAddTaskModal = function () {
+      var inp = document.getElementById('modal-new-task-input');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) {
+        if (inp) {
+          inp.style.borderColor = '#ef4444';
+          inp.focus();
+        }
+        var errEl = document.getElementById('modal-task-error');
+        if (errEl) errEl.style.display = 'block';
         return;
       }
 
+      window.executeAddTask(val);
+      window.closeAddTaskModal();
+    };
+
+    window.executeAddTask = function (taskText) {
       var id = getCurRef() || cur();
       if (!id) return;
       if (!Array.isArray(id.tasks)) id.tasks = [];
 
+      var nowIso = new Date().toISOString();
       var newTask = {
         id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        text: textVal,
+        text: taskText,
         completed: false,
         completedAt: null,
         status: 'yet_to_start',
         timeToResult: 'Not yet decided',
         expanded: false,
         ideas: [],
-        createdDate: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        subtasks: [],
+        createdDate: nowIso,
+        updatedAt: nowIso
       };
 
       id.tasks.unshift(newTask);
-      id.updatedAt = new Date().toISOString();
-      save(true);
-      render();
+      id.updatedAt = nowIso;
+      if (typeof S !== 'undefined' && S) {
+        S.lastActionTime = Date.now();
+        S.lastActionDevice = DEVICE_ID;
+        S.lastActionDesc = 'add_task';
+      }
+      save(true, true);
+      render(true);
+    };
+
+    window.focusNewTaskInput = function () {
+      window.openAddTaskModal();
+    };
+
+    window.addTask = function (textVal) {
+      if (typeof textVal === 'string' && textVal.trim()) {
+        window.executeAddTask(textVal.trim());
+      } else {
+        window.openAddTaskModal();
+      }
     };
 
     window.toggleTask = function (taskId) {
@@ -8782,10 +8867,10 @@
 
         var searchQuery = (window.taskSearchQuery || '').trim().toLowerCase();
 
-        var searchBarHtml = '<div style="position:relative;display:flex;align-items:center;min-width:220px;max-width:320px;flex:1">'
-          + '<span style="position:absolute;left:11px;font-size:12px;color:#60a5fa;pointer-events:none">🔍</span>'
-          + '<input type="text" id="task-search-input" value="' + esc(window.taskSearchQuery || '') + '" placeholder="Search tasks & subtasks..." oninput="handleTaskSearchInput(this.value)" onkeydown="if(event.key===\'Escape\')clearTaskSearch()" style="width:100%;box-sizing:border-box;background:#0b1329;border:1px solid ' + (searchQuery ? '#3b82f6' : 'rgba(59,130,246,0.3)') + ';color:#f8fafc;padding:6px 28px 6px 30px;border-radius:20px;font-size:12px;outline:none;transition:border-color 0.2s, box-shadow 0.2s;' + (searchQuery ? 'box-shadow:0 0 10px rgba(59,130,246,0.3);' : '') + '" onfocus="this.style.borderColor=\'#3b82f6\';this.style.boxShadow=\'0 0 10px rgba(59,130,246,0.3)\'" onblur="if(!window.taskSearchQuery){this.style.borderColor=\'rgba(59,130,246,0.3)\';this.style.boxShadow=\'none\'}" />'
-          + (window.taskSearchQuery ? ('<button onclick="clearTaskSearch()" style="position:absolute;right:8px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:2px 4px;line-height:1" title="Clear search (Esc)">✕</button>') : '')
+        var searchBarHtml = '<div style="position:relative;display:flex;align-items:center;width:100%;margin-bottom:14px">'
+          + '<span style="position:absolute;left:13px;font-size:13px;color:#60a5fa;pointer-events:none">🔍</span>'
+          + '<input type="text" id="task-search-input" value="' + esc(window.taskSearchQuery || '') + '" placeholder="Search tasks, milestones & subtasks..." oninput="handleTaskSearchInput(this.value)" onkeydown="if(event.key===\'Escape\')clearTaskSearch()" style="width:100%;box-sizing:border-box;background:#0b1329;border:1px solid ' + (searchQuery ? '#3b82f6' : 'rgba(59,130,246,0.3)') + ';color:#f8fafc;padding:9px 34px 9px 36px;border-radius:10px;font-size:13px;outline:none;transition:border-color 0.2s, box-shadow 0.2s;' + (searchQuery ? 'box-shadow:0 0 12px rgba(59,130,246,0.3);' : '') + '" onfocus="this.style.borderColor=\'#3b82f6\';this.style.boxShadow=\'0 0 12px rgba(59,130,246,0.3)\'" onblur="if(!window.taskSearchQuery){this.style.borderColor=\'rgba(59,130,246,0.3)\';this.style.boxShadow=\'none\'}" />'
+          + (window.taskSearchQuery ? ('<button onclick="clearTaskSearch()" style="position:absolute;right:10px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:2px 6px;line-height:1" title="Clear search (Esc)">✕</button>') : '')
           + '</div>';
 
         var filteredSortedTasks = sortedTasks.filter(function (item) {
@@ -8821,13 +8906,8 @@
         } else if (searchQuery) {
           tasksListHtml = '<div style="text-align:center;padding:24px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.25);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 8px 0">No tasks or subtasks match "<strong>' + esc(window.taskSearchQuery) + '</strong>".</p><button class="b bp bs" onclick="clearTaskSearch()" style="font-size:11.5px;padding:5px 12px;background:#2563eb;color:#fff;font-weight:700">Clear Search</button></div>';
         } else {
-          tasksListHtml = '<div style="text-align:center;padding:16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.3);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 4px 0">No tasks created yet for this identity.</p><p class="h" style="font-size:12px;color:#64748b;margin:0">Add your first task below to plan and execute milestones.</p></div>';
+          tasksListHtml = '<div style="text-align:center;padding:20px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(59,130,246,0.3);border-radius:10px;margin-bottom:14px"><p class="h" style="font-size:13px;color:#94a3b8;margin:0 0 8px 0">No tasks created yet for this identity.</p><button class="b bp bs" onclick="openAddTaskModal()" style="font-size:12px;padding:6px 14px;background:#2563eb;color:#fff;font-weight:700">+ Add First Task</button></div>';
         }
-
-        var addTaskBarHtml = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08)">'
-          + '<input type="text" id="new-task-text" placeholder="Add a new task / milestone (e.g. Build MVP Prototype)..." style="flex:1;min-width:200px;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:9px 12px;border-radius:8px;font-size:13px" onkeydown="if(event.key===\'Enter\')addTask()" />'
-          + '<button class="b bp bs" onclick="addTask()" style="font-size:12px;padding:9px 16px;background:#2563eb;color:#fff;font-weight:700">+ Add Task</button>'
-          + '</div>';
 
         var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
         var selTaskCount = (window.bulkTaskState && window.bulkTaskState.selectedTasks) ? window.bulkTaskState.selectedTasks.length : 0;
@@ -8852,12 +8932,12 @@
           + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#60a5fa;margin:0;display:inline-flex;align-items:center;gap:6px">📌 TASKS & ACTION IDEAS</h3>'
           + '<span style="font-size:12px;color:#94a3b8;font-weight:600">(' + completedCount + ' / ' + tasks.length + ' achieved)</span>'
           + '</div>'
-          + '<div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end;min-width:220px">'
+          + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+          + (isTaskBulkActive ? '<button onclick="toggleTaskBulkMode()" class="bg" style="font-size:11.5px;padding:6px 12px;border:1px solid rgba(239,68,68,0.5);color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">Cancel Selection</button>' : '')
+          + '<button class="b bp bs" onclick="openAddTaskModal()" style="font-size:12.5px;padding:7px 16px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;font-weight:700;border-radius:8px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(37,99,235,0.35);cursor:pointer">+ Add Task</button>'
+          + '</div>'
+          + '</div>'
           + searchBarHtml
-          + (isTaskBulkActive ? '<button onclick="toggleTaskBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid rgba(239,68,68,0.5);color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">Cancel Selection</button>' : '')
-          + '</div>'
-          + '</div>'
-          + addTaskBarHtml
           + searchResultsBadgeHtml
           + bulkTaskActionBarHtml
           + tasksListHtml
