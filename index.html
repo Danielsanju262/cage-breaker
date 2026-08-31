@@ -555,6 +555,16 @@
       line-height: 1.5;
     }
 
+    textarea.auto-expand-input,
+    textarea.title-edit-input {
+      min-height: 0 !important;
+      max-height: none !important;
+      padding: 2px 6px;
+      resize: none !important;
+      transition: none !important;
+      line-height: 1.35 !important;
+    }
+
     input:focus, textarea:focus, select:focus {
       border-color: var(--border-focus);
       background: rgba(17, 24, 39, 0.95);
@@ -966,6 +976,7 @@
       justify-content: space-between;
       gap: 10px;
       width: 100%;
+      cursor: pointer;
     }
 
     .task-card-header-left {
@@ -3250,14 +3261,10 @@
 
     window.autoResizeTextarea = function (ta) {
       if (!ta) return;
-      ta.style.height = 'auto';
-      var minH = parseInt(ta.getAttribute('data-min-h') || '22', 10);
-      if (!ta.value || !ta.value.trim()) {
-        ta.style.height = minH + 'px';
-      } else {
-        var targetH = Math.max(minH, ta.scrollHeight);
-        ta.style.height = targetH + 'px';
-      }
+      var minH = parseInt(ta.getAttribute('data-min-h') || '20', 10);
+      ta.style.height = '0px';
+      var targetH = Math.max(minH, ta.scrollHeight);
+      ta.style.height = targetH + 'px';
     };
 
     function adjustAllTextareaHeights() {
@@ -5251,6 +5258,7 @@
 
       var now = Date.now();
       var targetKey = (targetType || 'task') + '_' + parentTaskId + '_' + (subtaskId || '');
+      var isSubtaskTimer = (targetType === 'subtask');
 
       // Double click detected
       if ((event && event.type === 'dblclick') || (targetKey === _lastTimerClickTarget && (now - _lastTimerClickTime) < 300)) {
@@ -5260,7 +5268,11 @@
         }
         _lastTimerClickTime = 0;
         _lastTimerClickTarget = '';
-        openNextTimePickerModal(targetType, parentTaskId, subtaskId);
+        if (isSubtaskTimer) {
+          toggleTimerCardExpand(parentTaskId, event);
+        } else {
+          openNextTimePickerModal(targetType, parentTaskId, subtaskId);
+        }
         return;
       }
 
@@ -5272,7 +5284,11 @@
         _timerClickTimeout = null;
         _lastTimerClickTime = 0;
         _lastTimerClickTarget = '';
-        toggleTimerCardExpand(parentTaskId, event);
+        if (isSubtaskTimer) {
+          openNextTimePickerModal(targetType, parentTaskId, subtaskId);
+        } else {
+          toggleTimerCardExpand(parentTaskId, event);
+        }
       }, 250);
     };
 
@@ -5285,6 +5301,7 @@
 
       if (cd) {
         var stId = subtaskId || '';
+        var pillTitle = (targetType === 'subtask') ? 'Click to edit target time • Double click to toggle view' : 'Click to toggle view • Double click to edit target time';
         return '<button class="live-next-time-pill" data-target-time="' + (currentTargetTime || '') + '"'
           + ' onmousedown="event.stopPropagation();onTimerPressStart(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + stId + '\', event)"'
           + ' onmouseup="event.stopPropagation();onTimerPressCancel()"'
@@ -5297,7 +5314,7 @@
           + ' onclick="handleTimerInteraction(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + stId + '\', event)"'
           + ' ondblclick="handleTimerInteraction(\'' + targetType + '\', \'' + parentTaskId + '\', \'' + stId + '\', event)"'
           + ' style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:' + cd.bg + ';border:1px solid ' + cd.border + ';color:' + cd.color + ';cursor:pointer;white-space:nowrap;margin-left:auto;align-self:center;flex-shrink:0"'
-          + ' title="Click to toggle view • Double click to edit target time">' + cd.text + '</button>';
+          + ' title="' + pillTitle + '">' + cd.text + '</button>';
       } else {
         var clickHandler = "event.stopPropagation();openNextTimePickerModal('" + targetType + "', '" + parentTaskId + "', '" + (subtaskId || '') + "')";
         return '<button onclick="' + clickHandler + '" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;cursor:pointer;white-space:nowrap;margin-left:auto;align-self:center;flex-shrink:0" title="Set Target Wait Time">+ Set Time</button>';
@@ -7463,13 +7480,21 @@
     };
 
     window.handleTaskCardClick = function (taskId, evt) {
-      if (evt && evt.target) {
-        if (evt.target.closest('button, select, textarea, input, .task-title, .subtask-title, .task-dropdown-menu, .subtask-dropdown-menu, .live-task-timer-box, [draggable="true"], .subtasks-container, .auto-expand-input, .task-menu-wrapper, .subtask-menu-wrapper, .task-inputs-container, .subtask-inputs-container, .subtasks-wrapper, .subtask-card-item, .task-notes-container, .evidence-logs-container')) {
-          return;
+      if (evt) {
+        if (evt.target && evt.target.closest) {
+          if (evt.target.closest('button, select, textarea, input, option, .task-dropdown-menu, .subtask-dropdown-menu, .live-task-timer-box, [draggable="true"], .subtasks-container, .auto-expand-input, .task-menu-wrapper, .subtask-menu-wrapper, .task-inputs-container, .subtask-inputs-container, .subtasks-wrapper, .subtasks-inner, .subtask-card-item, .task-notes-container, .evidence-logs-container')) {
+            return;
+          }
+          var isHeaderRow = evt.target.closest('.task-card-header-row');
+          var isCollapsedTimer = evt.target.closest('.task-card-collapsed-timer');
+          if (!isHeaderRow && !isCollapsedTimer) {
+            return;
+          }
         }
-        var isHeaderRow = evt.target.closest('.task-card-header-row');
-        var isCollapsedTimer = evt.target.closest('.task-card-collapsed-timer');
-        if (!isHeaderRow && !isCollapsedTimer) {
+      }
+      if ((window.taskSearchQuery || '').trim()) {
+        if (typeof window.focusTaskFromSearch === 'function') {
+          window.focusTaskFromSearch(taskId, null, evt);
           return;
         }
       }
@@ -7489,7 +7514,34 @@
 
     window.handleTaskTitleClick = function (taskId, evt) {
       if (evt && evt.stopPropagation) evt.stopPropagation();
+      if ((window.taskSearchQuery || '').trim()) {
+        if (typeof window.focusTaskFromSearch === 'function') {
+          window.focusTaskFromSearch(taskId, null, evt);
+          return;
+        }
+      }
       window.startEditTask(taskId);
+    };
+
+    window.handleSubtaskTitleClick = function (taskId, subtaskId, evt) {
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      if ((window.taskSearchQuery || '').trim()) {
+        if (typeof window.focusTaskFromSearch === 'function') {
+          window.focusTaskFromSearch(taskId, subtaskId, evt);
+          return;
+        }
+      }
+      window.startEditSubtask(taskId, subtaskId);
+    };
+
+    window.handleSubtaskRowClick = function (taskId, subtaskId, evt) {
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      if ((window.taskSearchQuery || '').trim()) {
+        if (typeof window.focusTaskFromSearch === 'function') {
+          window.focusTaskFromSearch(taskId, subtaskId, evt);
+        }
+      }
+      // Subtask row click does not expand or collapse anything
     };
 
     window.renderTimeToResultSelect = function (targetType, taskId, subtaskId, currentVal, customStyle, contextPrefix) {
@@ -7627,37 +7679,36 @@
       save(true);
     };
 
+    window.updateTaskText = function (taskId, value) {
+      var id = getCurRef() || cur();
+      if (!id || !Array.isArray(id.tasks)) return;
+      var task = id.tasks.find(function (t) { return t.id === taskId; });
+      if (!task) return;
+      task.text = value;
+      task.updatedAt = new Date().toISOString();
+      save(true);
+    };
+
     window.startEditTask = function (taskId) {
       window.editingTaskId = taskId;
       render();
       setTimeout(function () {
         var inp = document.getElementById('edit-task-input-' + taskId);
-        if (inp) inp.focus();
-      }, 50);
+        if (inp) {
+          inp.focus();
+          if (inp.setSelectionRange) inp.setSelectionRange(inp.value.length, inp.value.length);
+          if (typeof window.autoResizeTextarea === 'function') window.autoResizeTextarea(inp);
+        }
+      }, 30);
     };
 
-    window.cancelEditTask = function () {
+    window.finishEditTask = function () {
       window.editingTaskId = null;
       render();
     };
 
-    window.saveEditTask = function (taskId) {
-      var id = getCurRef() || cur();
-      if (!id || !id.tasks) return;
-      var task = id.tasks.find(function (t) { return t.id === taskId; });
-      if (!task) return;
-
-      var textInp = document.getElementById('edit-task-input-' + taskId);
-      var textVal = textInp ? textInp.value.trim() : '';
-      if (!textVal) return;
-
-      task.text = textVal;
-      task.updatedAt = new Date().toISOString();
-
-      window.editingTaskId = null;
-      save(true);
-      render();
-    };
+    window.cancelEditTask = window.finishEditTask;
+    window.saveEditTask = function (taskId) { window.finishEditTask(); };
 
     window.deleteTask = function (taskId) {
       var id = getCurRef() || cur();
@@ -7884,39 +7935,38 @@
       save(true);
     };
 
-    window.startEditSubtask = function (taskId, subtaskId) {
-      window.editingSubtaskKey = taskId + '_' + subtaskId;
-      render();
-      setTimeout(function () {
-        var inp = document.getElementById('edit-subtask-input-' + subtaskId);
-        if (inp) inp.focus();
-      }, 50);
-    };
-
-    window.cancelEditSubtask = function () {
-      window.editingSubtaskKey = null;
-      render();
-    };
-
-    window.saveEditSubtask = function (taskId, subtaskId) {
+    window.updateSubtaskText = function (taskId, subtaskId, value) {
       var id = getCurRef() || cur();
       if (!id || !Array.isArray(id.tasks)) return;
       var task = id.tasks.find(function (t) { return t.id === taskId; });
       if (!task || !Array.isArray(task.subtasks)) return;
       var sub = task.subtasks.find(function (s) { return s.id === subtaskId; });
       if (!sub) return;
-
-      var inp = document.getElementById('edit-subtask-input-' + subtaskId);
-      var val = inp ? inp.value.trim() : '';
-      if (!val) return;
-
-      sub.text = val;
+      sub.text = value;
       sub.updatedAt = new Date().toISOString();
-      window.editingSubtaskKey = null;
-
       save(true);
+    };
+
+    window.startEditSubtask = function (taskId, subtaskId) {
+      window.editingSubtaskKey = taskId + '_' + subtaskId;
+      render();
+      setTimeout(function () {
+        var inp = document.getElementById('edit-subtask-input-' + subtaskId);
+        if (inp) {
+          inp.focus();
+          if (inp.setSelectionRange) inp.setSelectionRange(inp.value.length, inp.value.length);
+          if (typeof window.autoResizeTextarea === 'function') window.autoResizeTextarea(inp);
+        }
+      }, 30);
+    };
+
+    window.finishEditSubtask = function () {
+      window.editingSubtaskKey = null;
       render();
     };
+
+    window.cancelEditSubtask = window.finishEditSubtask;
+    window.saveEditSubtask = function (taskId, subtaskId) { window.finishEditSubtask(); };
 
     window.deleteSubtask = function (taskId, subtaskId) {
       var id = getCurRef() || cur();
@@ -8189,17 +8239,6 @@
       renderIdeasModalContent();
     };
 
-    window.toggleTaskExpanded = function (taskId) {
-      var id = getCurRef() || cur();
-      if (!id || !Array.isArray(id.tasks)) return;
-      var task = id.tasks.find(function (t) { return t.id === taskId; });
-      if (!task) return;
-      task.expanded = !task.expanded;
-      task.updatedAt = new Date().toISOString();
-      save(true);
-      render(true);
-    };
-
     window.focusTaskFromSearch = function (taskId, subtaskId, event) {
       if (event && typeof event.stopPropagation === 'function') {
         event.stopPropagation();
@@ -8246,53 +8285,6 @@
 
       setTimeout(doScrollToTarget, 50);
       setTimeout(doScrollToTarget, 160);
-    };
-
-    window.handleTaskTitleClick = function (taskId, event) {
-      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
-      if ((window.taskSearchQuery || '').trim()) {
-        window.focusTaskFromSearch(taskId, null, event);
-        return;
-      }
-      window.toggleTaskExpanded(taskId);
-    };
-
-    window.handleSubtaskTitleClick = function (taskId, subtaskId, event) {
-      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
-      if ((window.taskSearchQuery || '').trim()) {
-        window.focusTaskFromSearch(taskId, subtaskId, event);
-        return;
-      }
-      window.toggleTaskExpanded(taskId);
-    };
-
-    window.handleSubtaskRowClick = function (taskId, subtaskId, event) {
-      if ((window.taskSearchQuery || '').trim()) {
-        if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
-        window.focusTaskFromSearch(taskId, subtaskId, event);
-      }
-    };
-
-    window.handleTaskCardClick = function (taskId, event) {
-      if (event) {
-        var target = event.target;
-        if (target) {
-          var tag = (target.tagName || '').toLowerCase();
-          if (tag === 'input' || tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'option') {
-            return;
-          }
-          if (target.closest && (target.closest('.subtask-card-item') || target.closest('.task-dropdown-menu') || target.closest('.task-inputs-container') || target.closest('.collapsed-timer-bottom-row') || target.closest('.live-task-timer-box') || target.closest('.main-ideas-btn-wrap'))) {
-            return;
-          }
-        }
-      }
-
-      if ((window.taskSearchQuery || '').trim()) {
-        window.focusTaskFromSearch(taskId, null, event);
-        return;
-      }
-
-      window.toggleTaskExpanded(taskId);
     };
 
     window.deleteModalIdea = function (ideaId) {
@@ -8531,19 +8523,6 @@
       var statusBg = curStatus === 'completed' ? 'rgba(74,222,128,0.15)' : (curStatus === 'in_process' ? 'rgba(59,130,246,0.15)' : 'rgba(148,163,184,0.1)');
       var statusBorder = curStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
 
-      if (isEditingTask) {
-        return '<div class="task-card" style="border-color:#3b82f6;background:rgba(59,130,246,0.06);margin-bottom:12px">'
-          + '<div style="font-size:12px;font-weight:700;color:#93c5fd;margin-bottom:8px">EDIT TASK</div>'
-          + '<div style="margin-bottom:10px">'
-          + '<textarea rows="1" id="edit-task-input-' + task.id + '" class="auto-expand-input" data-min-h="32px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this)" style="width:100%;background:#111827;border:1px solid #3b82f6;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;height:32px;min-height:32px">' + esc(task.text) + '</textarea>'
-          + '</div>'
-          + '<div style="display:flex;justify-content:flex-end;gap:6px">'
-          + '<button class="bg" onclick="cancelEditTask()" style="font-size:11px;padding:4px 10px">Cancel</button>'
-          + '<button class="b bp bs" onclick="saveEditTask(\'' + task.id + '\')" style="font-size:11px;padding:5px 12px;background:#2563eb;color:#fff">Save Task</button>'
-          + '</div>'
-          + '</div>';
-      }
-
       var taskHighestCd = getTaskHighestTimerStatus(task);
       var taskItemCd = getItemTimerStatus(task) || taskHighestCd;
 
@@ -8582,13 +8561,12 @@
               var stTotalIdeas = stIdeas.length;
               var isSubDone = st.completed || task.completed;
               var isEditingSub = window.editingSubtaskKey === (task.id + '_' + st.id);
-              if (isEditingSub) {
-                return '<div style="display:flex;gap:6px;align-items:flex-start;background:#111827;padding:6px 10px;border-radius:8px;border:1px solid #3b82f6">'
-                  + '<textarea rows="1" id="edit-subtask-input-' + st.id + '" class="auto-expand-input" data-min-h="28px" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this)" style="flex:1;background:#0f172a;border:1px solid #334155;color:#fff;padding:5px 8px;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;height:28px;min-height:28px">' + esc(st.text) + '</textarea>'
-                  + '<button class="bg" onclick="cancelEditSubtask()" style="font-size:11px;padding:4px 8px;align-self:center">Cancel</button>'
-                  + '<button class="b bp bs" onclick="saveEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:11px;padding:4px 10px;background:#2563eb;color:#fff;align-self:center">Save</button>'
-                  + '</div>';
-              }
+
+              var subTitleContentHtml = isEditingSub ? (
+                '<textarea rows="1" id="edit-subtask-input-' + st.id + '" class="auto-expand-input title-edit-input" data-min-h="22px" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateSubtaskText(\'' + task.id + '\', \'' + st.id + '\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();finishEditSubtask();}" onblur="finishEditSubtask()" onclick="event.stopPropagation()" style="background:#0f172a;border:1px solid #3b82f6;color:#fff;padding:2px 6px;border-radius:6px;font-size:13px;font-weight:500;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;outline:none;field-sizing:content;max-width:100%;min-width:80px;width:auto;margin:0;min-height:0">' + esc(st.text) + '</textarea>'
+              ) : (
+                '<span class="subtask-title" onclick="event.stopPropagation();handleSubtaskTitleClick(\'' + task.id + '\', \'' + st.id + '\', event)" ondblclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:13px;font-weight:500;cursor:pointer;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:inline;max-width:100%;width:fit-content;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit subtask">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
+              );
 
               var curSubStatus = st.status || (st.completed ? 'completed' : 'yet_to_start');
               var subStatusColor = curSubStatus === 'completed' ? '#4ede80' : (curSubStatus === 'in_process' ? '#60a5fa' : '#94a3b8');
@@ -8608,7 +8586,7 @@
 
               var isSubCompleted = isSubDone || curSubStatus === 'completed';
 
-              var subtaskInputsHtml = !isSubCompleted ? (
+              var subtaskInputsHtml = (!isSubCompleted && curSubStatus === 'in_process') ? (
                 '<div class="subtask-inputs-container" style="display:flex;gap:6px;align-items:center;margin-top:4px">'
                 + '<div style="display:flex;align-items:center;gap:6px;flex:1;background:' + subNextBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + subNextBorder + '">'
                 + '<span style="font-size:11px;font-weight:700;color:' + subNextLabelColor + ';white-space:nowrap">Next:</span>'
@@ -8631,7 +8609,7 @@
                 + '</button>'
               );
 
-              return '<div id="subtask-row-' + task.id + '-' + st.id + '" data-subtask-task-id="' + task.id + '" data-subtask-id="' + st.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item" style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:4px;' + subShadow + '" onclick="handleSubtaskRowClick(\'' + task.id + '\', \'' + st.id + '\', event)" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
+              return '<div id="subtask-row-' + task.id + '-' + st.id + '" data-subtask-task-id="' + task.id + '" data-subtask-id="' + st.id + '" data-subtask-idx="' + item.origIdx + '" class="subtask-card-item" style="display:flex;flex-direction:column;padding:8px 10px;background:' + (isSubBulkSelected ? 'rgba(239,68,68,0.15)' : subBg) + ';border:' + (isSubBulkSelected ? '1px solid rgba(239,68,68,0.4)' : subBorder) + ';border-radius:8px;gap:4px;' + subShadow + '" onclick="event.stopPropagation();handleSubtaskRowClick(\'' + task.id + '\', \'' + st.id + '\', event)" ondragover="onSubtaskDragOver(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragleave="onSubtaskDragLeave(event, \'' + task.id + '\', ' + item.origIdx + ')" ondrop="onSubtaskDrop(event, \'' + task.id + '\', ' + item.origIdx + ')" ondragend="onSubtaskDragEnd(event)">'
                 + '<div class="subtask-card-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;width:100%">'
                 + '<div class="subtask-card-row-left" style="display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0">'
                 + subtaskBulkCheckHtml
@@ -8640,7 +8618,9 @@
                 + (isSubDone ? '✓' : '')
                 + '</button>'
                 + (subIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + subIdeasButtonHtml + '</div>') : '')
-                + '<span class="subtask-title" onclick="handleSubtaskTitleClick(\'' + task.id + '\', \'' + st.id + '\', event)" ondblclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:13px;font-weight:500;cursor:pointer;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:block;flex:1;min-width:0;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to expand/collapse • Double click to edit">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
+                + '<div class="subtask-title-wrap" style="flex:1;min-width:0;display:flex;align-items:flex-start;line-height:1.4">'
+                + subTitleContentHtml
+                + '</div>'
                 + '</div>'
                 + '<div class="subtask-card-row-right" style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;white-space:nowrap">'
                 + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
@@ -8666,15 +8646,15 @@
       }
 
       var addSubtaskBarHtml = !task.completed ? (
-        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:' + (displayedSubtasks.length > 0 ? '10px' : '0') + '">'
+        '<div onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center;margin-bottom:' + (displayedSubtasks.length > 0 ? '10px' : '0') + '">'
         + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:7px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
         + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11.5px;padding:7px 12px;background:#2563eb;color:#fff;font-weight:700">+ Add Subtask</button>'
         + '</div>'
       ) : '';
 
       var subtasksContainerHtml = (
-        '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '">'
-        + '<div class="subtasks-inner" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08)">'
+        '<div id="subtasks-wrapper-' + task.id + '" class="subtasks-wrapper ' + (isExpanded ? 'expanded' : '') + '" onclick="event.stopPropagation()">'
+        + '<div class="subtasks-inner" onclick="event.stopPropagation()" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08)">'
         + addSubtaskBarHtml
         + subtasksListHtml
         + '</div>'
@@ -8800,7 +8780,11 @@
         + '</button>'
         + (mainIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + mainIdeasButtonHtml + '</div>') : '')
         + '<div class="task-title-wrap" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;line-height:1.45">'
-        + '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" ondblclick="event.stopPropagation();startEditTask(\'' + task.id + '\')" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to expand/collapse • Double click to edit">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
+        + (isEditingTask ? (
+            '<textarea rows="1" id="edit-task-input-' + task.id + '" class="auto-expand-input title-edit-input" data-min-h="24px" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateTaskText(\'' + task.id + '\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();finishEditTask();}" onblur="finishEditTask()" onclick="event.stopPropagation()" style="background:#0f172a;border:1px solid #3b82f6;color:#fff;padding:2px 6px;border-radius:6px;font-size:15px;font-weight:600;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;outline:none;field-sizing:content;max-width:100%;min-width:100px;width:auto;margin:0;min-height:0">' + esc(task.text) + '</textarea>'
+          ) : (
+            '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" ondblclick="event.stopPropagation();startEditTask(\'' + task.id + '\')" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;display:inline;width:fit-content;max-width:100%;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit task title">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
+          ))
         + subtasksBadgeHtml
         + '</div>'
         + '</div>'
