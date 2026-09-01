@@ -8351,7 +8351,7 @@
       window.bulkTaskState = window.bulkTaskState || { active: false, selectedTasks: [], selectedSubtasks: [] };
       window.bulkTaskState.active = true;
       if (type === 'subtask' && subtaskId) {
-        var key = taskId + '_' + subtaskId;
+        var key = taskId + ':::sub:::' + subtaskId;
         if (!Array.isArray(window.bulkTaskState.selectedSubtasks)) window.bulkTaskState.selectedSubtasks = [];
         if (!window.bulkTaskState.selectedSubtasks.includes(key)) {
           window.bulkTaskState.selectedSubtasks.push(key);
@@ -8385,7 +8385,7 @@
     };
 
     window.toggleSubtaskBulkSelect = function (taskId, subtaskId, isChecked) {
-      var key = taskId + '_' + subtaskId;
+      var key = taskId + ':::sub:::' + subtaskId;
       if (!Array.isArray(window.bulkTaskState.selectedSubtasks)) window.bulkTaskState.selectedSubtasks = [];
       if (isChecked) {
         if (!window.bulkTaskState.selectedSubtasks.includes(key)) window.bulkTaskState.selectedSubtasks.push(key);
@@ -8405,7 +8405,7 @@
           window.bulkTaskState.selectedTasks.push(t.id);
           if (Array.isArray(t.subtasks)) {
             t.subtasks.forEach(function (st) {
-              window.bulkTaskState.selectedSubtasks.push(t.id + '_' + st.id);
+              window.bulkTaskState.selectedSubtasks.push(t.id + ':::sub:::' + st.id);
             });
           }
         });
@@ -8416,8 +8416,8 @@
     window.executeBulkDeleteTasks = function () {
       var id = getCurRef() || cur();
       if (!id) return;
-      var selTasks = window.bulkTaskState.selectedTasks || [];
-      var selSubtasks = window.bulkTaskState.selectedSubtasks || [];
+      var selTasks = (window.bulkTaskState && window.bulkTaskState.selectedTasks) ? window.bulkTaskState.selectedTasks.slice() : [];
+      var selSubtasks = (window.bulkTaskState && window.bulkTaskState.selectedSubtasks) ? window.bulkTaskState.selectedSubtasks.slice() : [];
       var totalCount = selTasks.length + selSubtasks.length;
       if (totalCount === 0) return;
 
@@ -8427,64 +8427,95 @@
         confirmText: 'Delete Selected (' + totalCount + ')',
         confirmBg: 'linear-gradient(135deg, #ef4444, #dc2626)',
         onConfirm: function () {
-          if (!Array.isArray(id.deletedTaskIds)) id.deletedTaskIds = [];
-          if (!Array.isArray(id.deletedSubtaskIds)) id.deletedSubtaskIds = [];
-          if (!Array.isArray(id.deletedIdeaIds)) id.deletedIdeaIds = [];
+          var curId = getCurRef() || cur();
+          if (!curId || !Array.isArray(curId.tasks)) return;
+
+          if (!Array.isArray(curId.deletedTaskIds)) curId.deletedTaskIds = [];
+          if (!Array.isArray(curId.deletedSubtaskIds)) curId.deletedSubtaskIds = [];
+          if (!Array.isArray(curId.deletedIdeaIds)) curId.deletedIdeaIds = [];
 
           selSubtasks.forEach(function (key) {
-            var parts = key.split('_');
-            var taskId = parts[0];
-            var subtaskId = parts[1];
-            var task = Array.isArray(id.tasks) ? id.tasks.find(function (t) { return t.id === taskId; }) : null;
+            var taskId = '';
+            var subtaskId = '';
+            if (key.indexOf(':::sub:::') !== -1) {
+              var parts = key.split(':::sub:::');
+              taskId = parts[0];
+              subtaskId = parts[1];
+            } else if (key.indexOf('_subtask_') !== -1) {
+              var idx = key.indexOf('_subtask_');
+              taskId = key.slice(0, idx);
+              subtaskId = key.slice(idx + 1);
+            } else {
+              var parts = key.split('_');
+              taskId = parts[0];
+              subtaskId = parts.slice(1).join('_');
+            }
+
+            var task = Array.isArray(curId.tasks) ? curId.tasks.find(function (t) { return t.id === taskId; }) : null;
+            if (!task && Array.isArray(curId.tasks)) {
+              task = curId.tasks.find(function (t) {
+                return Array.isArray(t.subtasks) && t.subtasks.some(function (s) { return s.id === subtaskId; });
+              });
+            }
+
             if (task && Array.isArray(task.subtasks)) {
               var sub = task.subtasks.find(function (s) { return s.id === subtaskId; });
               if (sub) {
-                if (!id.deletedSubtaskIds.includes(subtaskId)) id.deletedSubtaskIds.push(subtaskId);
+                if (!curId.deletedSubtaskIds.includes(subtaskId)) curId.deletedSubtaskIds.push(subtaskId);
                 if (Array.isArray(sub.ideas)) {
                   sub.ideas.forEach(function (i) {
-                    if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+                    if (i && i.id && !curId.deletedIdeaIds.includes(i.id)) curId.deletedIdeaIds.push(i.id);
                   });
                 }
-                removeAndTombstoneLogs(id, function (l) {
+                removeAndTombstoneLogs(curId, function (l) {
                   return (l.subtaskId === subtaskId) || (l.note && l.note.indexOf('Subtask: ' + sub.text) !== -1);
                 });
                 task.subtasks = task.subtasks.filter(function (s) { return s.id !== subtaskId; });
+                task.updatedAt = new Date().toISOString();
               }
             }
           });
 
           selTasks.forEach(function (taskId) {
-            var task = Array.isArray(id.tasks) ? id.tasks.find(function (t) { return t.id === taskId; }) : null;
+            var task = Array.isArray(curId.tasks) ? curId.tasks.find(function (t) { return t.id === taskId; }) : null;
             if (task) {
-              if (!id.deletedTaskIds.includes(taskId)) id.deletedTaskIds.push(taskId);
+              if (!curId.deletedTaskIds.includes(taskId)) curId.deletedTaskIds.push(taskId);
               if (Array.isArray(task.ideas)) {
                 task.ideas.forEach(function (i) {
-                  if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+                  if (i && i.id && !curId.deletedIdeaIds.includes(i.id)) curId.deletedIdeaIds.push(i.id);
                 });
               }
               if (Array.isArray(task.subtasks)) {
                 task.subtasks.forEach(function (st) {
-                  if (st && st.id && !id.deletedSubtaskIds.includes(st.id)) id.deletedSubtaskIds.push(st.id);
+                  if (st && st.id && !curId.deletedSubtaskIds.includes(st.id)) curId.deletedSubtaskIds.push(st.id);
                   if (st && Array.isArray(st.ideas)) {
                     st.ideas.forEach(function (i) {
-                      if (i && i.id && !id.deletedIdeaIds.includes(i.id)) id.deletedIdeaIds.push(i.id);
+                      if (i && i.id && !curId.deletedIdeaIds.includes(i.id)) curId.deletedIdeaIds.push(i.id);
                     });
                   }
                 });
               }
-              removeAndTombstoneLogs(id, function (l) {
+              removeAndTombstoneLogs(curId, function (l) {
                 if (l.taskId === taskId) return true;
                 if (l.subtaskId && Array.isArray(task.subtasks) && task.subtasks.some(function (st) { return st.id === l.subtaskId; })) return true;
+                if (l.ideaId) {
+                  if (Array.isArray(task.ideas) && task.ideas.some(function (i) { return i.id === l.ideaId; })) return true;
+                  if (Array.isArray(task.subtasks)) {
+                    return task.subtasks.some(function (st) {
+                      return Array.isArray(st.ideas) && st.ideas.some(function (i) { return i.id === l.ideaId; });
+                    });
+                  }
+                }
                 return false;
               });
-              id.tasks = id.tasks.filter(function (t) { return t.id !== taskId; });
+              curId.tasks = curId.tasks.filter(function (t) { return t.id !== taskId; });
             }
           });
 
-          id.updatedAt = new Date().toISOString();
+          curId.updatedAt = new Date().toISOString();
           window.bulkTaskState = { active: false, selectedTasks: [], selectedSubtasks: [] };
           save(true);
-          render(true);
+          render();
         }
       });
     };
@@ -8598,7 +8629,7 @@
               var subBorder = stTimerCd ? ('1px solid ' + stTimerCd.border) : '1px solid rgba(255,255,255,0.06)';
               var subShadow = stTimerCd ? ('box-shadow:0 0 14px ' + stTimerCd.glow + ';') : '';
 
-              var isSubBulkSelected = Array.isArray(window.bulkTaskState && window.bulkTaskState.selectedSubtasks) && window.bulkTaskState.selectedSubtasks.includes(task.id + '_' + st.id);
+              var isSubBulkSelected = Array.isArray(window.bulkTaskState && window.bulkTaskState.selectedSubtasks) && (window.bulkTaskState.selectedSubtasks.includes(task.id + ':::sub:::' + st.id) || window.bulkTaskState.selectedSubtasks.includes(task.id + '_' + st.id));
               var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
               var subtaskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isSubBulkSelected ? 'checked' : '') + ' onchange="toggleSubtaskBulkSelect(\'' + task.id + '\', \'' + st.id + '\', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select subtask for bulk delete" />') : '';
 
