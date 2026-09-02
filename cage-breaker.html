@@ -94,7 +94,7 @@
      *   - `touch-action: pan-x pan-y`: Prevents 300ms double-tap browser delay on mobile.
      * ═══════════════════════════════════════════════════════════════════════════════ */
     html {
-      scroll-behavior: smooth;
+      scroll-behavior: auto;
       -webkit-text-size-adjust: 100%;
       background-color: var(--bg-app);
       color-scheme: dark;
@@ -3143,42 +3143,52 @@
           screen: state.screen,
           currentId: state.currentId,
           deletedIds: state.deletedIds || [],
+          dailyCrack: state.dailyCrack || null,
           identities: (state.identities || []).map(function (id) {
             return {
               id: id.id,
               newIdentity: id.newIdentity,
-              achieved: id.achieved,
+              achieved: !!id.achieved,
               type: id.type,
               targetEvent: id.targetEvent,
               targetEventName: id.targetEventName,
               taggedEvent: id.taggedEvent,
               targetEventDate: id.targetEventDate,
               targetActionLine: id.targetActionLine,
+              antiVisionText: id.antiVisionText,
+              whyStatement: id.whyStatement,
               tasks: (id.tasks || []).map(function (t) {
                 return {
                   id: t.id,
                   text: t.text,
-                  completed: t.completed,
+                  completed: !!t.completed,
                   status: t.status,
                   doingNow: t.doingNow,
                   whatNext: t.whatNext,
                   timeToResult: t.timeToResult,
                   nextTargetTime: t.nextTargetTime,
                   subtasks: (t.subtasks || []).map(function (st) {
-                    return { id: st.id, text: st.text, completed: st.completed, doingNow: st.doingNow, whatNext: st.whatNext, status: st.status };
+                    return { id: st.id, text: st.text, completed: !!st.completed, doingNow: st.doingNow, whatNext: st.whatNext, status: st.status };
                   }),
                   ideas: (t.ideas || []).map(function (idea) {
-                    return { id: idea.id, text: idea.text, completed: idea.completed };
+                    return { id: idea.id, text: idea.text, completed: !!idea.completed };
                   })
                 };
               }),
               routineLoops: (id.routineLoops || []).map(function (rl) {
                 return { id: rl.id, title: rl.title, iterationCount: rl.iterationCount, steps: (rl.steps || []).map(function (s) { return s.text || s; }) };
               }),
-              logs: (id.logs || []).map(function (l) { return { id: l.id, note: l.note, date: l.date }; }),
+              logs: (id.logs || []).map(function (l) { return { id: l.id, note: l.note, date: l.date, type: l.type, category: l.category }; }),
               habits: (id.habits || []).map(function (h) { return { id: h.id, text: h.text, checks: h.checks }; }),
               reflections: (id.reflections || []).map(function (r) { return { id: r.id, note: r.note, date: r.date }; }),
-              dailyCrack: state.dailyCrack
+              oldEvidence: (id.oldEvidence || []).map(function (oe) { return { id: oe.id, note: oe.note, date: oe.date }; }),
+              actions: (id.actions || []).map(function (a) { return { id: a.id, text: a.text, completed: !!a.completed }; }),
+              goalActions: (id.goalActions || []).map(function (ga) { return { id: ga.id, text: ga.text, completed: !!ga.completed }; }),
+              deletedTaskIds: id.deletedTaskIds || [],
+              deletedSubtaskIds: id.deletedSubtaskIds || [],
+              deletedIdeaIds: id.deletedIdeaIds || [],
+              deletedLogIds: id.deletedLogIds || [],
+              deletedHabitIds: id.deletedHabitIds || []
             };
           })
         };
@@ -3198,11 +3208,15 @@
       var sy = shouldPreserve ? (rawY > 0 ? rawY : (window._modalSavedScrollY || window._lastKnownPageScrollY || 0)) : 0;
       var sx = shouldPreserve ? (rawX > 0 ? rawX : (window._modalSavedScrollX || window._lastKnownPageScrollX || 0)) : 0;
 
-      // Lock current height of app container before replacing innerHTML so page height never collapses and scroll position never jumps to top
+      // Lock current height of app container before replacing innerHTML so page height never collapses
       var prevHeight = a.offsetHeight;
       if (shouldPreserve && prevHeight > 0) {
         a.style.minHeight = prevHeight + 'px';
       }
+
+      var htmlEl = document.documentElement;
+      var prevScrollBehavior = htmlEl.style.scrollBehavior;
+      htmlEl.style.scrollBehavior = 'auto';
 
       var activeId = document.activeElement ? document.activeElement.id : null;
       var selStart = null, selEnd = null;
@@ -3227,18 +3241,24 @@
       else if (scr === 'goal') rGoal(a);
       else rHub(a);
 
+      // Perform all textarea auto-resizing synchronously BEFORE scroll repositioning and paint
+      adjustAllTextareaHeights();
+
       if (shouldPreserve && (sx > 0 || sy > 0)) {
-        window.scrollTo(sx, sy);
-        requestAnimationFrame(function () {
-          window.scrollTo(sx, sy);
-        });
+        window.scrollTo({ left: sx, top: sy, behavior: 'instant' });
       }
 
-      // Smoothly clear locked minHeight after paint
+      // Smoothly clear locked minHeight and restore scroll behavior after paint
       if (shouldPreserve && prevHeight > 0) {
         requestAnimationFrame(function () {
           a.style.minHeight = '';
+          if (shouldPreserve && (sx > 0 || sy > 0)) {
+            window.scrollTo({ left: sx, top: sy, behavior: 'instant' });
+          }
+          htmlEl.style.scrollBehavior = prevScrollBehavior;
         });
+      } else {
+        htmlEl.style.scrollBehavior = prevScrollBehavior;
       }
 
       if (activeId) {
@@ -3253,7 +3273,6 @@
         }
       }
 
-      adjustAllTextareaHeights();
       try { updateLiveCountdowns(); } catch (e) {}
     }
     window.render = render;
@@ -3261,22 +3280,22 @@
     window.autoResizeTextarea = function (ta) {
       if (!ta) return;
       var minH = parseInt(ta.getAttribute('data-min-h') || '20', 10);
-      ta.style.height = '0px';
+      ta.style.height = 'auto';
       var targetH = Math.max(minH, ta.scrollHeight);
       ta.style.height = targetH + 'px';
     };
 
     function adjustAllTextareaHeights() {
-      setTimeout(function () {
-        var tas = document.querySelectorAll('textarea.auto-expand-input');
+      var tas = document.querySelectorAll('textarea.auto-expand-input, textarea.mg-editable-ta');
+      if (tas && tas.length) {
         tas.forEach(function (ta) {
           window.autoResizeTextarea(ta);
         });
-      }, 0);
+      }
     }
 
     document.addEventListener('input', function (e) {
-      if (e.target && e.target.matches && e.target.matches('textarea.auto-expand-input')) {
+      if (e.target && e.target.matches && e.target.matches('textarea.auto-expand-input, textarea.mg-editable-ta')) {
         window.autoResizeTextarea(e.target);
       }
     });
@@ -3679,10 +3698,11 @@
         }
       });
 
+      var localVaultExpanded = (i1 && i1.achievedVaultExpanded !== undefined) ? i1.achievedVaultExpanded : !!primary.achievedVaultExpanded;
       return {
         ...secondary,
         ...primary,
-        achievedVaultExpanded: false,
+        achievedVaultExpanded: localVaultExpanded,
         dailyCrack: mergedDailyCrack,
         deletedLogIds: mergedDeletedLogIds,
         deletedTaskIds: mergedDeletedTaskIds,
@@ -4013,63 +4033,85 @@
       }
     };
 
-    window.pullFromCloud = async function () {
+    window.pullFromCloud = async function (isBackgroundSync) {
       if (!fbDb) initFirebaseSync();
       if (!fbDb) { _initialSyncDone = true; return false; }
-      _syncStatus = 'syncing'; updateSyncStatusUI();
+      if (!isBackgroundSync) {
+        _syncStatus = 'syncing';
+        updateSyncStatusUI();
+      }
       try {
         var doc = await fbDb.collection('cage_sync').doc(MASTER_DOC_ID).get();
         if (doc.exists) {
           var data = doc.data();
           if (data && data.payload) {
-            var payloadStr = typeof data.payload === 'string' ? data.payload : JSON.stringify(data.payload);
             var parsed = typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload;
 
             if (parsed) {
               var currentIdentitiesCount = (S && Array.isArray(S.identities)) ? S.identities.length : 0;
               var cloudIdentitiesCount = Array.isArray(parsed.identities) ? parsed.identities.length : 0;
 
-              // If local is empty but cloud has data, ALWAYS adopt cloud data!
-              var shouldAdoptCloud = (currentIdentitiesCount === 0 && cloudIdentitiesCount > 0) ||
-                (payloadStr !== localStorage.getItem(SK));
+              // ── ANTI-WIPE GUARD ──
+              var localItemCount = countAllItems(S);
+              var cloudItemCount = countAllItems(parsed);
+              if (localItemCount > 5 && cloudItemCount < localItemCount * 0.5) {
+                console.warn('[CageBreaker SAFEGUARD] pullFromCloud: incoming cloud data has ' + cloudItemCount + ' items vs local ' + localItemCount + '. Rejecting destructive update.');
+                _syncStatus = 'synced';
+                if (!isBackgroundSync) updateSyncStatusUI();
+                return false;
+              }
 
-              if (shouldAdoptCloud) {
-                S = mergeStates(S, parsed);
-                if (typeof _initialSyncDone === 'undefined' || !_initialSyncDone) {
-                  collapseAllExpandedStates(S);
-                }
-                if (data.lastActionTime) S.lastActionTime = data.lastActionTime;
-                if (data.lastActionDevice) S.lastActionDevice = data.lastActionDevice;
-                if (data.lastActionDesc) S.lastActionDesc = data.lastActionDesc;
-                if (data.identityOrderUpdatedAt) S.identityOrderUpdatedAt = data.identityOrderUpdatedAt;
+              var oldPayloadSig = getPayloadSignature(S);
+              var merged = mergeStates(S, parsed);
+              if (typeof _initialSyncDone === 'undefined' || !_initialSyncDone) {
+                collapseAllExpandedStates(merged);
+              }
+              var newPayloadSig = getPayloadSignature(merged);
 
-                if (!isLocalhost()) {
-                  var dataStr = JSON.stringify(S);
-                  localStorage.setItem(SK, dataStr);
-                  localStorage.setItem(SK + '_backup', dataStr);
-                  localStorage.setItem(SK + '_cloud_snapshot', dataStr);
-                }
-                _syncStatus = 'synced'; updateSyncStatusUI();
-
-                var mergedItemCount = countAllItems(S);
-                if (mergedItemCount > 0 || cloudIdentitiesCount > 0) {
-                  _initialSyncDone = true;
-                } else {
-                  setTimeout(function () {
-                    if (!_initialSyncDone) _initialSyncDone = true;
-                  }, 5000);
-                }
-                var activeTag = document.activeElement ? document.activeElement.tagName : '';
-                var hasModal = !!document.querySelector('.modal-overlay');
-                if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && !hasModal) {
-                  render(true);
-                }
+              // If data is identical, update references silently and DO NOT re-render
+              if (oldPayloadSig === newPayloadSig && currentIdentitiesCount > 0) {
+                S = merged;
+                _syncStatus = 'synced';
+                if (!isBackgroundSync) updateSyncStatusUI();
+                _initialSyncDone = true;
                 return true;
               }
+
+              // Real remote changes detected
+              _isRemoteUpdate = true;
+              S = merged;
+              if (S.identities && S.identities.length > 0 && S.screen === 'welcome') {
+                S.screen = 'hub';
+              }
+              if (data.lastActionTime) S.lastActionTime = data.lastActionTime;
+              if (data.lastActionDevice) S.lastActionDevice = data.lastActionDevice;
+              if (data.lastActionDesc) S.lastActionDesc = data.lastActionDesc;
+              if (data.identityOrderUpdatedAt) S.identityOrderUpdatedAt = data.identityOrderUpdatedAt;
+
+              if (!isLocalhost()) {
+                var dataStr = JSON.stringify(S);
+                localStorage.setItem(SK, dataStr);
+                localStorage.setItem(SK + '_backup', dataStr);
+                localStorage.setItem(SK + '_cloud_snapshot', dataStr);
+              }
+              _syncStatus = 'synced';
+              updateSyncStatusUI();
+              _initialSyncDone = true;
+
+              var activeTag = document.activeElement ? document.activeElement.tagName : '';
+              var hasModal = !!document.querySelector('.modal-overlay');
+              if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && !hasModal) {
+                render(true);
+              }
+
+              setTimeout(function () { _isRemoteUpdate = false; }, 400);
+              return true;
             }
           }
         }
         _initialSyncDone = true;
+        _syncStatus = 'synced';
+        if (!isBackgroundSync) updateSyncStatusUI();
       } catch (err) {
         console.warn('[CageBreaker Firebase] Pull error:', err);
         _syncStatus = 'error'; updateSyncStatusUI();
@@ -5063,15 +5105,6 @@
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) {
         updateLiveCountdowns();
-        if (typeof window.pullFromCloud === 'function') {
-          window.pullFromCloud();
-        }
-      }
-    });
-
-    window.addEventListener('focus', function () {
-      if (typeof window.pullFromCloud === 'function') {
-        window.pullFromCloud();
       }
     });
 
@@ -5832,7 +5865,7 @@
       showCustomConfirm({
         title: willAchieve ? 'Achieve & Archive Identity?' : 'Re-open Live Identity?',
         message: willAchieve
-          ? 'Congratulations on achieving your identity! It will be moved to the Identities Achieved section.'
+          ? 'Congratulations on achieving your identity! All tasks, subtasks, and ideas will be completed, active timers cleared, and the card moved to the Identities Achieved section.'
           : 'Re-activate this identity and move it back up to Live Identities?',
         confirmText: willAchieve ? 'Yes, Mark Achieved' : 'Yes, Re-open Live',
         confirmBg: willAchieve ? 'linear-gradient(135deg, #eab308, #ca8a04)' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
@@ -5840,6 +5873,71 @@
           identity.achieved = willAchieve;
           identity.achievedAt = willAchieve ? new Date().toISOString() : null;
           identity.updatedAt = new Date().toISOString();
+
+          if (willAchieve) {
+            var nowIso = new Date().toISOString();
+            // Complete/strike all tasks, remove timers, and complete subtasks and ideas
+            if (Array.isArray(identity.tasks)) {
+              identity.tasks.forEach(function (t) {
+                if (!t) return;
+                t.completed = true;
+                t.status = 'completed';
+                t.completedAt = t.completedAt || nowIso;
+                t.doingNow = false;
+                t.whatNext = false;
+                t.timeToResult = 'Not yet decided';
+                t.nextTargetTime = null;
+                t.timerExpanded = false;
+
+                // Strike/complete all child subtasks
+                if (Array.isArray(t.subtasks)) {
+                  t.subtasks.forEach(function (st) {
+                    if (!st) return;
+                    st.completed = true;
+                    st.status = 'completed';
+                    st.completedAt = st.completedAt || nowIso;
+                    st.doingNow = false;
+                    st.whatNext = false;
+                    if (Array.isArray(st.ideas)) {
+                      st.ideas.forEach(function (idea) {
+                        if (!idea) return;
+                        idea.completed = true;
+                        idea.completedAt = idea.completedAt || nowIso;
+                      });
+                    }
+                  });
+                }
+
+                // Strike/complete all task ideas
+                if (Array.isArray(t.ideas)) {
+                  t.ideas.forEach(function (idea) {
+                    if (!idea) return;
+                    idea.completed = true;
+                    idea.completedAt = idea.completedAt || nowIso;
+                  });
+                }
+              });
+            }
+
+            // Complete/strike all actions
+            if (Array.isArray(identity.actions)) {
+              identity.actions.forEach(function (a) {
+                if (!a) return;
+                a.completed = true;
+                a.completedAt = a.completedAt || nowIso;
+              });
+            }
+
+            // Complete/strike all goalActions
+            if (Array.isArray(identity.goalActions)) {
+              identity.goalActions.forEach(function (ga) {
+                if (!ga) return;
+                ga.completed = true;
+                ga.completedAt = ga.completedAt || nowIso;
+              });
+            }
+          }
+
           save(true);
           render();
         }
@@ -6442,7 +6540,7 @@
       var headerHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
         + '<h3 style="font-size:15px;font-weight:800;letter-spacing:0.8px;color:#4ade80;margin:0;display:inline-flex;align-items:center;gap:6px">🏆 EVIDENCE VAULT</h3>'
-        + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + logs.length + ' proofs · ' + streak + '-day streak</span>'
+        + '<span style="font-size:12px;color:#94a3b8;font-weight:600">' + logs.length + ' proof' + (logs.length === 1 ? '' : 's') + (streak > 1 ? ' · ' + streak + '-day streak' : '') + '</span>'
         + '</div>'
         + (isBulkActive ? '<button onclick="toggleLogBulkMode()" class="bg" style="font-size:11.5px;padding:4px 10px;border:1px solid rgba(239,68,68,0.5);color:#fca5a5;background:rgba(239,68,68,0.15);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px">Cancel Selection</button>' : '')
         + '</div>'
@@ -9146,7 +9244,7 @@
         + '<button class="b bp bs" onclick="startCreate()" style="font-size:12px;padding:8px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700;box-shadow:0 3px 10px rgba(245,158,11,0.25);white-space:nowrap;display:inline-flex;align-items:center;gap:4px">➕ Create New Identity</button>'
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
-        + '<button onclick="toggleAchievedIdentity(' + id.id + ')" style="background:' + (id.achieved ? 'rgba(59,130,246,0.15)' : 'rgba(234,179,8,0.15)') + ';border:1px solid ' + (id.achieved ? 'rgba(59,130,246,0.4)' : 'rgba(234,179,8,0.4)') + ';color:' + (id.achieved ? '#93c5fd' : '#fde047') + ';font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap">' + (id.achieved ? 'Re-open Identity' : '🏆 Mark Achieved') + '</button>'
+        + '<button onclick="toggleAchievedIdentity(\'' + id.id + '\')" style="background:' + (id.achieved ? 'rgba(59,130,246,0.15)' : 'rgba(234,179,8,0.15)') + ';border:1px solid ' + (id.achieved ? 'rgba(59,130,246,0.4)' : 'rgba(234,179,8,0.4)') + ';color:' + (id.achieved ? '#93c5fd' : '#fde047') + ';font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap">' + (id.achieved ? 'Re-open Identity' : '🏆 Mark Achieved') + '</button>'
         + '<button class="b bb bs" onclick="go(\'manage\')" style="font-size:12px;padding:7px 12px;white-space:nowrap">Edit Details</button>'
         + '<button class="bg" onclick="go(\'hub\')" style="font-size:12px;padding:7px 12px;color:#fbbf24;font-weight:600;white-space:nowrap">All Cards →</button>'
         + '</div>'
@@ -9302,7 +9400,7 @@
     </div>
 
     ${id.logs.length > 0 ? `<div style="margin-top:18px">
-      <p class="sm" style="margin-bottom:8px">${id.logs.length} proofs · ${streak > 0 ? streak + '-day streak' : 'start your streak today'}</p>
+      <p class="sm" style="margin-bottom:8px">${id.logs.length} proof${id.logs.length === 1 ? '' : 's'}${streak > 1 ? ' · ' + streak + '-day streak' : ''}</p>
       <div class="sb">${streakDots(id)}</div>
     </div>`: ''}
 
@@ -9441,13 +9539,13 @@
       render();
 
       document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible' && typeof pullFromCloud === 'function') pullFromCloud();
+        if (document.visibilityState === 'visible' && typeof pullFromCloud === 'function') pullFromCloud(true);
       });
       window.addEventListener('focus', function () {
-        if (typeof _lastSyncTime !== 'undefined' && Date.now() - _lastSyncTime > 5000 && typeof pullFromCloud === 'function') pullFromCloud();
+        if (typeof _lastSyncTime !== 'undefined' && Date.now() - _lastSyncTime > 5000 && typeof pullFromCloud === 'function') pullFromCloud(true);
       });
       setInterval(function () {
-        if (document.visibilityState === 'visible' && typeof pullFromCloud === 'function') pullFromCloud();
+        if (document.visibilityState === 'visible' && typeof pullFromCloud === 'function') pullFromCloud(true);
       }, 45000);
     });
 
@@ -10264,8 +10362,8 @@
       }
 
       var statsSummary = activeTab === 'daily'
-        ? (logs.length + ' total proofs · ' + streak + '-day streak · ' + 'Progress')
-        : (reflections.length + ' total reflections · ' + daysOld(id) + ' days on journey');
+        ? (logs.length + ' total proof' + (logs.length === 1 ? '' : 's') + (streak > 1 ? ' · ' + streak + '-day streak' : '') + ' · Progress')
+        : (reflections.length + ' total reflection' + (reflections.length === 1 ? '' : 's') + ' · ' + daysOld(id) + ' days on journey');
 
       modal.innerHTML = '<div class="modal-card" onclick="event.stopPropagation()">'
         + '<div class="modal-header">'
