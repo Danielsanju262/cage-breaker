@@ -2201,6 +2201,57 @@
         return rl && rl.id && !delRoutineLoopSet.has(rl.id);
       }) : [];
 
+      if (id.achieved) {
+        id.targetEventTime = null;
+        id.targetEventDate = null;
+        id.targetEvent = null;
+        if (Array.isArray(id.tasks)) {
+          id.tasks.forEach(function (t) {
+            if (!t) return;
+            t.completed = true;
+            t.status = 'completed';
+            t.doingNow = false;
+            t.whatNext = false;
+            t.timeToResult = 'Not yet decided';
+            t.nextTargetTime = null;
+            t.timerExpanded = false;
+            if (Array.isArray(t.subtasks)) {
+              t.subtasks.forEach(function (st) {
+                if (!st) return;
+                st.completed = true;
+                st.status = 'completed';
+                st.doingNow = false;
+                st.whatNext = false;
+                st.timeToResult = 'Not yet decided';
+                st.nextTargetTime = null;
+                if (Array.isArray(st.ideas)) {
+                  st.ideas.forEach(function (idea) {
+                    if (!idea) return;
+                    idea.completed = true;
+                  });
+                }
+              });
+            }
+            if (Array.isArray(t.ideas)) {
+              t.ideas.forEach(function (idea) {
+                if (!idea) return;
+                idea.completed = true;
+              });
+            }
+          });
+        }
+        if (Array.isArray(id.actions)) {
+          id.actions.forEach(function (a) {
+            if (a) a.completed = true;
+          });
+        }
+        if (Array.isArray(id.goalActions)) {
+          id.goalActions.forEach(function (ga) {
+            if (ga) ga.completed = true;
+          });
+        }
+      }
+
       return id;
     }
 
@@ -3142,9 +3193,12 @@
         var clean = {
           screen: state.screen,
           currentId: state.currentId,
-          deletedIds: state.deletedIds || [],
+          deletedIds: Array.isArray(state.deletedIds) ? state.deletedIds.slice().sort() : [],
           dailyCrack: state.dailyCrack || null,
-          identities: (state.identities || []).map(function (id) {
+          identities: (Array.isArray(state.identities) ? state.identities.slice() : []).sort(function (a, b) {
+            return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+          }).map(function (id) {
+            if (!id) return null;
             return {
               id: id.id,
               newIdentity: id.newIdentity,
@@ -3157,7 +3211,10 @@
               targetActionLine: id.targetActionLine,
               antiVisionText: id.antiVisionText,
               whyStatement: id.whyStatement,
-              tasks: (id.tasks || []).map(function (t) {
+              tasks: (Array.isArray(id.tasks) ? id.tasks.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (t) {
+                if (!t) return null;
                 return {
                   id: t.id,
                   text: t.text,
@@ -3167,28 +3224,49 @@
                   whatNext: t.whatNext,
                   timeToResult: t.timeToResult,
                   nextTargetTime: t.nextTargetTime,
-                  subtasks: (t.subtasks || []).map(function (st) {
+                  subtasks: (Array.isArray(t.subtasks) ? t.subtasks.slice() : []).sort(function (a, b) {
+                    return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+                  }).map(function (st) {
+                    if (!st) return null;
                     return { id: st.id, text: st.text, completed: !!st.completed, doingNow: st.doingNow, whatNext: st.whatNext, status: st.status };
                   }),
-                  ideas: (t.ideas || []).map(function (idea) {
+                  ideas: (Array.isArray(t.ideas) ? t.ideas.slice() : []).sort(function (a, b) {
+                    return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+                  }).map(function (idea) {
+                    if (!idea) return null;
                     return { id: idea.id, text: idea.text, completed: !!idea.completed };
                   })
                 };
               }),
-              routineLoops: (id.routineLoops || []).map(function (rl) {
+              routineLoops: (Array.isArray(id.routineLoops) ? id.routineLoops.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (rl) {
+                if (!rl) return null;
                 return { id: rl.id, title: rl.title, iterationCount: rl.iterationCount, steps: (rl.steps || []).map(function (s) { return s.text || s; }) };
               }),
-              logs: (id.logs || []).map(function (l) { return { id: l.id, note: l.note, date: l.date, type: l.type, category: l.category }; }),
-              habits: (id.habits || []).map(function (h) { return { id: h.id, text: h.text, checks: h.checks }; }),
-              reflections: (id.reflections || []).map(function (r) { return { id: r.id, note: r.note, date: r.date }; }),
-              oldEvidence: (id.oldEvidence || []).map(function (oe) { return { id: oe.id, note: oe.note, date: oe.date }; }),
-              actions: (id.actions || []).map(function (a) { return { id: a.id, text: a.text, completed: !!a.completed }; }),
-              goalActions: (id.goalActions || []).map(function (ga) { return { id: ga.id, text: ga.text, completed: !!ga.completed }; }),
-              deletedTaskIds: id.deletedTaskIds || [],
-              deletedSubtaskIds: id.deletedSubtaskIds || [],
-              deletedIdeaIds: id.deletedIdeaIds || [],
-              deletedLogIds: id.deletedLogIds || [],
-              deletedHabitIds: id.deletedHabitIds || []
+              logs: (Array.isArray(id.logs) ? id.logs.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (l) { return { id: l.id, note: l.note, date: l.date, type: l.type, category: l.category }; }),
+              habits: (Array.isArray(id.habits) ? id.habits.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (h) { return { id: h.id, text: h.text, checks: h.checks }; }),
+              reflections: (Array.isArray(id.reflections) ? id.reflections.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (r) { return { id: r.id, note: r.note, date: r.date }; }),
+              oldEvidence: (Array.isArray(id.oldEvidence) ? id.oldEvidence.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (oe) { return { id: oe.id, note: oe.note, date: oe.date }; }),
+              actions: (Array.isArray(id.actions) ? id.actions.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (a) { return { id: a.id, text: a.text, completed: !!a.completed }; }),
+              goalActions: (Array.isArray(id.goalActions) ? id.goalActions.slice() : []).sort(function (a, b) {
+                return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+              }).map(function (ga) { return { id: ga.id, text: ga.text, completed: !!ga.completed }; }),
+              deletedTaskIds: Array.isArray(id.deletedTaskIds) ? id.deletedTaskIds.slice().sort() : [],
+              deletedSubtaskIds: Array.isArray(id.deletedSubtaskIds) ? id.deletedSubtaskIds.slice().sort() : [],
+              deletedIdeaIds: Array.isArray(id.deletedIdeaIds) ? id.deletedIdeaIds.slice().sort() : [],
+              deletedLogIds: Array.isArray(id.deletedLogIds) ? id.deletedLogIds.slice().sort() : [],
+              deletedHabitIds: Array.isArray(id.deletedHabitIds) ? id.deletedHabitIds.slice().sort() : []
             };
           })
         };
@@ -3205,14 +3283,8 @@
       var rawY = (window.pageYOffset || window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0);
       var rawX = (window.pageXOffset || window.scrollX || document.documentElement.scrollLeft || document.body.scrollLeft || 0);
 
-      var sy = shouldPreserve ? (rawY > 0 ? rawY : (window._modalSavedScrollY || window._lastKnownPageScrollY || 0)) : 0;
-      var sx = shouldPreserve ? (rawX > 0 ? rawX : (window._modalSavedScrollX || window._lastKnownPageScrollX || 0)) : 0;
-
-      // Lock current height of app container before replacing innerHTML so page height never collapses
-      var prevHeight = a.offsetHeight;
-      if (shouldPreserve && prevHeight > 0) {
-        a.style.minHeight = prevHeight + 'px';
-      }
+      var sy = shouldPreserve ? rawY : 0;
+      var sx = shouldPreserve ? rawX : 0;
 
       var htmlEl = document.documentElement;
       var prevScrollBehavior = htmlEl.style.scrollBehavior;
@@ -3247,19 +3319,7 @@
       if (shouldPreserve && (sx > 0 || sy > 0)) {
         window.scrollTo({ left: sx, top: sy, behavior: 'instant' });
       }
-
-      // Smoothly clear locked minHeight and restore scroll behavior after paint
-      if (shouldPreserve && prevHeight > 0) {
-        requestAnimationFrame(function () {
-          a.style.minHeight = '';
-          if (shouldPreserve && (sx > 0 || sy > 0)) {
-            window.scrollTo({ left: sx, top: sy, behavior: 'instant' });
-          }
-          htmlEl.style.scrollBehavior = prevScrollBehavior;
-        });
-      } else {
-        htmlEl.style.scrollBehavior = prevScrollBehavior;
-      }
+      htmlEl.style.scrollBehavior = prevScrollBehavior;
 
       if (activeId) {
         var restoredEl = document.getElementById(activeId);
@@ -3863,16 +3923,24 @@
                     return;
                   }
 
-                  var oldPayloadSig = getPayloadSignature(S);
+                  var localSig = getPayloadSignature(S);
+                  var incomingSig = getPayloadSignature(parsed);
+                  if (localSig && localSig === incomingSig && currentIdentitiesCount > 0) {
+                    _syncStatus = 'synced';
+                    updateSyncStatusUI();
+                    return;
+                  }
+
                   var merged = mergeStates(S, parsed);
                   if (typeof _initialSyncDone === 'undefined' || !_initialSyncDone) {
                     collapseAllExpandedStates(merged);
                   }
-                  var newPayloadSig = getPayloadSignature(merged);
+                  var mergedSig = getPayloadSignature(merged);
 
-                  if (oldPayloadSig === newPayloadSig && currentIdentitiesCount > 0) {
+                  if (localSig === mergedSig && currentIdentitiesCount > 0) {
                     S = merged;
-                    _syncStatus = 'synced'; updateSyncStatusUI();
+                    _syncStatus = 'synced';
+                    updateSyncStatusUI();
                     return;
                   }
                   _isRemoteUpdate = true;
@@ -4061,15 +4129,23 @@
                 return false;
               }
 
-              var oldPayloadSig = getPayloadSignature(S);
+              var localSig = getPayloadSignature(S);
+              var incomingSig = getPayloadSignature(parsed);
+              if (localSig && localSig === incomingSig && currentIdentitiesCount > 0) {
+                _syncStatus = 'synced';
+                if (!isBackgroundSync) updateSyncStatusUI();
+                _initialSyncDone = true;
+                return true;
+              }
+
               var merged = mergeStates(S, parsed);
               if (typeof _initialSyncDone === 'undefined' || !_initialSyncDone) {
                 collapseAllExpandedStates(merged);
               }
-              var newPayloadSig = getPayloadSignature(merged);
+              var mergedSig = getPayloadSignature(merged);
 
               // If data is identical, update references silently and DO NOT re-render
-              if (oldPayloadSig === newPayloadSig && currentIdentitiesCount > 0) {
+              if (localSig === mergedSig && currentIdentitiesCount > 0) {
                 S = merged;
                 _syncStatus = 'synced';
                 if (!isBackgroundSync) updateSyncStatusUI();
@@ -5049,8 +5125,12 @@
             var details = getCountdownDetails(timeStr, isDetail);
             if (!details) return;
 
-            badge.setAttribute('style', details.scaleStyle);
-            badge.textContent = details.countdownText;
+            if (badge.textContent !== details.countdownText) {
+              badge.textContent = details.countdownText;
+            }
+            if (badge.getAttribute('style') !== details.scaleStyle) {
+              badge.setAttribute('style', details.scaleStyle);
+            }
           });
         }
 
@@ -5061,10 +5141,10 @@
             if (!timeStr) return;
             var cd = getNextHoursCountdown(timeStr);
             if (cd) {
-              pill.textContent = cd.text;
-              pill.style.background = cd.bg;
-              pill.style.borderColor = cd.border;
-              pill.style.color = cd.color;
+              if (pill.textContent !== cd.text) pill.textContent = cd.text;
+              if (pill.style.background !== cd.bg) pill.style.background = cd.bg;
+              if (pill.style.borderColor !== cd.border) pill.style.borderColor = cd.border;
+              if (pill.style.color !== cd.color) pill.style.color = cd.color;
             }
           });
         }
@@ -5079,13 +5159,15 @@
               if (t) {
                 var cd = getTaskHighestTimerStatus(t);
                 if (cd) {
-                  box.style.borderColor = cd.color;
+                  if (box.style.borderColor !== cd.color) box.style.borderColor = cd.color;
                   box.style.setProperty('--pulse-glow', cd.glow);
                   var textEl = box.querySelector('.live-task-timer-text');
                   if (textEl) {
-                    textEl.textContent = cd.timerText || cd.text;
-                    textEl.style.color = cd.color;
-                    textEl.style.textShadow = '0 0 18px ' + cd.glow;
+                    var newText = cd.timerText || cd.text;
+                    if (textEl.textContent !== newText) textEl.textContent = newText;
+                    if (textEl.style.color !== cd.color) textEl.style.color = cd.color;
+                    var newShadow = '0 0 18px ' + cd.glow;
+                    if (textEl.style.textShadow !== newShadow) textEl.style.textShadow = newShadow;
                   }
                 }
               }
@@ -5855,9 +5937,9 @@
     }
 
     window.toggleAchievedIdentity = function (id) {
-      var targetId = typeof id === 'string' ? id : (S ? S.currentId : null);
+      var targetId = (typeof id === 'string' || typeof id === 'number') ? String(id) : (id && id.id ? String(id.id) : (S ? String(S.currentId) : null));
       if (!targetId || !Array.isArray(S.identities)) return;
-      var identity = S.identities.find(function (item) { return item && item.id === targetId; });
+      var identity = S.identities.find(function (item) { return item && String(item.id) === String(targetId); });
       if (!identity) return;
 
       var willAchieve = !identity.achieved;
@@ -5876,6 +5958,10 @@
 
           if (willAchieve) {
             var nowIso = new Date().toISOString();
+            identity.targetEventTime = null;
+            identity.targetEventDate = null;
+            identity.targetEvent = null;
+
             // Complete/strike all tasks, remove timers, and complete subtasks and ideas
             if (Array.isArray(identity.tasks)) {
               identity.tasks.forEach(function (t) {
@@ -5898,6 +5984,8 @@
                     st.completedAt = st.completedAt || nowIso;
                     st.doingNow = false;
                     st.whatNext = false;
+                    st.timeToResult = 'Not yet decided';
+                    st.nextTargetTime = null;
                     if (Array.isArray(st.ideas)) {
                       st.ideas.forEach(function (idea) {
                         if (!idea) return;
@@ -8178,7 +8266,8 @@
                   + '<button class="b bp bs" onclick="saveEditModalIdea(\'' + idea.id + '\')" style="font-size:11px;padding:5px 11px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#09090b;font-weight:700">Save</button>'
                   + '</div>';
               }
-              var isIdeaDone = !!idea.completed;
+              var curId = getCurRef() || cur();
+              var isIdeaDone = !!idea.completed || !!(curId && curId.achieved);
               return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:' + (isIdeaDone ? 'rgba(74,222,128,0.05)' : 'rgba(255,255,255,0.03)') + ';border:1px solid ' + (isIdeaDone ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.07)') + ';border-radius:8px;gap:8px">'
                 + '<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">'
                 + '<button class="task-check-btn ' + (isIdeaDone ? 'checked' : '') + '" style="width:20px;height:20px;font-size:11px;flex-shrink:0" onclick="toggleIdeaCompletion(\'' + idea.id + '\')" title="' + (isIdeaDone ? 'Mark idea pending' : 'Mark idea completed (+1 Evidence Point)') + '">'
@@ -8619,11 +8708,18 @@
     };
 
     function renderTaskCard(task, tIdx) {
+      var curId = getCurRef() || cur();
+      var isIdAchieved = !!(curId && curId.achieved);
+      if (isIdAchieved) {
+        task.completed = true;
+        task.status = 'completed';
+      }
+
       var mainIdeas = Array.isArray(task.ideas) ? task.ideas : [];
       var mainCompletedIdeas = mainIdeas.filter(function (i) { return !!i.completed; }).length;
       var mainTotalIdeas = mainIdeas.length;
       var subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
-      var subtasksDoneCount = task.completed ? subtasks.length : subtasks.filter(function (st) { return st.completed; }).length;
+      var subtasksDoneCount = (task.completed || isIdAchieved) ? subtasks.length : subtasks.filter(function (st) { return st.completed; }).length;
       var searchQuery = (window.taskSearchQuery || '').trim().toLowerCase();
       var hasSearch = !!searchQuery;
 
@@ -8646,13 +8742,13 @@
         ? (' <span class="subtasks-badge-pill" style="font-size:10.5px;font-weight:700;color:' + subtaskPillColor + ';background:' + subtaskPillBg + ';padding:1.5px 6px;border-radius:5px;border:1px solid ' + subtaskPillBorder + ';cursor:pointer;user-select:none;display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;white-space:nowrap;line-height:1.2" title="Click to ' + (isExpanded ? 'collapse' : 'expand') + ' subtasks (' + subtasksDoneCount + ' of ' + subtasks.length + ' completed)" onclick="event.stopPropagation();toggleTaskExpanded(\'' + task.id + '\')">' + (subtasksDoneCount + '/' + subtasks.length + ' subtasks') + '</span>')
         : '';
 
-      var curStatus = task.status || (task.completed ? 'completed' : 'yet_to_start');
+      var curStatus = isIdAchieved ? 'completed' : (task.status || (task.completed ? 'completed' : 'yet_to_start'));
       var statusColor = curStatus === 'completed' ? '#4ede80' : (curStatus === 'in_process' ? '#60a5fa' : '#94a3b8');
       var statusBg = curStatus === 'completed' ? 'rgba(74,222,128,0.15)' : (curStatus === 'in_process' ? 'rgba(59,130,246,0.15)' : 'rgba(148,163,184,0.1)');
       var statusBorder = curStatus === 'completed' ? 'rgba(74,222,128,0.4)' : (curStatus === 'in_process' ? 'rgba(59,130,246,0.4)' : 'rgba(148,163,184,0.3)');
 
-      var taskHighestCd = getTaskHighestTimerStatus(task);
-      var taskItemCd = getItemTimerStatus(task) || taskHighestCd;
+      var taskHighestCd = isIdAchieved ? null : getTaskHighestTimerStatus(task);
+      var taskItemCd = isIdAchieved ? null : (getItemTimerStatus(task) || taskHighestCd);
 
       var mainStatusBorder = taskItemCd ? taskItemCd.border : 'rgba(147,197,253,0.25)';
       var mainStatusBg = taskItemCd ? taskItemCd.bg : 'rgba(15,23,42,0.6)';
@@ -8673,8 +8769,8 @@
       }
 
       displayedSubtasks.sort(function (a, b) {
-        var aDone = a.st.completed || task.completed;
-        var bDone = b.st.completed || task.completed;
+        var aDone = a.st.completed || task.completed || isIdAchieved;
+        var bDone = b.st.completed || task.completed || isIdAchieved;
         if (aDone === bDone) return a.origIdx - b.origIdx;
         return aDone ? 1 : -1;
       });
@@ -8687,7 +8783,7 @@
               var stIdeas = Array.isArray(st.ideas) ? st.ideas : [];
               var stCompletedIdeas = stIdeas.filter(function (i) { return !!i.completed; }).length;
               var stTotalIdeas = stIdeas.length;
-              var isSubDone = st.completed || task.completed;
+              var isSubDone = isIdAchieved || st.completed || task.completed;
               var isEditingSub = window.editingSubtaskKey === (task.id + '_' + st.id);
 
               var subTitleContentHtml = isEditingSub ? (
@@ -8696,12 +8792,12 @@
                 '<span class="subtask-title" onclick="event.stopPropagation();handleSubtaskTitleClick(\'' + task.id + '\', \'' + st.id + '\', event)" ondblclick="event.stopPropagation();startEditSubtask(\'' + task.id + '\', \'' + st.id + '\')" style="font-size:13px;font-weight:500;cursor:pointer;color:#e2e8f0;word-break:break-word;overflow-wrap:anywhere;white-space:normal;line-height:1.4;display:inline;max-width:100%;width:fit-content;' + (isSubDone ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit subtask">' + highlightSearchMatch(st.text, searchQuery) + '</span>'
               );
 
-              var curSubStatus = st.status || (st.completed ? 'completed' : 'yet_to_start');
+              var curSubStatus = isIdAchieved ? 'completed' : (st.status || (st.completed ? 'completed' : 'yet_to_start'));
               var subStatusColor = curSubStatus === 'completed' ? '#4ede80' : (curSubStatus === 'in_process' ? '#60a5fa' : '#94a3b8');
               var subStatusBg = curSubStatus === 'completed' ? 'rgba(74,222,128,0.12)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.12)' : 'rgba(148,163,184,0.08)');
               var subStatusBorder = curSubStatus === 'completed' ? 'rgba(74,222,128,0.35)' : (curSubStatus === 'in_process' ? 'rgba(59,130,246,0.35)' : 'rgba(148,163,184,0.25)');
 
-              var stItemCd = getItemTimerStatus(st);
+              var stItemCd = isIdAchieved ? null : getItemTimerStatus(st);
               var stTimerCd = stItemCd;
 
               var subDoingBorder = stTimerCd ? stTimerCd.border : 'rgba(147,197,253,0.25)';
@@ -8714,7 +8810,7 @@
 
               var isSubCompleted = isSubDone || curSubStatus === 'completed';
 
-              var subtaskInputsHtml = (!isSubCompleted && curSubStatus === 'in_process') ? (
+              var subtaskInputsHtml = (!isSubCompleted && !isIdAchieved && curSubStatus === 'in_process') ? (
                 '<div class="subtask-inputs-container" style="display:flex;gap:6px;align-items:center;margin-top:4px">'
                 + '<div style="display:flex;align-items:center;gap:6px;flex:1;background:' + subNextBg + ';padding:4px 8px;border-radius:6px;border:1px solid ' + subNextBorder + '">'
                 + '<span style="font-size:11px;font-weight:700;color:' + subNextLabelColor + ';white-space:nowrap">Next:</span>'
@@ -8731,7 +8827,7 @@
               var isTaskBulkActive = window.bulkTaskState && window.bulkTaskState.active;
               var subtaskBulkCheckHtml = isTaskBulkActive ? ('<input type="checkbox" ' + (isSubBulkSelected ? 'checked' : '') + ' onchange="toggleSubtaskBulkSelect(\'' + task.id + '\', \'' + st.id + '\', this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;flex-shrink:0" title="Select subtask for bulk delete" />') : '';
 
-              var subIdeasButtonHtml = isSubCompleted ? '' : (
+              var subIdeasButtonHtml = (isSubCompleted || isIdAchieved) ? '' : (
                 '<button class="bg" onclick="openIdeasModal(\'subtask\', \'' + task.id + '\', \'' + st.id + '\')" style="font-size:10.5px;padding:2px 6px;border:1px solid ' + (stTotalIdeas > 0 ? (stCompletedIdeas === stTotalIdeas ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (stTotalIdeas > 0 ? (stCompletedIdeas === stTotalIdeas ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (stTotalIdeas > 0 ? (stCompletedIdeas === stTotalIdeas ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:4px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Subtask ideas">'
                 + '💡 ' + (stTotalIdeas > 0 ? (stCompletedIdeas + '/' + stTotalIdeas) : '+')
                 + '</button>'
@@ -8751,8 +8847,8 @@
                 + '</div>'
                 + '</div>'
                 + '<div class="subtask-card-row-right" style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;white-space:nowrap">'
-                + (st.nextTargetTime && !isSubDone ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
-                + (!isSubDone && curSubStatus !== 'completed' ? renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Not yet decided', 'font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;min-width:92px;flex-shrink:0;color-scheme:dark', 'subtask') : '')
+                + (st.nextTargetTime && !isSubDone && !isIdAchieved ? renderNextTimePill('subtask', task.id, st.id, st.nextTargetTime) : '')
+                + (!isSubDone && !isIdAchieved && curSubStatus !== 'completed' ? renderTimeToResultSelect('subtask', task.id, st.id, st.timeToResult || 'Not yet decided', 'font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;min-width:92px;flex-shrink:0;color-scheme:dark', 'subtask') : '')
                 + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeSubtaskStatus(\'' + task.id + '\', \'' + st.id + '\', this.value)" style="font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:6px;border:1px solid ' + subStatusBorder + ';background:' + subStatusBg + ';color:' + subStatusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
                 + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curSubStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
                 + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curSubStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
@@ -8773,7 +8869,7 @@
           + '</div>';
       }
 
-      var addSubtaskBarHtml = !task.completed ? (
+      var addSubtaskBarHtml = (!task.completed && !isIdAchieved) ? (
         '<div onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center;margin-bottom:' + (displayedSubtasks.length > 0 ? '10px' : '0') + '">'
         + '<input type="text" id="new-subtask-text-' + task.id + '" placeholder="Add a subtask to this milestone..." style="flex:1;background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:7px 10px;border-radius:6px;font-size:12px" onkeydown="if(event.key===\'Enter\')addSubtask(\'' + task.id + '\')" />'
         + '<button class="b bp bs" onclick="addSubtask(\'' + task.id + '\')" style="font-size:11.5px;padding:7px 12px;background:#2563eb;color:#fff;font-weight:700">+ Add Subtask</button>'
@@ -8789,7 +8885,7 @@
         + '</div>'
       );
 
-      var hasActiveTimer = !!(taskHighestCd && !task.completed);
+      var hasActiveTimer = !isIdAchieved && !!(taskHighestCd && !task.completed);
       var isTimerExpanded = hasActiveTimer && (task.timerExpanded === true || window.expandedTimerTaskId === task.id || isExpanded);
 
       var collapsedTimerHtml = '';
@@ -8858,7 +8954,7 @@
 
       var timerCardClass = hasActiveTimer ? (' task-card-has-timer' + (isTimerExpanded ? ' task-card-timer-expanded' : '')) : '';
 
-      var mainIdeasButtonHtml = (task.completed || curStatus === 'completed') ? '' : (
+      var mainIdeasButtonHtml = (task.completed || isIdAchieved || curStatus === 'completed') ? '' : (
         '<button class="bg" onclick="event.stopPropagation();openIdeasModal(\'task\', \'' + task.id + '\')" style="font-size:11px;padding:2px 7px;border:1px solid ' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)') : 'rgba(255,255,255,0.15)') + ';color:' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? '#4ede80' : '#fbbf24') : '#94a3b8') + ';background:' + (mainTotalIdeas > 0 ? (mainCompletedIdeas === mainTotalIdeas ? 'rgba(74,222,128,0.1)' : 'rgba(245,158,11,0.1)') : 'rgba(255,255,255,0.03)') + ';border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;flex-shrink:0" title="Main Task Ideas">'
         + '💡 ' + (mainTotalIdeas > 0 ? (mainCompletedIdeas + '/' + mainTotalIdeas) : '+')
         + '</button>'
@@ -8880,7 +8976,7 @@
         taskCardStyle += 'border-color:rgba(59,130,246,0.5);box-shadow:0 0 15px rgba(59,130,246,0.1);';
       }
 
-      var mainTaskInputsHtml = (!task.completed && curStatus === 'in_process') ? (
+      var mainTaskInputsHtml = (!task.completed && !isIdAchieved && curStatus === 'in_process') ? (
         '<div class="task-inputs-container">'
         + '<div class="task-input-box" style="background:' + mainStatusBg + ';border:1px solid ' + mainStatusBorder + '">'
         + '<span style="font-size:11.5px;font-weight:700;color:' + mainStatusLabelColor + ';white-space:nowrap;flex-shrink:0;padding-top:2px">Status:</span>'
@@ -8895,7 +8991,7 @@
         + '</div>'
       ) : '';
 
-      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card ' + (task.completed ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" onclick="handleTaskCardClick(\'' + task.id + '\', event)" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
+      return '<div id="task-card-' + tIdx + '" data-task-idx="' + tIdx + '" data-task-id="' + task.id + '" class="task-card ' + ((task.completed || isIdAchieved) ? 'task-done' : '') + timerCardClass + '" style="' + taskCardStyle + '" onclick="handleTaskCardClick(\'' + task.id + '\', event)" ondragover="onTaskDragOver(event, ' + tIdx + ')" ondragleave="onTaskDragLeave(event, ' + tIdx + ')" ondrop="onTaskDrop(event, ' + tIdx + ')" ondragend="onTaskDragEnd(event)">'
         + collapsedTimerHtml
         + '<div class="task-card-details">'
         + '<div class="task-card-details-inner">'
@@ -8903,22 +8999,22 @@
         + '<div class="task-card-header-left">'
         + taskBulkCheckHtml
         + '<span style="cursor:grab;user-select:none;font-size:18px;color:#64748b;padding:2px 4px;line-height:1;touch-action:none;display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px" title="Drag to reorder" draggable="true" ondragstart="onTaskDragStart(event, ' + tIdx + ')" ontouchstart="onTaskTouchStart(event, ' + tIdx + ')" ontouchmove="onTaskTouchMove(event)" ontouchend="onTaskTouchEnd(event)" ontouchcancel="onTaskTouchEnd(event)">⠿</span>'
-        + '<button class="task-check-btn ' + (task.completed ? 'checked' : '') + '" style="margin-top:2px;flex-shrink:0" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + (task.completed ? 'Mark pending' : 'Mark completed') + '">'
-        + (task.completed ? '✓' : '')
+        + '<button class="task-check-btn ' + ((task.completed || isIdAchieved) ? 'checked' : '') + '" style="margin-top:2px;flex-shrink:0" onclick="event.stopPropagation();toggleTask(\'' + task.id + '\')" title="' + ((task.completed || isIdAchieved) ? 'Mark pending' : 'Mark completed') + '">'
+        + ((task.completed || isIdAchieved) ? '✓' : '')
         + '</button>'
         + (mainIdeasButtonHtml ? ('<div style="margin-top:2px;flex-shrink:0">' + mainIdeasButtonHtml + '</div>') : '')
         + '<div class="task-title-wrap" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;line-height:1.45">'
         + (isEditingTask ? (
             '<textarea rows="1" id="edit-task-input-' + task.id + '" class="auto-expand-input title-edit-input" data-min-h="24px" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" onfocus="window.autoResizeTextarea(this)" oninput="window.autoResizeTextarea(this);updateTaskText(\'' + task.id + '\', this.value)" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();finishEditTask();}" onblur="finishEditTask()" onclick="event.stopPropagation()" style="background:#0f172a;border:1px solid #3b82f6;color:#fff;padding:2px 6px;border-radius:6px;font-size:15px;font-weight:600;box-sizing:border-box;resize:none;overflow:hidden;line-height:1.35;font-family:inherit;outline:none;field-sizing:content;max-width:100%;min-width:100px;width:auto;margin:0;min-height:0">' + esc(task.text) + '</textarea>'
           ) : (
-            '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" ondblclick="event.stopPropagation();startEditTask(\'' + task.id + '\')" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;display:inline;width:fit-content;max-width:100%;' + (task.completed ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit task title">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
+            '<span class="task-title" onclick="handleTaskTitleClick(\'' + task.id + '\', event)" ondblclick="event.stopPropagation();startEditTask(\'' + task.id + '\')" style="font-size:15px;font-weight:600;cursor:pointer;line-height:1.45;white-space:normal;word-break:break-word;overflow-wrap:anywhere;display:inline;width:fit-content;max-width:100%;' + ((task.completed || isIdAchieved) ? 'text-decoration:line-through;color:#94a3b8' : '') + '" title="Click to edit task title">' + highlightSearchMatch(task.text, searchQuery) + '</span>'
           ))
         + subtasksBadgeHtml
         + '</div>'
         + '</div>'
         + '<div class="task-card-header-right">'
-        + (task.nextTargetTime && !task.completed ? renderNextTimePill('task', task.id, null, task.nextTargetTime) : '')
-        + (!task.completed && curStatus !== 'completed' ? renderTimeToResultSelect('task', task.id, null, task.timeToResult || 'Not yet decided', 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;min-width:100px;flex-shrink:0;color-scheme:dark', 'details') : '')
+        + (task.nextTargetTime && !task.completed && !isIdAchieved ? renderNextTimePill('task', task.id, null, task.nextTargetTime) : '')
+        + (!task.completed && !isIdAchieved && curStatus !== 'completed' ? renderTimeToResultSelect('task', task.id, null, task.timeToResult || 'Not yet decided', 'font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.3);background:#0f172a;color:#cbd5e1;cursor:pointer;width:auto;min-width:100px;flex-shrink:0;color-scheme:dark', 'details') : '')
         + '<select class="task-status-select" onclick="event.stopPropagation()" onchange="changeTaskStatus(\'' + task.id + '\', this.value)" style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid ' + statusBorder + ';background:' + statusBg + ';color:' + statusColor + ';cursor:pointer;width:auto;max-width:fit-content;flex-shrink:0;color-scheme:dark">'
         + '<option value="yet_to_start" style="background:#111827;color:#cbd5e1" ' + (curStatus === 'yet_to_start' ? 'selected' : '') + '>Yet to Start</option>'
         + '<option value="in_process" style="background:#111827;color:#60a5fa" ' + (curStatus === 'in_process' ? 'selected' : '') + '>In Process</option>'
